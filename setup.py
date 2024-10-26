@@ -11,7 +11,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     author='Sebastian Korsak',
-    author_email='sebykorsak@gmail.com',
+    author_email='s.korsak@datascience.edu.pl',
     url='https://github.com/SFGLab/pyLoopSage',  # GitHub repository URL
     license='GNU General Public License v3.0',
     packages=find_packages(),  # Automatically finds all packages and sub-packages
