@@ -33,9 +33,7 @@ These $L(\cdot), R(\cdot)$ functions are two functions that define the binding p
 
 $$N_{fold}=N_{coh}\cdot \langle n_i-m_i\rangle,\quad N_{cross}=N_{coh},\quad N_{bind}=\sum_{k}\left(L(k)+R(k)\right).$$
 
-The energy term $W_{i}(\cdot)$ it corresponds to the average values of the ChIP-Seq experiment $i$ for each loci of interest. Finally, $r_{i}$ it is a weight that corresponds each one of these experiments and by default it is set as $r_{i}=b/2$.
-
-Thus,
+And the energy difference can be expressed as the energy difference of each term,
 
 $$\Delta E = \Delta E_{fold}+\Delta E_{cross}+\Delta E_{bind}.$$
 
