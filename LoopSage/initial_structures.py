@@ -1,5 +1,6 @@
 import numpy as np
 from tqdm import tqdm
+
 def dist(p1: np.ndarray, p2: np.ndarray) -> float:
     """Mierzy dystans w przestrzeni R^3"""
     x1, y1, z1 = p1
