@@ -37,7 +37,7 @@ These $L(\cdot), R(\cdot)$ functions are two functions that define the binding p
 
 $$c_{\text{fold}}=-\dfrac{N_{\text{beads}}f}{N_{\text{lef}}\log(N_{\text{beads}}/N_{\text{lef}})},\quad c_{\text{bind}}=-\dfrac{N_{\text{beads}}b}{\sum_i \left(L(m_i)+R(n_i)\right)},\quad c_{\text{cross}}=\kappa \times 10^4.$$
 
-The parameters are defined in such a way that when f=b=\kappa, the three terms of the stochastic energy are balanced. 
+The parameters are defined in such a way that when $$f=b=\kappa=1$$, the three terms of the stochastic energy are balanced. 
 
 And the energy difference can be expressed as the energy difference of each term,
 
