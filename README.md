@@ -17,10 +17,14 @@ Please cite the method paper in case that you would like to use this model for y
 
 ## The model
 
+We have a polymer chain with $$N_{\text{beads}}$$ number of monomers. In general we can scale by deault the granularity of the simulation so as to give reasonable results. Therefore if we have a `region` counted in genomic coordinates, we can assume that `N_beads=(region[1]-region[0])//2000`.
+
 Let's assume that each cohesin $i$ can be represented of two coordinates $(m_{i},n_{i})$ we allow three moves in our simulation:
 
 * Slide both locations randomly (as 1D random walk) or
 * Rebind somewhere else.
+
+In general a good working assumption is that the number of cohesins (or loop extrusion factors LEFs) is $$N_{\text{lef}}=2N_{\text{CTCF}}$$.
 
 The main idea of the algorithm is to ensemble loop extrusion from a Boltzmann probability distribution, with Hamiltonian,
 
@@ -32,6 +36,8 @@ $K(m_{i},n_{i};m_{j},n_{j})$ which takes the value 1 when $m_{i} < m_{j} < n_{i}
 These $L(\cdot), R(\cdot)$ functions are two functions that define the binding potential and they are orientation specific - so they are different for left and right position of cohesin (because CTCF motifs are orientation specific), therefore when we have a gap in these functions, it means presence of CTCF. These two functions are derived from data with CTCF binning and by running the script for probabilistic orientation. Moreover, by $N_{(\cdot)}$ we symbolize the normalization constants for each factor,
 
 $$c_{\text{fold}}=-\dfrac{N_{\text{beads}}f}{N_{\text{lef}}\log(N_{\text{beads}}/N_{\text{lef}})},\quad c_{\text{bind}}=-\dfrac{N_{\text{beads}}b}{\sum_i \left(L(m_i)+R(n_i)\right)},\quad c_{\text{cross}}=\kappa \times 10^4.$$
+
+The parameters are defined in such a way that when f=b=\kappa, the three terms of the stochastic energy are balanced. 
 
 And the energy difference can be expressed as the energy difference of each term,
 
