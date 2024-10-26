@@ -10,7 +10,7 @@ permissions:
 jobs:
   deploy:
 
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4  # Check out your repository
@@ -39,7 +39,7 @@ jobs:
 
     # Use PyPI token
     - name: Publish package
-      uses: pypa/gh-action-pypi-publish@v0.0.1
+      uses: pypa/gh-action-pypi-publish@v0.0.2
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
