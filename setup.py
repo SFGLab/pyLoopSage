@@ -38,7 +38,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'loopsage=LoopSage.run:main',  # loopsage command points to run.py's main function
+            'loopsage=loopsage.run:main',  # loopsage command points to run.py's main function
         ],
     },
     classifiers=[
