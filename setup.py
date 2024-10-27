@@ -6,7 +6,7 @@ with open('README.md', 'r', encoding='utf-8') as f:
 
 setup(
     name='pyLoopSage',  # Package name
-    version='0.0.6',  # Version of the software
+    version='0.0.8',  # Version of the software
     description='An energy-based stochastic model of loop extrusion in chromatin.',
     long_description=long_description,
     long_description_content_type='text/markdown',
