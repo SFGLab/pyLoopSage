@@ -62,7 +62,7 @@ The main script is `LoopSage.py`. The implementation of the code is very easy an
 
 ```python
 # Definition of Monte Carlo parameters
-import Loopsage.stochastic_simulation as lps
+import loopsage.stochastic_simulation as lps
 
 N_steps, MC_step, burnin, T, T_min = int(4e4), int(5e2), 1000, 2.5, 1.0
 mode = 'Metropolis'
