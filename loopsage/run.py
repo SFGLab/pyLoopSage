@@ -54,7 +54,7 @@ def main():
     args = get_config()
     
     # Monte Carlo Parameters
-    N_beads = args.N_BEADS
+    N_beads, N_lef = args.N_BEADS, args.N_LEF
     N_steps, MC_step, burnin, T, T_min = args.N_STEPS, args.MC_STEP, args.BURNIN, args.T_INIT, args.T_FINAL
     mode = args.METHOD
     
@@ -69,7 +69,7 @@ def main():
     bedpe_file = args.BEDPE_PATH
     
     # Run Simulation
-    sim = StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=N_beads)
+    sim = StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=N_beads,N_lef=N_lef)
     Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True,lef_rw=args.LEF_RW)
     if args.SIMULATION_TYPE=='EM':
         sim.run_EM(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.TOLERANCE)
