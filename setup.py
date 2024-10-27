@@ -37,7 +37,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'loopsage=LoopSage.run:main',  # MultiMM command points to run.py's main function
+            'loopsage=LoopSage.run:main',  # loopsage command points to run.py's main function
         ],
     },
     classifiers=[
