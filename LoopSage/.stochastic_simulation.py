@@ -11,10 +11,10 @@ from scipy.stats import norm
 from scipy.stats import poisson
 
 # My own libraries
-from preproc import *
-from plots import *
-from md import *
-from em import *
+from .preproc import *
+from .plots import *
+from .md import *
+from .em import *
 
 @njit
 def Kappa(mi,ni,mj,nj):
