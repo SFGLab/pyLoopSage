@@ -3,7 +3,7 @@ import pyvista as pv
 import imageio_ffmpeg  # Ensures ffmpeg is used
 import imageio
 import numpy as np
-from utils import *
+from .utils import *
 
 def polyline_from_points(points):
     poly = pv.PolyData()
