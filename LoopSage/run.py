@@ -1,5 +1,5 @@
-from stochastic_simulation import *
-from args_definition import *
+from .stochastic_simulation import *
+from .args_definition import *
 import os
 import time
 import argparse
