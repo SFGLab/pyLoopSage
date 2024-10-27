@@ -14,7 +14,7 @@ setup(
     author_email='s.korsak@datascience.edu.pl',
     url='https://github.com/SFGLab/pyLoopSage',  # GitHub repository URL
     license='GNU General Public License v3.0',
-    packages=find_packages(),  # Automatically finds all packages and sub-packages
+    packages=find_packages(include=['loopsage', 'loopsage.*']),
     install_requires=[  # List your package dependencies here
         'numpy',
         'numba',
