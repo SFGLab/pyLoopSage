@@ -144,7 +144,7 @@ def initialize(N_beads,N_lef):
     return ms, ns
 
 @njit
-def run_simulation(N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,bind_norm,k_norm,N_lef,L,R,mode):
+def run_simulation(N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,bind_norm,k_norm,N_lef,L,R,mode,lef_rw=True):
     '''
     Runs the Monte Carlo simulation.
     '''
@@ -163,7 +163,7 @@ def run_simulation(N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,bind_norm,k_
             if r==0:
                 m_new, n_new = unbind_bind(N_beads)
             else:
-                m_new, n_new = slide(ms[j],ns[j],N_beads)
+                m_new, n_new = slide(ms[j],ns[j],N_beads,lef_rw)
 
             # Compute energy difference
             dE = get_dE(L, R, bind_norm, fold_norm, k_norm, ms, ns, m_new, n_new,j)
@@ -209,7 +209,7 @@ class StochasticSimulation:
         print('Number of LEFs:',self.N_lef)
         self.path = make_folder(out_dir)
     
-    def run_energy_minimization(self,N_steps,MC_step,burnin,T=1,T_min=0,mode='Metropolis',viz=False,save=False, f=1.0, b=1.0, kappa=1.0):
+    def run_energy_minimization(self,N_steps,MC_step,burnin,T=1,T_min=0,mode='Metropolis',viz=False,save=False, f=1.0, b=1.0, kappa=1.0, lef_rw=True):
         '''
         Implementation of the stochastic Monte Carlo simulation.
 
@@ -226,10 +226,10 @@ class StochasticSimulation:
         self.N_steps, self.MC_step = N_steps, MC_step
 
         # Run simulation
-        print('Running simulation...')
+        print('\nRunning simulation (with parallelization across CPU cores)...')
         start = time.time()
         self.burnin = burnin
-        self.Ms, self.Ns, self.Es, self.Ks, self.Fs, self.Bs, self.ufs = run_simulation(self.N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,bind_norm,k_norm,self.N_lef,self.L,self.R,mode)
+        self.Ms, self.Ns, self.Es, self.Ks, self.Fs, self.Bs, self.ufs = run_simulation(self.N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,bind_norm,k_norm,self.N_lef,self.L,self.R,mode,lef_rw)
         end = time.time()
         elapsed = end - start
         print(f'Computation finished succesfully in {elapsed//3600:.0f} hours, {elapsed%3600//60:.0f} minutes and  {elapsed%60:.0f} seconds.')

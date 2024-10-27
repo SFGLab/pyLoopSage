@@ -70,11 +70,13 @@ def main():
     
     # Run Simulation
     sim = StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=N_beads)
-    Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True)
+    Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True,lef_rw=args.LEF_RW)
     if args.SIMULATION_TYPE=='EM':
         sim.run_EM(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.TOLERANCE)
     elif args.SIMULATION_TYPE=='MD':
         sim.run_MD(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.TOLERANCE,args.SIM)
+    elif args.SIMULATION_TYPE==None:
+        print('\n3D simulation did not run because it was not specified. Please specify argument SIMULATION_TYPE as EM or MD.')
     else:
         IndentationError('Uknown simulation type. It can be either MD or EM.')
 

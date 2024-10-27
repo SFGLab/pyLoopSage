@@ -135,10 +135,11 @@ args = ListOfArgs([
     Arg('CHROM', help="Chromosome that corresponds the the modelling region of interest (in case that you do not want to model the whole genome).", type=str, default='', val=''),
     
     # Stochastic Simulation parameters
+    Arg('LEF_RW', help="True in case that you would like to make cohesins slide as random walk, instead of sliding only in one direction.", type=bool, default='True', val='True'),
     Arg('N_STEPS', help="Number of Monte Carlo steps.", type=int, default='', val=''),
     Arg('MC_STEP', help="Monte Carlo frequency.", type=int, default='200', val='200'),
     Arg('BURNIN', help="Burnin-period (steps that are considered before equillibrium).", type=int, default='1000', val='1000'),
-    Arg('T_INIT', help="Initial Temperature of the Stochastic Model.", type=float, default='2.5', val='2.5'),
+    Arg('T_INIT', help="Initial Temperature of the Stochastic Model.", type=float, default='1.8', val='1.8'),
     Arg('T_FINAL', help="Final Temperature of the Stochastic Model.", type=float, default='0.01', val='0.01'),
     Arg('METHOD', help="Stochastic modelling method. It can be Metropolis or Simulated Annealing.", type=str, default='Annealing', val='Annealing'),
     Arg('FOLDING_COEFF', help="Folding coefficient.", type=float, default='1.0', val='1.0'),
@@ -147,7 +148,7 @@ args = ListOfArgs([
 
     # Molecular Dynamic Properties
     Arg('INITIAL_STRUCTURE_TYPE', help="you can choose between: rw, confined_rw, self_avoiding_rw, helix, circle, spiral, sphere.", type=str, default='rw', val='rw'),
-    Arg('SIMULATION_TYPE', help="It can be either EM (multiple energy minimizations) or MD (one energy minimization and then run molecular dynamics).", type=str, default='EM', val='EM'),
+    Arg('SIMULATION_TYPE', help="It can be either EM (multiple energy minimizations) or MD (one energy minimization and then run molecular dynamics).", type=str, default='', val=''),
     Arg('FORCEFIELD_PATH', help="Path to XML file with forcefield.", type=str, default='forcefield/classic_sm_ff.xml', val='forcefield/classic_sm_ff.xml'),
     Arg('ANGLE_FF_STRENGTH', help="Angle force strength.", type=float, default='200.0', val='200.0'),
     Arg('LE_FF_LENGTH', help="Equillibrium distance of loop forces.", type=float, default='0.0', val='0.0'),
