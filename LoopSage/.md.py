@@ -12,8 +12,8 @@ from sys import stdout
 from mdtraj.reporters import HDF5Reporter
 from scipy import ndimage
 from openmm.app import PDBFile, PDBxFile, ForceField, Simulation, PDBReporter, PDBxReporter, DCDReporter, StateDataReporter, CharmmPsfFile
-from utils import *
-from initial_structures import *
+from .utils import *
+from .initial_structures import *
 
 class MD_LE:
     def __init__(self,M,N,N_beads,burnin,MC_step,path,platform,angle_ff_strength=200,le_distance=0.1,le_ff_strength=300000.0,ev_ff_strength=10.0,tolerance=0.001):
