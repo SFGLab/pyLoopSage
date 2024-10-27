@@ -33,6 +33,7 @@ setup(
         'OpenMM-cuda',
         'statsmodels',
         'imageio',
+        'imageio[ffmpeg]',
         'pillow',
     ],
     entry_points={
