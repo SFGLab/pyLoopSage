@@ -56,24 +56,33 @@ Can be easily installed with `pip install pyLoopSage`. To have CUDA acceleration
 
 ## How to use?
 
+### Python Implementation
+
 The main script is `LoopSage.py`. The implementation of the code is very easy and it can be described in the following lines,
 
 ```python
-N_steps, MC_step, burnin, T, T_min = int(1e4), int(2e2), 1000, 5,1
-region, chrom = [88271457,88851999], 'chr10'
-label=f'Petros_wt1h'
-bedpe_file = '/mnt/raid/data/Petros_project/loops/wt1h_pooled_2.bedpe'
-coh_track_file = '/mnt/raid/data/Petros_project/bw/RAD21_ChIPseq/mm_BMDM_WT_Rad21_heme_60min.bw'
-bw_file1 = '/mnt/raid/data/Petros_project/bw/BACH1_ChIPseq/mm_Bach1_1h_rep1_heme_merged.bw'
-bw_file2 = '/mnt/raid/data/Petros_project/bw/RNAPol_ChIPseq/WT-RNAPOLIIS2-1h-heme100-rep1_S5.bw'
-bw_files = [bw_file1,bw_file2]
+# Definition of Monte Carlo parameters
+import Loopsage.stochastic_simulation as lps
 
-sim = LoopSage(region,chrom,bedpe_file,label=label,N_lef=50,N_beads=1000,bw_files=bw_files,track_file=coh_track_file)
-Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,poisson_choice=True,mode='Annealing',viz=True,save=True)
-sim.run_MD()
+N_steps, MC_step, burnin, T, T_min = int(4e4), int(5e2), 1000, 2.5, 1.0
+mode = 'Metropolis'
+
+# Simulation Strengths
+f, b, kappa = 1.0, 1.0, 1.0
+
+# Definition of region
+region, chrom = [15550000,16850000], 'chr6'
+
+# Definition of data
+output_name='../HiChIP_Annealing_T1_MD_region'
+bedpe_file = '/home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe'
+
+sim = lps.StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=1000)
+Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True)
+sim.run_MD('CUDA')
 ```
 
-Firstly, we need to define the input files from which LoopSage would take the information to construct the potential. We define also the specific region that we would like to model. Therefore, in the code script above we define a `bedpe_file` from which information about the CTCF loops it is imported. In `coh_track_file` you can optionally define the track file with some cohesin coverage of ChIP-Seq to determine the distribution of LEFs and allow preferencial binding in regions with higher signal. Then the user can optionally define a list of BigWig files which are needed in case that user would like to model other protein factors and their coefficients $r_i$.
+Firstly, we need to define the input files from which LoopSage would take the information to construct the potential. We define also the specific region that we would like to model. Therefore, in the code script above we define a `bedpe_file` from which information about the CTCF loops it is imported.
 
 Note that the `.bedpe_file` must be in the following format,
 
@@ -93,6 +102,35 @@ chr1	991375	993240	chr1	1062647	1064919	15	1.0	0.9997541297643132
 where the last two columns represent the probabilites for left and right anchor respectively to be tandem right. If the probability is negative it means that no CTCF motif was detected in this anchor. You can extract these probabilities from the repo: https://github.com/SFGLab/3d-analysis-toolkit, with `find_motifs.py` file. 
 
 Then, we define the main parameters of the simulation `N_beads,N_coh,kappa,f,b` or we can choose the default ones (take care because it might be the case that they are not the appropriate ones and they need to be changed), the parameters of Monte Carlo `N_steps, MC_step, burnin, T`, and we initialize the class `LoopSage()`. The command `sim.run_energy_minimization()` corresponds to the stochastic Monte Carlo simulation, and it produces a set of cohesin constraints as a result (`Ms, Ns`). Note that the stochastic simulation has two modes: `Annealing` and `Metropolis`. We feed cohesin constraints to the molecular simulation part of and we run `MD_LE()` or `MD_EM()` simulation which produces a trajectory of 3d-structures, and the average heatmap. `MD_LE()` function can produce an actual trajectory and a `.dcd` video of how simulation changes over time. However, the implementation needs a high amount of memory since we need to define a bond for each time step, and it may not work for large systems. `EM_LE()` is suggested for large simulations, because it does not require so big amount of memory.
+
+### Command-line command
+To run LoopSage from command-line, you only need to type a command
+
+```bash
+loopsage -c config.ini
+```
+
+With this command the model will run with parameters specified in `config.ini` file. An example of a `config.ini` file would be the following,
+
+```txt
+# Definition of Monte Carlo parameters
+N_steps, MC_step, burnin, T, T_min = int(4e4), int(5e2), 1000, 2.5, 1.0
+mode = 'Metropolis'
+
+# Simulation Strengths
+f, b, kappa = 1.0, 1.0, 1.0
+
+# Definition of region
+region, chrom = [15550000,16850000], 'chr6'
+
+# Definition of data
+output_name='../HiChIP_Annealing_T1_MD_region'
+bedpe_file = '/home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe'
+
+sim = StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=1000)
+Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True)
+sim.run_MD('CUDA')
+``` 
 
 ### Output Files
 In the output files, simulation produces one folder with 4 subfolders. In subfolder `plots`, you can find plots that are the diagnostics of the algorithm. One of the most basic results you should see is the trajectories of cohesins (LEFs). this diagram should look like that,
