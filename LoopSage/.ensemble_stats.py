@@ -1,4 +1,4 @@
-from utils import *
+from .utils import *
 from sklearn.manifold import MDS
 from scipy import optimize
 from sklearn.cluster import DBSCAN
