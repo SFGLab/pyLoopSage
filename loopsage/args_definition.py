@@ -153,7 +153,7 @@ args = ListOfArgs([
     Arg('FORCEFIELD_PATH', help="Path to XML file with forcefield.", type=str, default='forcefield/classic_sm_ff.xml', val='forcefield/classic_sm_ff.xml'),
     Arg('ANGLE_FF_STRENGTH', help="Angle force strength.", type=float, default='200.0', val='200.0'),
     Arg('LE_FF_LENGTH', help="Equillibrium distance of loop forces.", type=float, default='0.0', val='0.0'),
-    Arg('LE_FF_STRENGTH', help="Equillibrium distance of loop forces.", type=float, default='300000.0', val='300000.0'),
+    Arg('LE_FF_STRENGTH', help="Equillibrium distance of loop forces.", type=float, default='30000.0', val='30000.0'),
     Arg('EV_FF_STRENGTH', help="Excluded-volume strength.", type=float, default='10.0', val='10.0'),
     Arg('TOLERANCE', help="Tolerance that works as stopping condition for energy minimization.", type=float, default='0.001', val='0.001'),
     Arg('SIM_STEP', help="This is the amount of simulation steps that are perform each time that we change the loop forces. If this number is too high, the simulation is slow, if is too low it may not have enough time to adapt the structure to the new constraints.", type=int, default='100', val='100'),
