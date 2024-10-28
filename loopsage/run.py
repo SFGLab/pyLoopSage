@@ -74,7 +74,7 @@ def main():
     if args.SIMULATION_TYPE=='EM':
         sim.run_EM(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.TOLERANCE)
     elif args.SIMULATION_TYPE=='MD':
-        sim.run_MD(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.TOLERANCE,args.SIM)
+        sim.run_MD(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.TOLERANCE,args.SIM_STEP)
     elif args.SIMULATION_TYPE==None:
         print('\n3D simulation did not run because it was not specified. Please specify argument SIMULATION_TYPE as EM or MD.')
     else:
