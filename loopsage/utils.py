@@ -122,7 +122,7 @@ def corr_exp_heat(mat_sim,bedpe_file,region,chrom,N_beads,path):
     axs[1].set_xlabel('Genomic Distance (with simumation beads as a unit)',fontsize=16)
     fig.savefig(path+'/plots/pearson.png',dpi=600)
     fig.savefig(path+'/plots/pearson.pdf',dpi=600)
-    fig.close()
+    plt.close()
 
     return pears
 
