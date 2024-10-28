@@ -16,7 +16,7 @@ from .utils import *
 from .initial_structures import *
 
 class MD_LE:
-    def __init__(self,M,N,N_beads,burnin,MC_step,path,platform,angle_ff_strength=200,le_distance=0.1,le_ff_strength=300000.0,ev_ff_strength=10.0,tolerance=0.001):
+    def __init__(self,M,N,N_beads,burnin,MC_step,path,platform,angle_ff_strength=200,le_distance=0.1,le_ff_strength=30000.0,ev_ff_strength=10.0,tolerance=0.001):
         '''
         M, N (np arrays): Position matrix of two legs of cohesin m,n. 
                           Rows represent  loops/cohesins and columns represent time
@@ -117,7 +117,7 @@ class MD_LE:
 
     def add_evforce(self):
         'Leonard-Jones potential for excluded volume'
-        self.ev_force = mm.CustomNonbondedForce('epsilon*((sigma1+sigma2)/(r+r_small))^6')
+        self.ev_force = mm.CustomNonbondedForce('epsilon*(sigma1+sigma2)/(r+r_small)')
         self.ev_force.addGlobalParameter('epsilon', defaultValue=self.ev_ff_strength)
         self.ev_force.addGlobalParameter('r_small', defaultValue=0.01)
         self.ev_force.addPerParticleParameter('sigma')
