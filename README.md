@@ -138,6 +138,33 @@ SIMULATION_TYPE = EM
 TOLERANCE = 1.0
 ``` 
 
+### Visualization with PyVista
+
+There are many tools for visualization of polymer structures. A very good one is UCSF chimera: https://www.cgl.ucsf.edu/chimera/. Usually these visualization tools work well for proteins, but we can use them for chromatin as well.
+
+LoopSage offers its own visualization which relies in the `pyvista` python library. To visualize a structure, you can run some very simple commands, which call LoopSage functions,
+
+```python
+import loopsage.vizualization_tools as vz
+import loopsage.utils as uts
+
+V = uts.get_coordinates_cif('/home/skorsak/Projects/mine/LoopSage/HiChIP_Annealing_T15_EM_region/ensemble/EMLE_1.cif')
+vz.viz_structure(V)
+```
+
+The output should be something like that,
+
+![image](https://github.com/user-attachments/assets/457d2b1f-e037-4ff1-8cec-c9eef7de789d)
+
+
+In case that you would like to create a continuous video from the enseble of structures, you can use the following command, which would generate an interactive video in gif format which would show how the structure changes in 3D. The command includes quaternion Kabsch aligment as well.
+
+```python
+import loopsage.vizualization_tools as vz
+
+vz.interactive_plot('/home/skorsak/Projects/mine/LoopSage/HiChIP_Annealing_T15_EM_region/ensemble')
+```
+
 ### Output Files
 In the output files, simulation produces one folder with 4 subfolders. In subfolder `plots`, you can find plots that are the diagnostics of the algorithm. One of the most basic results you should see is the trajectories of cohesins (LEFs). this diagram should look like that,
 
