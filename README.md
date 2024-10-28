@@ -103,7 +103,7 @@ where the last two columns represent the probabilites for left and right anchor 
 
 Then, we define the main parameters of the simulation `N_beads,N_coh,kappa,f,b` or we can choose the default ones (take care because it might be the case that they are not the appropriate ones and they need to be changed), the parameters of Monte Carlo `N_steps, MC_step, burnin, T`, and we initialize the class `LoopSage()`. The command `sim.run_energy_minimization()` corresponds to the stochastic Monte Carlo simulation, and it produces a set of cohesin constraints as a result (`Ms, Ns`). Note that the stochastic simulation has two modes: `Annealing` and `Metropolis`. We feed cohesin constraints to the molecular simulation part of and we run `MD_LE()` or `MD_EM()` simulation which produces a trajectory of 3d-structures, and the average heatmap. `MD_LE()` function can produce an actual trajectory and a `.dcd` video of how simulation changes over time. However, the implementation needs a high amount of memory since we need to define a bond for each time step, and it may not work for large systems. `EM_LE()` is suggested for large simulations, because it does not require so big amount of memory.
 
-### Command-line command
+### Running LoopSage from command-line
 To run LoopSage from command-line, you only need to type a command
 
 ```bash
@@ -113,23 +113,29 @@ loopsage -c config.ini
 With this command the model will run with parameters specified in `config.ini` file. An example of a `config.ini` file would be the following,
 
 ```txt
-# Definition of Monte Carlo parameters
-N_steps, MC_step, burnin, T, T_min = int(4e4), int(5e2), 1000, 2.5, 1.0
-mode = 'Metropolis'
+[Main]
 
-# Simulation Strengths
-f, b, kappa = 1.0, 1.0, 1.0
+; Input Data and Information
+BEDPE_PATH = /home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe
+REGION_START = 15550000
+REGION_END = 16850000
+CHROM = chr6
+OUT_PATH = ../HiChIP_Annealing_T15_MD_region
 
-# Definition of region
-region, chrom = [15550000,16850000], 'chr6'
+; Simulation Parameters
+N_BEADS = 1000
+N_STEPS = 40000
+MC_STEP = 500
+BURNIN = 1000
+T_INIT = 1.5
+T_FINAL = 0.01
+METHOD = Metropolis
 
-# Definition of data
-output_name='../HiChIP_Annealing_T1_MD_region'
-bedpe_file = '/home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe'
-
-sim = StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=1000)
-Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True)
-sim.run_MD('CUDA')
+; Molecular Dynamics
+PLATFORM = CUDA
+INITIAL_STRUCTURE_TYPE = rw
+SIMULATION_TYPE = EM 
+TOLERANCE = 1.0
 ``` 
 
 ### Output Files
