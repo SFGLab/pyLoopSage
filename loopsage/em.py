@@ -31,7 +31,7 @@ class EM_LE:
         self.ev_ff_strength = ev_ff_strength
         self.tolerance = tolerance
     
-    def run_pipeline(self,write_files=False,plots=False):
+    def run_pipeline(self,plots=False, friction=0.1, integrator_step = 5 * mm.unit.femtosecond, temperature = 310):
         '''
         This is the basic function that runs the molecular simulation pipeline.
 
@@ -56,7 +56,7 @@ class EM_LE:
             pdb = PDBxFile(self.path+'/LE_init_struct.cif')
             forcefield = ForceField('forcefields/classic_sm_ff.xml')
             self.system = forcefield.createSystem(pdb.topology, nonbondedCutoff=1*u.nanometer)
-            integrator = mm.LangevinIntegrator(310, 0.05, 100 * mm.unit.femtosecond)
+            integrator = mm.LangevinIntegrator(temperature, friction, integrator_step)
 
             # Add forces
             ms,ns = self.M[:,i], self.N[:,i]
@@ -69,8 +69,7 @@ class EM_LE:
             simulation.minimizeEnergy(tolerance=self.tolerance)
             self.state = simulation.context.getState(getPositions=True)
             PDBxFile.writeFile(pdb.topology, self.state.getPositions(), open(self.path+f'/ensemble/EMLE_{i-self.burnin+1}.cif', 'w'))
-            save_path = self.path+f'/heatmaps/heat_{i-self.burnin+1}.svg' if write_files else None
-            sum_heat+=get_heatmap(self.state.getPositions(),save_path=save_path,save=write_files)
+            sum_heat+=get_heatmap(self.state.getPositions(),save=False)
             counter+=1
         print('Energy minimizations done :D\n')
 

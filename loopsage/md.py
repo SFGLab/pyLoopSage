@@ -35,7 +35,7 @@ class MD_LE:
         self.ev_ff_strength = ev_ff_strength
         self.tolerance = tolerance
     
-    def run_pipeline(self,run_MD=True,sim_step=100,write_files=False,plots=False):
+    def run_pipeline(self,run_MD=True, friction=0.1, integrator_step=5 * mm.unit.femtosecond, sim_step=100, temperature=310, write_files=False, plots=False):
         '''
         This is the basic function that runs the molecular simulation pipeline.
 
@@ -62,7 +62,7 @@ class MD_LE:
         pdb = PDBxFile(self.path+'/LE_init_struct.cif')
         forcefield = ForceField('forcefields/classic_sm_ff.xml')
         self.system = forcefield.createSystem(pdb.topology, nonbondedCutoff=1*u.nanometer)
-        integrator = mm.LangevinIntegrator(310, 0.05, 100 * mm.unit.femtosecond)
+        integrator = mm.LangevinIntegrator(temperature, friction, integrator_step)
 
         # Add forces
         print('Adding forces...')
@@ -92,8 +92,7 @@ class MD_LE:
                 if i>=self.burnin:
                     self.state = self.simulation.context.getState(getPositions=True)
                     if write_files: PDBxFile.writeFile(pdb.topology, self.state.getPositions(), open(self.path+f'/ensemble/MDLE_{i-self.burnin+1}.cif', 'w'))
-                    save_path = self.path+f'/heatmaps/heat_{i-self.burnin+1}.svg' if write_files else None
-                    heats.append(get_heatmap(self.state.getPositions(),save_path=save_path,save=write_files))
+                    heats.append(get_heatmap(self.state.getPositions(),save=False))
             end = time.time()
             elapsed = end - start
 
@@ -117,7 +116,7 @@ class MD_LE:
 
     def add_evforce(self):
         'Leonard-Jones potential for excluded volume'
-        self.ev_force = mm.CustomNonbondedForce('epsilon*(sigma1+sigma2)/(r+r_small)')
+        self.ev_force = mm.CustomNonbondedForce('epsilon*((sigma1+sigma2)/(r+r_small))')
         self.ev_force.addGlobalParameter('epsilon', defaultValue=self.ev_ff_strength)
         self.ev_force.addGlobalParameter('r_small', defaultValue=0.01)
         self.ev_force.addPerParticleParameter('sigma')

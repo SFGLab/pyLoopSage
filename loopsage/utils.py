@@ -18,7 +18,6 @@ def make_folder(folder_name):
         os.mkdir(folder_name+'/plots')
         os.mkdir(folder_name+'/other')
         os.mkdir(folder_name+'/ensemble')
-        os.mkdir(folder_name+'/heatmaps')
     except OSError as error:
         a=1
         # print(f'Directory with name "{folder_name}" already exists! No problem lets continue!')
