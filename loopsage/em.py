@@ -12,7 +12,7 @@ from .utils import *
 from .initial_structures import *
 
 class EM_LE:
-    def __init__(self,M,N,N_beads,burnin,MC_step,path,platform,angle_ff_strength=200,le_distance=0.1,le_ff_strength=300000.0,ev_ff_strength=10.0,tolerance=0.001):
+    def __init__(self,M,N,N_beads,burnin,MC_step,path=None,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=300000.0,ev_ff_strength=10.0,tolerance=0.001):
         '''
         M, N (np arrays): Position matrix of two legs of cohesin m,n. 
                           Rows represent  loops/cohesins and columns represent time
@@ -34,12 +34,6 @@ class EM_LE:
     def run_pipeline(self,plots=False, friction=0.1, integrator_step = 5 * mm.unit.femtosecond, temperature = 310):
         '''
         This is the basic function that runs the molecular simulation pipeline.
-
-        Input parameters:
-        run_MD (bool): True if user wants to run molecular simulation (not only energy minimization).
-        sim_step (int): the simulation step of Langevin integrator.
-        write_files (bool): True if the user wants to save the structures that determine the simulation ensemble.
-        plots (bool): True if the user wants to see the output average heatmaps.
         '''
         # Define initial structure
         print('Building initial structure...')
@@ -127,4 +121,4 @@ def main():
     M = np.load('/home/skorsak/Dropbox/LoopSage/files/region_[48100000,48700000]_chr3/Annealing_Nbeads500_ncoh50/Ms.npy')
     N = np.load('/home/skorsak/Dropbox/LoopSage/files/region_[48100000,48700000]_chr3/Annealing_Nbeads500_ncoh50/Ns.npy')
     md = EM_LE(4*M,4*N,2000,5,1)
-    md.run_pipeline(write_files=False,plots=True,sim_step=100)
+    md.run_pipeline()

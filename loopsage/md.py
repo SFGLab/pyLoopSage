@@ -16,7 +16,7 @@ from .utils import *
 from .initial_structures import *
 
 class MD_LE:
-    def __init__(self,M,N,N_beads,burnin,MC_step,path,platform,angle_ff_strength=200,le_distance=0.1,le_ff_strength=30000.0,ev_ff_strength=10.0,tolerance=0.001):
+    def __init__(self,M,N,N_beads,burnin,MC_step,path=None,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=30000.0,ev_ff_strength=10.0,tolerance=0.001):
         '''
         M, N (np arrays): Position matrix of two legs of cohesin m,n. 
                           Rows represent  loops/cohesins and columns represent time
@@ -35,15 +35,9 @@ class MD_LE:
         self.ev_ff_strength = ev_ff_strength
         self.tolerance = tolerance
     
-    def run_pipeline(self,run_MD=True, friction=0.1, integrator_step=5 * mm.unit.femtosecond, sim_step=100, temperature=310, write_files=False, plots=False):
+    def run_pipeline(self,run_MD=True, friction=0.1, integrator_step=5 * mm.unit.femtosecond, sim_step=100, temperature=310, plots=False):
         '''
         This is the basic function that runs the molecular simulation pipeline.
-
-        Input parameters:
-        run_MD (bool): True if user wants to run molecular simulation (not only energy minimization).
-        sim_step (int): the simulation step of Langevin integrator.
-        write_files (bool): True if the user wants to save the structures that determine the simulation ensemble.
-        plots (bool): True if the user wants to see the output average heatmaps.
         '''
         # Parameters
         self.angle_ff_strength=200
@@ -91,7 +85,7 @@ class MD_LE:
                 self.simulation.step(sim_step)
                 if i>=self.burnin:
                     self.state = self.simulation.context.getState(getPositions=True)
-                    if write_files: PDBxFile.writeFile(pdb.topology, self.state.getPositions(), open(self.path+f'/ensemble/MDLE_{i-self.burnin+1}.cif', 'w'))
+                    PDBxFile.writeFile(pdb.topology, self.state.getPositions(), open(self.path+f'/ensemble/MDLE_{i-self.burnin+1}.cif', 'w'))
                     heats.append(get_heatmap(self.state.getPositions(),save=False))
             end = time.time()
             elapsed = end - start
@@ -171,4 +165,4 @@ def main():
     M = np.load('/home/skorsak/Dropbox/LoopSage/files/region_[48100000,48700000]_chr3/Annealing_Nbeads500_ncoh50/Ms.npy')
     N = np.load('/home/skorsak/Dropbox/LoopSage/files/region_[48100000,48700000]_chr3/Annealing_Nbeads500_ncoh50/Ns.npy')
     md = MD_LE(4*M,4*N,2000,5,1)
-    md.run_pipeline(write_files=False,plots=True,sim_step=100)
+    md.run_pipeline()
