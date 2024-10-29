@@ -160,7 +160,7 @@ args = ListOfArgs([
     Arg('EV_FF_STRENGTH', help="Excluded-volume strength.", type=float, default='10.0', val='10.0'),
     Arg('FRICTION',help='Friction coefficient of the Langevin integrator.',type=float, default='0.1', val='0.1'),
     Arg('TOLERANCE', help="Tolerance that works as stopping condition for energy minimization.", type=float, default='0.001', val='0.001'),
-    Arg('VIZ_HEATS', help="Visualize the output average heatmap.", type=Bool, default='True', val='True'),
+    Arg('VIZ_HEATS', help="Visualize the output average heatmap.", type=bool, default='True', val='True'),
     Arg('SIM_TEMP', help="The temperature of the 3D simulation (EM or MD).", type=Quantity, default='310 kelvin', val='310 kelvin'),
     Arg('SIM_STEP', help="This is the amount of simulation steps that are perform each time that we change the loop forces. If this number is too high, the simulation is slow, if is too low it may not have enough time to adapt the structure to the new constraints.", type=int, default='10', val='10'),
 ])
