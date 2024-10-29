@@ -68,17 +68,18 @@ class EM_LE:
         print('Energy minimizations done :D\n')
 
         self.avg_heat = sum_heat/counter
-        np.save(self.path+f'/other/avg_heatmap.npy',self.avg_heat)
+        
         if plots:
             figure(figsize=(10, 10))
             plt.imshow(self.avg_heat,cmap="Reds",vmax=1)
             plt.colorbar()
+            np.save(self.path+f'/other/avg_heatmap.npy',self.avg_heat)
             plt.savefig(self.path+f'/plots/avg_heatmap.svg',format='svg',dpi=500)
             plt.savefig(self.path+f'/plots/avg_heatmap.pdf',format='pdf',dpi=500)
             # plt.colorbar()
             plt.close()
             
-            return self.avg_heat
+        return self.avg_heat
 
     def add_forcefield(self,ms,ns):
         '''
@@ -96,7 +97,7 @@ class EM_LE:
         self.ev_force.addPerParticleParameter('sigma')
         self.system.addForce(self.ev_force)
         for i in range(self.system.getNumParticles()):
-            self.ev_force.addParticle([0.1])
+            self.ev_force.addParticle([0.05])
 
         # Harmonic bond borce between succesive beads
         self.bond_force = mm.HarmonicBondForce()

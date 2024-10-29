@@ -94,12 +94,13 @@ class MD_LE:
 
             self.avg_heat = np.average(heats,axis=0)
             self.std_heat = np.std(heats,axis=0)
-            np.save(self.path+f'/other/avg_heatmap.npy',self.avg_heat)
-            np.save(self.path+f'/other/std_heatmap.npy',self.std_heat)
+            
             if plots:
+                np.save(self.path+f'/other/avg_heatmap.npy',self.avg_heat)
+                np.save(self.path+f'/other/std_heatmap.npy',self.std_heat)
                 self.plot_heat(self.avg_heat,f'/plots/avg_heatmap.svg')
                 self.plot_heat(self.std_heat,f'/plots/std_heatmap.svg')
-            return self.avg_heat
+        return self.avg_heat
     
     def change_loop(self,i):
         force_idx = self.system.getNumForces()-1

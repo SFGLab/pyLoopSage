@@ -123,8 +123,8 @@ available_platforms = [mm.Platform.getPlatform(i).getName() for i in range(mm.Pl
 
 args = ListOfArgs([
     # Platform settings
-    Arg('PLATFORM', help=f"name of the platform. Available choices: {' '.join(available_platforms)}", type=str, default='CPU', val='CPU'),
-    Arg('DEVICE', help="device index for CUDA or OpenCL (count from 0)", type=str, default='', val=''),
+    Arg('PLATFORM', help=f"Name of the platform. Available choices: {' '.join(available_platforms)}", type=str, default='CPU', val='CPU'),
+    Arg('DEVICE', help="Device index for CUDA or OpenCL (count from 0)", type=str, default='', val=''),
     
     # Input data
     Arg('N_BEADS', help="Number of Simulation Beads.", type=int, default='', val=''),
@@ -138,7 +138,7 @@ args = ListOfArgs([
     Arg('LEF_RW', help="True in case that you would like to make cohesins slide as random walk, instead of sliding only in one direction.", type=bool, default='True', val='True'),
     Arg('N_STEPS', help="Number of Monte Carlo steps.", type=int, default='', val=''),
     Arg('N_LEF', help="Number of loop extrusion factors (condensins and cohesins).", type=int, default='', val=''),
-    Arg('MC_STEP', help="Monte Carlo frequency.", type=int, default='200', val='200'),
+    Arg('MC_STEP', help="Monte Carlo frequency. It should be hundreds of steps, except if you would like to include molecular dynamics (MD) and in this case it should be ideally 1.", type=int, default='200', val='200'),
     Arg('BURNIN', help="Burnin-period (steps that are considered before equillibrium).", type=int, default='1000', val='1000'),
     Arg('T_INIT', help="Initial Temperature of the Stochastic Model.", type=float, default='1.8', val='1.8'),
     Arg('T_FINAL', help="Final Temperature of the Stochastic Model.", type=float, default='0.01', val='0.01'),
@@ -146,6 +146,8 @@ args = ListOfArgs([
     Arg('FOLDING_COEFF', help="Folding coefficient.", type=float, default='1.0', val='1.0'),
     Arg('CROSS_COEFF', help="LEF crossing coefficient.", type=float, default='1.0', val='1.0'),
     Arg('BIND_COEFF', help="CTCF binding coefficient.", type=float, default='1.0', val='1.0'),
+    Arg('SAVE_PLOTS', help="It should be true in case that you would like to save diagnostic plots. In case that you use small MC_STEP or large N_STEPS is better to mark it as False.", type=bool, default='True', val='True'),
+    Arg('SAVE_MDT', help="In case that you would liketo save metadata of the stochastic simulation.", type=bool, default='True', val='True'),
 
     # Molecular Dynamic Properties
     Arg('INITIAL_STRUCTURE_TYPE', help="you can choose between: rw, confined_rw, self_avoiding_rw, helix, circle, spiral, sphere.", type=str, default='rw', val='rw'),
@@ -158,6 +160,7 @@ args = ListOfArgs([
     Arg('EV_FF_STRENGTH', help="Excluded-volume strength.", type=float, default='10.0', val='10.0'),
     Arg('FRICTION',help='Friction coefficient of the Langevin integrator.',type=float, default='0.1', val='0.1'),
     Arg('TOLERANCE', help="Tolerance that works as stopping condition for energy minimization.", type=float, default='0.001', val='0.001'),
-    Arg('SIM_TEMP', help="The temperature of the stochastic simulation.", type=Quantity, default='310 kelvin', val='310 kelvin'),
-    Arg('SIM_STEP', help="This is the amount of simulation steps that are perform each time that we change the loop forces. If this number is too high, the simulation is slow, if is too low it may not have enough time to adapt the structure to the new constraints.", type=int, default='100', val='100'),
+    Arg('VIZ_HEATS', help="Visualize the output average heatmap.", type=Bool, default='True', val='True'),
+    Arg('SIM_TEMP', help="The temperature of the 3D simulation (EM or MD).", type=Quantity, default='310 kelvin', val='310 kelvin'),
+    Arg('SIM_STEP', help="This is the amount of simulation steps that are perform each time that we change the loop forces. If this number is too high, the simulation is slow, if is too low it may not have enough time to adapt the structure to the new constraints.", type=int, default='10', val='10'),
 ])

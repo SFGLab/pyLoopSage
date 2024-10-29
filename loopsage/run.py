@@ -70,11 +70,11 @@ def main():
     
     # Run Simulation
     sim = StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=N_beads,N_lef=N_lef)
-    Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True,lef_rw=args.LEF_RW)
+    Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=args.SAVE_PLOTS,save=args.SAVE_MDT,lef_rw=args.LEF_RW)
     if args.SIMULATION_TYPE=='EM':
-        sim.run_EM(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.TOLERANCE,args.FRICTION,args.INTEGRATOR_STEP,args.SIM_TEMP)
+        sim.run_EM(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.TOLERANCE,args.FRICTION,args.INTEGRATOR_STEP,args.SIM_TEMP,args.VIZ_HEATS)
     elif args.SIMULATION_TYPE=='MD':
-        sim.run_MD(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.TOLERANCE,args.FRICTION,args.INTEGRATOR_STEP,args.SIM_TEMP,args.SIM_STEP)
+        sim.run_MD(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.TOLERANCE,args.FRICTION,args.INTEGRATOR_STEP,args.SIM_TEMP,args.SIM_STEP,args.VIZ_HEATS)
     elif args.SIMULATION_TYPE==None:
         print('\n3D simulation did not run because it was not specified. Please specify argument SIMULATION_TYPE as EM or MD.')
     else:
