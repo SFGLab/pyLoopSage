@@ -11,10 +11,10 @@ from scipy.stats import norm
 from scipy.stats import poisson
 
 # My own libraries
-from .preproc import *
-from .plots import *
-from .md import *
-from .em import *
+from preproc import *
+from plots import *
+from md import *
+from em import *
 
 @njit
 def Kappa(mi,ni,mj,nj):
@@ -56,11 +56,12 @@ def E_fold(ms, ns, fold_norm):
     return fold_norm * folding
 
 @njit
-def get_E(L, R, bind_norm, fold_norm, k_norm, ms, ns):
+def get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, N_lef, N_lef2):
     ''''
     The total energy.
     '''
     energy = E_bind(L, R, ms, ns, bind_norm) + E_cross(ms, ns, k_norm) + E_fold(ms, ns, fold_norm)
+    if fold_norm2!=0: energy += E_fold(ms[N_lef:N_lef+N_lef2],ns[N_lef:N_lef+N_lef2],fold_norm2)
     return energy
 
 @njit
@@ -90,12 +91,15 @@ def get_dE_cross(ms, ns, m_new, n_new, idx, k_norm):
     return k_norm * (K2 - K1)
 
 @njit
-def get_dE(L, R, bind_norm, fold_norm, k_norm, ms, ns, m_new, n_new, idx):
+def get_dE(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, m_new, n_new, idx, N_lef, N_lef2):
     '''
     Total energy difference.
     '''
     dE = 0.0
-    dE += get_dE_fold(fold_norm,ms,ns,m_new,n_new,idx)
+    if idx<N_lef:
+        dE += get_dE_fold(fold_norm,ms[:N_lef],ns[:N_lef],m_new,n_new,idx)
+    else:
+        dE += get_dE_fold(fold_norm,ms[N_lef:N_lef+N_lef2],ns[N_lef:N_lef2],m_new,n_new,idx-N_lef)
     dE += get_dE_bind(L, R, bind_norm, ms, ns, m_new, n_new, idx)
     dE += get_dE_cross(ms, ns, m_new, n_new, idx, k_norm)
     return dE
@@ -144,20 +148,20 @@ def initialize(N_beads,N_lef):
     return ms, ns
 
 @njit
-def run_simulation(N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,bind_norm,k_norm,N_lef,L,R,mode,lef_rw=True):
+def run_simulation(N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,fold_norm2,bind_norm,k_norm,N_lef,N_lef2,L,R,mode,lef_rw=True):
     '''
     Runs the Monte Carlo simulation.
     '''
     Ti = T
     bi = burnin//MC_step
-    ms, ns = initialize(N_beads,N_lef)
-    E = get_E(L, R, bind_norm, fold_norm, k_norm,  ms, ns)
+    ms, ns = initialize(N_beads,N_lef+N_lef2)
+    E = get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm,  ms, ns, N_lef, N_lef2)
     Es,Ks,Fs,Bs,ufs = np.zeros(N_steps//MC_step, dtype=np.float64),np.zeros(N_steps//MC_step, dtype=np.float64),np.zeros(N_steps//MC_step, dtype=np.float64),np.zeros(N_steps//MC_step, dtype=np.float64),np.zeros(N_steps//MC_step, dtype=np.float64)
-    Ms, Ns = np.zeros((N_lef,N_steps//MC_step), dtype=np.int64), np.zeros((N_lef,N_steps//MC_step), dtype=np.int64)
+    Ms, Ns = np.zeros((N_lef+N_lef2,N_steps//MC_step), dtype=np.int64), np.zeros((N_lef+N_lef2,N_steps//MC_step), dtype=np.int64)
 
     for i in range(N_steps):
         Ti = T-(T-T_min)*(i+1)/N_steps if mode=='Annealing' else T
-        for j in range(N_lef):
+        for j in range(N_lef+N_lef2):
             # Randomly choose a move (sliding or rebinding)
             r = np.random.choice(np.array([0, 1]))
             if r==0:
@@ -166,7 +170,8 @@ def run_simulation(N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,bind_norm,k_
                 m_new, n_new = slide(ms[j],ns[j],N_beads,lef_rw)
 
             # Compute energy difference
-            dE = get_dE(L, R, bind_norm, fold_norm, k_norm, ms, ns, m_new, n_new,j)
+            dE = get_dE(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, m_new, n_new, j, N_lef, N_lef2)
+            
             if dE <= 0 or np.exp(-dE/Ti) > np.random.rand():
                 ms[j], ns[j] = m_new, n_new
                 E += dE
@@ -184,15 +189,13 @@ def run_simulation(N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,bind_norm,k_
     return Ms, Ns, Es, Ks, Fs, Bs, ufs
 
 class StochasticSimulation:
-    def __init__(self,region,chrom,bedpe_file,N_beads=None,N_lef=None,track_file=None,bw_files=None,out_dir=None):
+    def __init__(self,region,chrom,bedpe_file,N_beads=None,N_lef=None,N_lef2=0,out_dir=None):
         '''
         Definition of simulation parameters and input files.
         
         region (list): [start,end].
         chrom (str): indicator of chromosome.
         bedpe_file (str): path where is the bedpe file with CTCF loops.
-        track_file (str): bigwig file with cohesin coverage.
-        bw_files (list of str): bigwig files with (or other protein of interest) coverage.
         N_beads (int): number of monomers in the polymer chain.
         N_lef (int): number of cohesins in the system.
         kappa (float): LEF crossing coefficient of Hamiltonian.
@@ -203,13 +206,14 @@ class StochasticSimulation:
         self.N_beads = N_beads if N_beads!=None else int(np.round((region[1]-region[0])/2000))
         print('Number of beads:',self.N_beads)
         self.chrom, self.region = chrom, region
-        self.bedpe_file, self.track_file = bedpe_file, track_file
+        self.bedpe_file = bedpe_file
         self.preprocessing()
         self.N_lef = 2*self.N_CTCF if N_lef==None else N_lef
-        print('Number of LEFs:',self.N_lef)
+        self.N_lef2 = N_lef2
+        print('Number of LEFs:',self.N_lef+self.N_lef2)
         self.path = make_folder(out_dir)
     
-    def run_energy_minimization(self,N_steps,MC_step,burnin,T=1,T_min=0,mode='Metropolis',viz=False,save=False, f=1.0, b=1.0, kappa=1.0, lef_rw=True):
+    def run_energy_minimization(self,N_steps,MC_step,burnin,T=1,T_min=0,mode='Metropolis',viz=False,save=False, f=1.0, f2=0.0, b=1.0, kappa=1.0, lef_rw=True):
         '''
         Implementation of the stochastic Monte Carlo simulation.
 
@@ -222,14 +226,14 @@ class StochasticSimulation:
         viz (bool): True in case that user wants to see plots.
         '''
         # Define normalization constants
-        fold_norm, bind_norm, k_norm = -self.N_beads*f/(self.N_lef*np.log(self.N_beads/self.N_lef)), -self.N_beads*b/(np.sum(self.L)+np.sum(self.R)), kappa*1e4
+        fold_norm, fold_norm2, bind_norm, k_norm = -self.N_beads*f/((self.N_lef+self.N_lef2)*np.log(self.N_beads/(self.N_lef+self.N_lef2))), -self.N_beads*f2/((self.N_lef+self.N_lef2)*np.log(self.N_beads/(self.N_lef+self.N_lef2))), -self.N_beads*b/(np.sum(self.L)+np.sum(self.R)), kappa*1e4
         self.N_steps, self.MC_step = N_steps, MC_step
 
         # Run simulation
         print('\nRunning simulation (with parallelization across CPU cores)...')
         start = time.time()
         self.burnin = burnin
-        self.Ms, self.Ns, self.Es, self.Ks, self.Fs, self.Bs, self.ufs = run_simulation(self.N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,bind_norm,k_norm,self.N_lef,self.L,self.R,mode,lef_rw)
+        self.Ms, self.Ns, self.Es, self.Ks, self.Fs, self.Bs, self.ufs = run_simulation(self.N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,fold_norm2,bind_norm,k_norm,self.N_lef,self.N_lef2,self.L,self.R,mode,lef_rw)
         end = time.time()
         elapsed = end - start
         print(f'Computation finished succesfully in {elapsed//3600:.0f} hours, {elapsed%3600//60:.0f} minutes and  {elapsed%60:.0f} seconds.')
@@ -240,7 +244,6 @@ class StochasticSimulation:
             f.write(f'Number of beads {self.N_beads}.\n')
             f.write(f'Number of cohesins {self.N_lef}. Number of CTCFs {self.N_CTCF}.\n')
             f.write(f'Bedpe file for CTCF binding is {self.bedpe_file}.\n')
-            f.write(f'LEF track file for LEF preferential relocation is {self.track_file}.\n')
             f.write(f'Initial temperature {T}. Minimum temperature {T_min}.\n')
             f.write(f'Monte Carlo optimization method: {mode}.\n')
             f.write(f'Monte Carlo steps {N_steps}. Sampling frequency {MC_step}. Burnin period {burnin}.\n')
@@ -268,7 +271,6 @@ class StochasticSimulation:
 
     def preprocessing(self):
         self.L, self.R, self.dists = binding_vectors_from_bedpe(self.bedpe_file,self.N_beads,self.region,self.chrom,False,False)
-        self.track = load_track(self.track_file,self.region,self.chrom,self.N_beads,False,True) if np.all(self.track_file!=None) else None
         self.N_CTCF = np.max([np.count_nonzero(self.L),np.count_nonzero(self.R)])
         print('Number of CTCF:',self.N_CTCF)
 
@@ -284,11 +286,13 @@ class StochasticSimulation:
 
 def main():
     # Definition of Monte Carlo parameters
-    N_steps, MC_step, burnin, T, T_min = int(4e4), int(5e2), 1000, 2.5, 1.0
-    mode = 'Metropolis'
+    N_steps, MC_step, burnin, T, T_min = int(4e4), int(5e2), 1000, 4.0, 1.0
+    N_lef, N_lef2 = 80, 20
+    lew_rw=True
+    mode = 'Annealing'
     
     # Simulation Strengths
-    f, b, kappa = 1.0, 1.0, 1.0
+    f, f2, b, kappa = 1.0, 2.0, 1.0, 1.0
     
     # Definition of region
     region, chrom = [15550000,16850000], 'chr6'
@@ -297,9 +301,9 @@ def main():
     output_name='../HiChIP_Annealing_T1_MD_region'
     bedpe_file = '/home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe'
     
-    sim = StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=1000)
-    Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True)
-    sim.run_MD('CUDA')
+    sim = StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=1000,N_lef=N_lef,N_lef2=N_lef2)
+    Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True,f=f,f2=f2, b=b, kappa=kappa, lef_rw=lew_rw)
+    sim.run_MD('CPU')
 
 if __name__=='__main__':
     main()
