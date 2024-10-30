@@ -152,15 +152,15 @@ args = ListOfArgs([
     # Molecular Dynamic Properties
     Arg('INITIAL_STRUCTURE_TYPE', help="you can choose between: rw, confined_rw, self_avoiding_rw, helix, circle, spiral, sphere.", type=str, default='rw', val='rw'),
     Arg('SIMULATION_TYPE', help="It can be either EM (multiple energy minimizations) or MD (one energy minimization and then run molecular dynamics).", type=str, default='', val=''),
-    Arg('INTEGRATOR_STEP', help="The step of the integrator.", type=Quantity, default='5 femtosecond', val='5 femtosecond'),
+    Arg('INTEGRATOR_STEP', help="The step of the integrator.", type=Quantity, default='100 femtosecond', val='100 femtosecond'),
     Arg('FORCEFIELD_PATH', help="Path to XML file with forcefield.", type=str, default='forcefield/classic_sm_ff.xml', val='forcefield/classic_sm_ff.xml'),
     Arg('ANGLE_FF_STRENGTH', help="Angle force strength.", type=float, default='200.0', val='200.0'),
     Arg('LE_FF_LENGTH', help="Equillibrium distance of loop forces.", type=float, default='0.1', val='0.1'),
-    Arg('LE_FF_STRENGTH', help="Interaction Strength of loop forces.", type=float, default='3000.0', val='3000.0'),
+    Arg('LE_FF_STRENGTH', help="Interaction Strength of loop forces.", type=float, default='50000.0', val='50000.0'),
     Arg('EV_FF_STRENGTH', help="Excluded-volume strength.", type=float, default='10.0', val='10.0'),
     Arg('FRICTION',help='Friction coefficient of the Langevin integrator.',type=float, default='0.1', val='0.1'),
     Arg('TOLERANCE', help="Tolerance that works as stopping condition for energy minimization.", type=float, default='0.001', val='0.001'),
     Arg('VIZ_HEATS', help="Visualize the output average heatmap.", type=bool, default='True', val='True'),
     Arg('SIM_TEMP', help="The temperature of the 3D simulation (EM or MD).", type=Quantity, default='310 kelvin', val='310 kelvin'),
-    Arg('SIM_STEP', help="This is the amount of simulation steps that are perform each time that we change the loop forces. If this number is too high, the simulation is slow, if is too low it may not have enough time to adapt the structure to the new constraints.", type=int, default='10', val='10'),
+    Arg('SIM_STEP', help="This is the amount of simulation steps that are perform each time that we change the loop forces. If this number is too high, the simulation is slow, if is too low it may not have enough time to adapt the structure to the new constraints.", type=int, default='100', val='100'),
 ])
