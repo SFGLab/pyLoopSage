@@ -136,7 +136,7 @@ args = ListOfArgs([
     
     # Stochastic Simulation parameters
     Arg('LEF_RW', help="True in case that you would like to make cohesins slide as random walk, instead of sliding only in one direction.", type=bool, default='True', val='True'),
-    Arg('N_STEPS', help="Number of Monte Carlo steps.", type=int, default='', val=''),
+    Arg('N_STEPS', help="Number of Monte Carlo steps.", type=int, default='40000', val='40000'),
     Arg('N_LEF', help="Number of loop extrusion factors (condensins and cohesins).", type=int, default='', val=''),
     Arg('MC_STEP', help="Monte Carlo frequency. It should be hundreds of steps so as to avoid autocorrelated ensembles.", type=int, default='200', val='200'),
     Arg('BURNIN', help="Burnin-period (steps that are considered before equillibrium).", type=int, default='1000', val='1000'),
