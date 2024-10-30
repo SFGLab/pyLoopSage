@@ -25,10 +25,6 @@ def make_loop_hist(Ms,Ns,path=None):
     if path!=None:
         save_path = path+'/plots/loop_length.png'
         plt.savefig(save_path,format='png',dpi=200)
-        save_path = path+'/plots/loop_length.svg'
-        plt.savefig(save_path,format='svg',dpi=600)
-        save_path = path+'/plots/loop_length.pdf'
-        plt.savefig(save_path,format='pdf',dpi=600)
     plt.close()
 
     Is, Js = Ms.flatten(), Ns.flatten()
@@ -40,10 +36,6 @@ def make_loop_hist(Ms,Ns,path=None):
     if path!=None:
         save_path = path+'/plots/ij_prob.png'
         plt.savefig(save_path,format='png',dpi=200)
-        save_path = path+'/plots/ij_prob.svg'
-        plt.savefig(save_path,format='svg',dpi=600)
-        save_path = path+'/plots/ij_prob.pdf'
-        plt.savefig(save_path,format='pdf',dpi=600)
     plt.close()
 
 def make_gif(N,path=None):
@@ -71,10 +63,6 @@ def make_timeplots(Es, Bs, Ks, Fs, burnin, mode, path=None):
     if path!=None:
         save_path = path+'/plots/energies.png'
         plt.savefig(save_path,format='png',dpi=200)
-        save_path = path+'/plots/energies.svg'
-        plt.savefig(save_path,format='svg',dpi=200)
-        save_path = path+'/plots/energies.pdf'
-        plt.savefig(save_path,format='pdf',dpi=600)
     plt.close()
 
     # Autocorrelation plot
@@ -91,10 +79,6 @@ def make_timeplots(Es, Bs, Ks, Fs, burnin, mode, path=None):
     if path!=None: 
         save_path = path+'/plots/autoc.png'
         plt.savefig(save_path,dpi=200)
-        save_path = path+'/plots/autoc.svg'
-        plt.savefig(save_path,format='svg',dpi=200)
-        save_path = path+'/plots/autoc.pdf'
-        plt.savefig(save_path,format='pdf',dpi=200)
     plt.close()
 
 def make_moveplots(unbinds, slides, path=None):
@@ -108,9 +92,7 @@ def make_moveplots(unbinds, slides, path=None):
     plt.grid()
     if path!=None:
         save_path = path+'/plots/moveplot.png'
-        plt.savefig(save_path,dpi=600)
-        save_path = path+'/plots/moveplot.pdf'
-        plt.savefig(save_path,dpi=600)
+        plt.savefig(save_path,dpi=200)
     plt.close()
 
 def average_pooling(mat,dim_new):
@@ -171,10 +153,6 @@ def coh_traj_plot(ms,ns,N_beads,path):
     plt.gca().invert_yaxis()
     save_path = path+'/plots/coh_trajectories.png' if path!=None else 'coh_trajectories.png'
     plt.savefig(save_path, format='png', dpi=200)
-    save_path = path+'/plots/coh_trajectories.svg' if path!=None else 'coh_trajectories.svg'
-    plt.savefig(save_path, format='svg', dpi=600)
-    save_path = path+'/plots/coh_trajectories.pdf' if path!=None else 'coh_trajectories.pdf'
-    plt.savefig(save_path, format='pdf', dpi=600)
     plt.close()
 
 def coh_probdist_plot(ms,ns,N_beads,path):
@@ -192,10 +170,6 @@ def coh_probdist_plot(ms,ns,N_beads,path):
     plt.title('Probablity distribution of cohesin')
     save_path = path+'/plots/coh_probdist.png' if path!=None else 'coh_trajectories.png'
     plt.savefig(save_path, format='png', dpi=200)
-    save_path = path+'/plots/coh_probdist.svg' if path!=None else 'coh_trajectories.svg'
-    plt.savefig(save_path, format='svg', dpi=600)
-    save_path = path+'/plots/coh_probdist.pdf' if path!=None else 'coh_trajectories.pdf'
-    plt.savefig(save_path, format='pdf', dpi=600)
     plt.close()
 
 def stochastic_heatmap(ms,ns,step,L,path,comm_prop=True,fill_square=True):
@@ -229,9 +203,7 @@ def stochastic_heatmap(ms,ns,step,L,path,comm_prop=True,fill_square=True):
     figure(figsize=(10, 10))
     plt.imshow(avg_mat,cmap="Reds",vmax=np.average(avg_mat)+3*np.std(avg_mat))
     save_path = path+f'/plots/stochastic_heatmap.svg' if path!=None else 'stochastic_heatmap.svg'
-    plt.savefig(save_path,format='svg',dpi=500)
-    save_path = path+f'/plots/stochastic_heatmap.pdf' if path!=None else 'stochastic_heatmap.pdf'
-    plt.savefig(save_path,format='pdf',dpi=500)
+    plt.savefig(save_path,format='svg',dpi=200)
     # plt.colorbar()
     plt.close()
 
@@ -266,8 +238,5 @@ def combine_matrices(path_upper,path_lower,label_upper,label_lower,th1=0,th2=50,
     # plt.ylabel('Genomic Distance (x5kb)',fontsize=16)
     plt.xlabel('Genomic Distance (x5kb)',fontsize=20)
     plt.ylabel('Genomic Distance (x5kb)',fontsize=20)
-    # plt.title('Experimental (upper triangle) versus simulation (lower triangle) heatmap',fontsize=25)
-    plt.savefig('comparison_reg3.svg',format='svg',dpi=500)
-    plt.savefig('comparison_reg3.png',format='png',dpi=500)
-    plt.savefig('comparison_reg3.pdf',format='pdf',dpi=500)
+    plt.savefig('comparison_reg3.png',format='png',dpi=200)
     plt.close()

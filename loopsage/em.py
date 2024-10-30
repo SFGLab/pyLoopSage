@@ -31,7 +31,7 @@ class EM_LE:
         self.ev_ff_strength = ev_ff_strength
         self.tolerance = tolerance
     
-    def run_pipeline(self,plots=False, friction=0.1, integrator_step = 100 * mm.unit.femtosecond, temperature = 310):
+    def run_pipeline(self,plots=False, friction=0.1, ff_path='forcefields/classic_sm_ff.xml', integrator_step = 100 * mm.unit.femtosecond, temperature = 310):
         '''
         This is the basic function that runs the molecular simulation pipeline.
         '''
@@ -48,7 +48,7 @@ class EM_LE:
         for i in tqdm(range(self.burnin,self.N_steps)):
             # Define System
             pdb = PDBxFile(self.path+'/LE_init_struct.cif')
-            forcefield = ForceField('forcefields/classic_sm_ff.xml')
+            forcefield = ForceField(ff_path)
             self.system = forcefield.createSystem(pdb.topology, nonbondedCutoff=1*u.nanometer)
             integrator = mm.LangevinIntegrator(temperature, friction, integrator_step)
 
