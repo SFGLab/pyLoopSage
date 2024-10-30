@@ -16,7 +16,7 @@ from .utils import *
 from .initial_structures import *
 
 class MD_LE:
-    def __init__(self,M,N,N_beads,burnin,MC_step,path=None,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=30000.0,ev_ff_strength=10.0,tolerance=0.001):
+    def __init__(self,M,N,N_beads,burnin,MC_step,path=None,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=10.0,tolerance=0.001):
         '''
         M, N (np arrays): Position matrix of two legs of cohesin m,n. 
                           Rows represent  loops/cohesins and columns represent time
@@ -35,7 +35,7 @@ class MD_LE:
         self.ev_ff_strength = ev_ff_strength
         self.tolerance = tolerance
     
-    def run_pipeline(self,run_MD=True, friction=0.1, integrator_step=5 * mm.unit.femtosecond, sim_step=100, temperature=310, plots=False):
+    def run_pipeline(self,run_MD=True, friction=0.1, integrator_step=10 * mm.unit.femtosecond, sim_step=1000, temperature=310, plots=False):
         '''
         This is the basic function that runs the molecular simulation pipeline.
         '''
