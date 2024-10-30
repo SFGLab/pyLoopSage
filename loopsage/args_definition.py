@@ -138,7 +138,7 @@ args = ListOfArgs([
     Arg('LEF_RW', help="True in case that you would like to make cohesins slide as random walk, instead of sliding only in one direction.", type=bool, default='True', val='True'),
     Arg('N_STEPS', help="Number of Monte Carlo steps.", type=int, default='', val=''),
     Arg('N_LEF', help="Number of loop extrusion factors (condensins and cohesins).", type=int, default='', val=''),
-    Arg('MC_STEP', help="Monte Carlo frequency. It should be hundreds of steps, except if you would like to include molecular dynamics (MD) and in this case it should be ideally 1.", type=int, default='200', val='200'),
+    Arg('MC_STEP', help="Monte Carlo frequency. It should be hundreds of steps so as to avoid autocorrelated ensembles, except if you would like to include molecular dynamics (MD) then it can be smaller so as to show continuous trajectory of the 3D structure.", type=int, default='200', val='200'),
     Arg('BURNIN', help="Burnin-period (steps that are considered before equillibrium).", type=int, default='1000', val='1000'),
     Arg('T_INIT', help="Initial Temperature of the Stochastic Model.", type=float, default='1.8', val='1.8'),
     Arg('T_FINAL', help="Final Temperature of the Stochastic Model.", type=float, default='0.01', val='0.01'),
