@@ -58,7 +58,7 @@ Can be easily installed with `pip install pyLoopSage`. To have CUDA acceleration
 
 ### Python Implementation
 
-The main script is `LoopSage.py`. The implementation of the code is very easy and it can be described in the following lines,
+The main script is `stochastic_simulation.py`. However, the implementation of the code is very easy and it can be described in the following lines,
 
 ```python
 # Definition of Monte Carlo parameters
