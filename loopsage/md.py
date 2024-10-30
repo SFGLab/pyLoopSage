@@ -68,7 +68,7 @@ class MD_LE:
         platform = mm.Platform.getPlatformByName(self.platform)
         self.simulation = Simulation(pdb.topology, self.system, integrator, platform)
         self.simulation.reporters.append(StateDataReporter(stdout, (self.N_steps*sim_step)//100, step=True, totalEnergy=True, potentialEnergy=True, temperature=True))
-        self.simulation.reporters.append(DCDReporter(self.path+'/other/stochastic_LE.dcd', 5))
+        self.simulation.reporters.append(DCDReporter(self.path+'/other/stochastic_LE.dcd', sim_step))
         self.simulation.context.setPositions(pdb.positions)
         current_platform = self.simulation.context.getPlatform()
         print(f"Simulation will run on platform: {current_platform.getName()}")
