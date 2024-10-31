@@ -12,7 +12,7 @@ from .utils import *
 from .initial_structures import *
 
 class EM_LE:
-    def __init__(self,M,N,N_beads,burnin,MC_step,path=None,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=10.0,tolerance=0.001):
+    def __init__(self,M,N,N_beads,burnin,MC_step,path=None,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=10.0,ev_ff_power=3.0,tolerance=0.001):
         '''
         M, N (np arrays): Position matrix of two legs of cohesin m,n. 
                           Rows represent  loops/cohesins and columns represent time
@@ -29,6 +29,7 @@ class EM_LE:
         self.le_distance = le_distance
         self.le_ff_strength = le_ff_strength
         self.ev_ff_strength = ev_ff_strength
+        self.ev_ff_power = ev_ff_power
         self.tolerance = tolerance
     
     def run_pipeline(self,plots=False, friction=0.1, ff_path='forcefields/classic_sm_ff.xml', integrator_step = 100 * mm.unit.femtosecond, temperature = 310):
@@ -92,7 +93,7 @@ class EM_LE:
         - LE forces: this is a list of force objects. Each object corresponds to a different cohesin. It is needed to define a force for each time step.
         '''
         # Leonard-Jones potential for excluded volume
-        self.ev_force = mm.CustomNonbondedForce('epsilon*((sigma1+sigma2)/r)^6')
+        self.ev_force = mm.CustomNonbondedForce(f'epsilon*((sigma1+sigma2)/r)^{self.ev_ff_power}')
         self.ev_force.addGlobalParameter('epsilon', defaultValue=self.ev_ff_strength)
         self.ev_force.addPerParticleParameter('sigma')
         self.system.addForce(self.ev_force)

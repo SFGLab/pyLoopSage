@@ -11,10 +11,10 @@ from scipy.stats import norm
 from scipy.stats import poisson
 
 # My own libraries
-from preproc import *
-from plots import *
-from md import *
-from em import *
+from .preproc import *
+from .plots import *
+from .md import *
+from .em import *
 
 @njit
 def Kappa(mi,ni,mj,nj):
@@ -99,7 +99,7 @@ def get_dE(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, m_new, n_new,
     if idx<N_lef:
         dE += get_dE_fold(fold_norm,ms[:N_lef],ns[:N_lef],m_new,n_new,idx)
     else:
-        dE += get_dE_fold(fold_norm,ms[N_lef:N_lef+N_lef2],ns[N_lef:N_lef2],m_new,n_new,idx-N_lef)
+        dE += get_dE_fold(fold_norm2,ms[N_lef:N_lef+N_lef2],ns[N_lef:N_lef2],m_new,n_new,idx-N_lef)
     dE += get_dE_bind(L, R, bind_norm, ms, ns, m_new, n_new, idx)
     dE += get_dE_cross(ms, ns, m_new, n_new, idx, k_norm)
     return dE
@@ -274,20 +274,20 @@ class StochasticSimulation:
         self.N_CTCF = np.max([np.count_nonzero(self.L),np.count_nonzero(self.R)])
         print('Number of CTCF:',self.N_CTCF)
 
-    def run_EM(self,platform='CPU',angle_ff_strength=200,le_distance=0.0,le_ff_strength=300000.0,ev_ff_strength=10.0,tolerance=0.001,friction=0.1,integrator_step=5*mm.unit.femtosecond,temperature=310,save_plots=True,ff_path='forcefields/classic_sm_ff.xml'):
-        em = EM_LE(self.Ms,self.Ns,self.N_beads,self.burnin,self.MC_step,self.path,platform,angle_ff_strength,le_distance,le_ff_strength,ev_ff_strength,tolerance)
+    def run_EM(self,platform='CPU',angle_ff_strength=200,le_distance=0.0,le_ff_strength=300000.0,ev_ff_strength=10.0,ev_ff_power=3.0,tolerance=0.001,friction=0.1,integrator_step=100*mm.unit.femtosecond,temperature=310,save_plots=True,ff_path='forcefields/classic_sm_ff.xml'):
+        em = EM_LE(self.Ms,self.Ns,self.N_beads,self.burnin,self.MC_step,self.path,platform,angle_ff_strength,le_distance,le_ff_strength,ev_ff_strength,ev_ff_power,tolerance)
         sim_heat = em.run_pipeline(plots=save_plots,friction=friction,integrator_step=integrator_step,temperature=temperature,ff_path=ff_path)
         corr_exp_heat(sim_heat,self.bedpe_file,self.region,self.chrom,self.N_beads,self.path)
     
-    def run_MD(self,platform='CPU',angle_ff_strength=200,le_distance=0.0,le_ff_strength=300000.0,ev_ff_strength=10.0,tolerance=0.001,friction=0.1,integrator_step=5*mm.unit.femtosecond,temperature=310,sim_step=100,save_plots=True,ff_path='forcefields/classic_sm_ff.xml'):
-        md = MD_LE(self.Ms,self.Ns,self.N_beads,self.burnin,self.MC_step,self.path,platform,angle_ff_strength,le_distance,le_ff_strength,ev_ff_strength,tolerance)
+    def run_MD(self,platform='CPU',angle_ff_strength=200,le_distance=0.0,le_ff_strength=300000.0,ev_ff_strength=10.0,ev_ff_power=3.0,tolerance=0.001,friction=0.1,integrator_step=100*mm.unit.femtosecond,temperature=310,sim_step=1000,save_plots=True,ff_path='forcefields/classic_sm_ff.xml'):
+        md = MD_LE(self.Ms,self.Ns,self.N_beads,self.burnin,self.MC_step,self.path,platform,angle_ff_strength,le_distance,le_ff_strength,ev_ff_strength,ev_ff_power,tolerance)
         sim_heat = md.run_pipeline(plots=save_plots,sim_step=sim_step,friction=friction,integrator_step=integrator_step,temperature=temperature,ff_path=ff_path)
         corr_exp_heat(sim_heat,self.bedpe_file,self.region,self.chrom,self.N_beads,self.path)
 
 def main():
     # Definition of Monte Carlo parameters
-    N_steps, MC_step, burnin, T, T_min = int(4e4), int(5e2), 1000, 4.0, 1.0
-    N_lef, N_lef2 = 80, 20
+    N_steps, MC_step, burnin, T, T_min = int(4e4), int(5e2), 1000, 3.0, 1.0
+    N_lef, N_lef2 = 100, 20
     lew_rw=True
     mode = 'Annealing'
     
@@ -303,7 +303,7 @@ def main():
     
     sim = StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=1000,N_lef=N_lef,N_lef2=N_lef2)
     Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True,f=f,f2=f2, b=b, kappa=kappa, lef_rw=lew_rw)
-    sim.run_MD('CPU')
+    sim.run_MD('CUDA')
 
 if __name__=='__main__':
     main()

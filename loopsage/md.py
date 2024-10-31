@@ -16,7 +16,7 @@ from .utils import *
 from .initial_structures import *
 
 class MD_LE:
-    def __init__(self,M,N,N_beads,burnin,MC_step,path=None,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=10.0,tolerance=0.001):
+    def __init__(self,M,N,N_beads,burnin,MC_step,path=None,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=10.0,ev_ff_power=3.0,tolerance=0.001):
         '''
         M, N (np arrays): Position matrix of two legs of cohesin m,n. 
                           Rows represent  loops/cohesins and columns represent time
@@ -33,9 +33,10 @@ class MD_LE:
         self.le_distance = le_distance
         self.le_ff_strength = le_ff_strength
         self.ev_ff_strength = ev_ff_strength
+        self.ev_ff_power = ev_ff_power
         self.tolerance = tolerance
     
-    def run_pipeline(self,run_MD=True, friction=0.1, integrator_step=10 * mm.unit.femtosecond, sim_step=1000, ff_path = 'forcefields/classic_sm_ff.xml',temperature=310, plots=False):
+    def run_pipeline(self,run_MD=True, friction=0.1, integrator_step=100 * mm.unit.femtosecond, sim_step=1000, ff_path = 'forcefields/classic_sm_ff.xml',temperature=310, plots=False):
         '''
         This is the basic function that runs the molecular simulation pipeline.
         '''
@@ -111,12 +112,12 @@ class MD_LE:
 
     def add_evforce(self):
         'Leonard-Jones potential for excluded volume'
-        self.ev_force = mm.CustomNonbondedForce('epsilon*((sigma1+sigma2)/(r+r_small))')
+        self.ev_force = mm.CustomNonbondedForce(f'epsilon*((sigma1+sigma2)/(r+r_small))^{self.ev_ff_power}')
         self.ev_force.addGlobalParameter('epsilon', defaultValue=self.ev_ff_strength)
         self.ev_force.addGlobalParameter('r_small', defaultValue=0.01)
         self.ev_force.addPerParticleParameter('sigma')
         for i in range(self.N_beads):
-            self.ev_force.addParticle([0.1])
+            self.ev_force.addParticle([0.05])
         self.system.addForce(self.ev_force)
 
     def add_bonds(self):
