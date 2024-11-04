@@ -53,6 +53,14 @@ In this manner we accept a move in two cases:
 
 And of course, the result - the distribution of loops in equilibrium -  depends on temperature of Boltzmann distribution $T$.
 
+#### Modelling with two families of cohesins
+
+In this version of LoopSage it is possible to have two families of cohesins (LEFs) as well, with different folding coefficients (which is equivalent to different cohesin speeds). Therefore, we could write the energy of folding,
+
+$$E_{\text{fold}} = c_{\text{fold,1}}\sum_{i=1}^{N_{\text{coh,1}}}\log(n_i-m_i)+c_{\text{fold,2}}\sum_{i=N_{\text{coh,1}}}^{N_{\text{coh,1}}+N_{\text{coh},2}}\log(n_i-m_i)$$
+
+The coefficient of the first family of LEFs is set to one by default $f_1 = 1$, whereas the other one is set to zero $f_2 = 0$. Usually a small amount of fast cohesins with $f_2>f_1$ can reconstruct more long-range loops, because the cohesins have time to extrude. Contrary, leads in very stable small loops.
+
 ### Molecular Simulation
 
 Let us consider a system comprising $N_{\text{lef}}$ LEFs, as well as two matrices, $M$ and $N$, both of which possess dimensions $N_{\text{lef}}\times N_{\text{steps}}$. These matrices represent the respective constraints associated with each LEF. Consequently, we define a time-dependent force field as follows:
