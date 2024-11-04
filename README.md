@@ -70,7 +70,7 @@ For the implementation of this model in python, we used OpenMM and CUDA accelera
 
 In general the user can run simulation in two different ways:
 
-1. **Energy minimization (EM)**: It means that for each sample of cohesin positions $C_{t_i}=(m_j(t_i),n_j(t_i))$ start from a different initial structure (usually random walk) and we apply the forcefield. For each structure we start from a different initial condition. In general, it is suggested to run the model in this way because it is faster, less prone to errors and the structures are not correlated to each other.
+1. **Energy minimization (EM)**: It means that for each sample of cohesin positions $C_{t_i}=(m_j(t_i),n_j(t_i))$ start from a different initial structure (usually 3D random walk) and we apply the forcefield. For each structure we start from a different initial condition. In general, it is suggested to run the model in this way because it is faster, less prone to errors and the structures are not correlated to each other.
 2. **Molecular Dynamics (MD)**: In this case we have only one initial structure, we minimize the energy according to the forcefield only once and then we run a molecular dynamics simulation over time. This creates a continuous trajectory of structures, and it is cool for visualization pruposes. Novertheness, it is not suggested because it is more prone to errors and can lead to autocorrelated structures. We suggest our users to set the power of excluded volume $\alpha=1$ for the purposes of MD simulation. However, this depends on the research interests of the user.
 
 ## Installation
