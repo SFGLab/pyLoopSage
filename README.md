@@ -17,11 +17,14 @@ Please cite the method paper in case that you would like to use this model for y
 
 ## The model
 
+### Stochastic Simulation
+Before simulating 3D structures, a stochastic simulation takes place that it purely applies in the locations of cohesins. The purpose of it is to create realistic ensemble of cohesin locations, and recontruct their trajectories. Otherwise, a molecular simulation alone, could not have enough variability to reconstruct the experimental heatmaps with the same fixed positions. Therefore, the stochastic simulation can be seen as a generator of cohesin possible configurations.
+
 We have a polymer chain with $N_{\text{beads}}$ number of monomers. In general we can scale by deault the granularity of the simulation so as to give reasonable results. Therefore if we have a `region` counted in genomic coordinates, we can assume that `N_beads=(region[1]-region[0])//2000`.
 
 Let's assume that each cohesin $i$ can be represented of two coordinates $(m_{i},n_{i})$ we allow three moves in our simulation:
 
-* Slide both locations randomly (as 1D random walk) or
+* Slide both locations randomly (linearly or as 1D random walk) or
 * Rebind somewhere else.
 
 In general a good working assumption is that the number of cohesins (or loop extrusion factors LEFs) is $N_{\text{lef}}=2N_{\text{CTCF}}$.
@@ -49,6 +52,21 @@ In this manner we accept a move in two cases:
 * if $\Delta E>0$ with probability $e^{-\Delta E/kT}$.
 
 And of course, the result - the distribution of loops in equilibrium -  depends on temperature of Boltzmann distribution $T$.
+
+### Molecular Simulation
+
+Let us consider a system comprising $N_{\text{lef}}$ LEFs, as well as two matrices, $M$ and $N$, both of which possess dimensions $N_{\text{lef}}\times N_{\text{steps}}$. These matrices represent the respective constraints associated with each LEF. Consequently, we define a time-dependent force field as follows:
+
+$$E(t) = E_{\text{bond}}+E_{\text{angle}}+E_{\text{rep}}+E_{\text{loop}}(t)$$
+
+where,
+
+- $E_{\text{bond}}$ corresponds to a typical harmonic bond force field that connects adjacent beads $i$ and $i+1$, with an equilibrium length of $x_{0}=0.1 \text{nm}$ and a Hook constant assumed to be $k=3\times 10^5 \text{kJ/(mol}\cdot \text{nm}^2)$.
+- $E_{\text{angle}}$ a harmonic angle force that connects beads $i-1,i,i+1$, and has equilibrium angle $\theta_{0}=\pi$ and Hook constant $200  kJ/(mol\cdot nm^2)$. The strength of the angle force, can be tuned by the user.
+- $E_{\text{rep}}$ which is a repelling forcefield of the form: $$E_{\text{rep}} = \epsilon\left(\frac{\sigma_{1}+\sigma_{2}}{r}\right)^{\alpha}$$ where $\epsilon=10 kJ/mol$ and $\sigma_{1}=\sigma_{2}=0.05 nm$. The power $\alpha$ is a parameter of the simulation, but it is set as $\alpha=3$ by default.
+- $E_{\text{loop}}(t)$ represents a time-dependent LE force. This force reads the matrices $M$ and $N$, applying a distinct set of constraints $C_{t_i}=(m_j(t_i),n_j(t_i))$ at each time step $t_i$. Each LEF $j$ is subjected to specific constraints $m_{j,t_i}$ and $n_{j,t_i}$. The functional form of this force is also a harmonic bond force, with parameters $x_{0}=0.1 \text{nm}$ and a Hook constant assumed to be $k=5\times 10^4 \text{kJ/(mol}\cdot \text{nm}^2)$. The strength and equillibrium distance of the looping bonds can also be set in different way, if the user wishes.
+  
+For the implementation of this model in python, we used OpenMM and CUDA acceleration. To minimize the energy Langevin dynamics were used, in temperature of $T_{L}=310 K$, friction coefficient $\gamma = 0.05  psec^{-1}$ and time step $t_{s}=100 fsec$. Note that the temperature of molecular dynamics simulation is independent from the temperature of stochastic simulation and they represent different physical realities. 
 
 ## Installation
 
