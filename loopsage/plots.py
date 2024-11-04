@@ -148,11 +148,13 @@ def coh_traj_plot(ms,ns,N_beads,path):
     for nn in range(N_coh):
         tr_m, tr_n = ms[nn], ns[nn]
         plt.fill_between(np.arange(len(tr_m)), tr_m, tr_n, color=color[nn], alpha=0.4, interpolate=False, linewidth=0)
-    plt.xlabel('Simulation Step', fontsize=16)
-    plt.ylabel('Position of Cohesin', fontsize=16)
+    plt.xlabel('Simulation Step', fontsize=24)
+    plt.ylabel('Position of Cohesin', fontsize=24)
     plt.gca().invert_yaxis()
     save_path = path+'/plots/coh_trajectories.png' if path!=None else 'coh_trajectories.png'
     plt.savefig(save_path, format='png', dpi=200)
+    save_path = path+'/plots/coh_trajectories.svg' if path!=None else 'coh_trajectories.svg'
+    plt.savefig(save_path, format='svg', dpi=200)
     plt.close()
 
 def coh_probdist_plot(ms,ns,N_beads,path):
