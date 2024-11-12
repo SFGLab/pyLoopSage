@@ -15,6 +15,10 @@ setup(
     url='https://github.com/SFGLab/pyLoopSage',  # GitHub repository URL
     license='GNU General Public License v3.0',
     packages=find_packages(include=['loopsage', 'loopsage.*']),
+    include_package_data=True,
+    package_data={
+    'loopsage': ['forcefields/*'],
+    },
     install_requires=[  # List your package dependencies here
         'numpy',
         'numba',
