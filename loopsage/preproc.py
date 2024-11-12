@@ -33,6 +33,8 @@ def binding_vectors_from_bedpe(bedpe_file,N_beads,region,chrom,normalization=Fal
     has_col_7_8 = df.shape[1] > 8
     if has_col_7_8:
         print("The input file contains CTCF orientation! It will run taking it into account.")
+        if df.shape[1] > 10:
+            print('WARNING: The .bedpe file has more columns than are needed. It might be something wrong. Are you sure that these columns show CTCF orientation??')
     else:
         print("WARNING: The script does not contain CTCF orientation and thus it is not taken into account. If you would like to add CTCF orientation check the documentation.")
 
