@@ -164,7 +164,7 @@ args = ListOfArgs([
     Arg('INITIAL_STRUCTURE_TYPE', help="you can choose between: rw, confined_rw, self_avoiding_rw, helix, circle, spiral, sphere.", type=str, default='rw', val='rw'),
     Arg('SIMULATION_TYPE', help="It can be either EM (multiple energy minimizations) or MD (one energy minimization and then run molecular dynamics).", type=str, default='', val=''),
     Arg('INTEGRATOR_STEP', help="The step of the integrator.", type=Quantity, default='100 femtosecond', val='100 femtosecond'),
-    Arg('FORCEFIELD_PATH', help="Path to XML file with forcefield.", type=str, default='loopsage.forcefields/classic_sm_ff.xml', val='loopsage.forcefields/classic_sm_ff.xml'),
+    Arg('FORCEFIELD_PATH', help="Path to XML file with forcefield.", type=str, default=default_xml_path, val=default_xml_path),
     Arg('ANGLE_FF_STRENGTH', help="Angle force strength.", type=float, default='200.0', val='200.0'),
     Arg('LE_FF_LENGTH', help="Equillibrium distance of loop forces.", type=float, default='0.1', val='0.1'),
     Arg('LE_FF_STRENGTH', help="Interaction Strength of loop forces.", type=float, default='50000.0', val='50000.0'),
