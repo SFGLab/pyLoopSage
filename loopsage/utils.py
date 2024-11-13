@@ -75,10 +75,10 @@ def corr_exp_heat(mat_sim,bedpe_file,region,chrom,N_beads,path):
     exp_vec, th_vec = np.zeros(N_beads), np.zeros(N_beads)
     for i in range(len(df)):
         x, y = (df[1][i]+df[2][i])//2, (df[4][i]+df[5][i])//2
-        if df[7][i]>=0: exp_vec[x]+=df[6][i]
-        if df[8][i]>=0: exp_vec[y]+=df[6][i]
-        if df[7][i]>=0: th_vec[x]+=mat_sim[x,y]
-        if df[8][i]>=0: th_vec[y]+=mat_sim[x,y]        
+        exp_vec[x]+=df[6][i]
+        exp_vec[y]+=df[6][i]
+        th_vec[x]+=mat_sim[x,y]
+        th_vec[y]+=mat_sim[x,y]        
 
     # pearson correlation calculation
     pears, pval1 = pearsonr(th_vec,exp_vec)
