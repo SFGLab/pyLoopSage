@@ -110,7 +110,7 @@ bedpe_file = '/home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe'
 
 sim = lps.StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=1000)
 Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True)
-sim.run_MD('CUDA')
+sim.run_EM('CUDA')
 ```
 
 Firstly, we need to define the input files from which LoopSage would take the information to construct the potential. We define also the specific region that we would like to model. Therefore, in the code script above we define a `bedpe_file` from which information about the CTCF loops it is imported.
