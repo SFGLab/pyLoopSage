@@ -40,7 +40,7 @@ These $L(\cdot), R(\cdot)$ functions are two functions that define the binding p
 
 $$c_{\text{fold}}=-\dfrac{N_{\text{beads}}f}{N_{\text{lef}}\log(N_{\text{beads}}/N_{\text{lef}})},\quad c_{\text{bind}}=-\dfrac{N_{\text{beads}}b}{\sum_i \left(L(m_i)+R(n_i)\right)},\quad c_{\text{cross}}=\kappa \times 10^4.$$
 
-The parameters are defined in such a way that when $f=b=\kappa=1$, the three terms of the stochastic energy are balanced. To clarrify, this parametrization is slightly different than this of the original paper. We multiply with $N_{\text{beads}}s, so as to keep the input parameters $f,b,\kappa$ simpler close to 1. Therefore, a value $f=0.1$ leads to unfolded structures, and a value $f=2$ it leads to very fast propagating long loops. 
+The parameters are defined in such a way that when $f=b=\kappa=1$, the three terms of the stochastic energy are balanced. To clarrify, this parametrization is slightly different than this of the original paper. We multiply with $N_{\text{beads}}$, so as to keep the input parameters $f,b,\kappa$ simpler close to 1. Therefore, a value $f=0.1$ leads to unfolded structures, and a value $f=2$ it leads to very fast propagating long loops. 
 
 And the energy difference can be expressed as the energy difference of each term,
 
