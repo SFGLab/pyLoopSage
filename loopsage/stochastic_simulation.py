@@ -303,7 +303,7 @@ def main():
     
     sim = StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=1000,N_lef=N_lef,N_lef2=N_lef2)
     Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True,f=f,f2=f2, b=b, kappa=kappa, lef_rw=lew_rw)
-    sim.run_MD('CUDA')
+    sim.run_EM('CUDA')
 
 if __name__=='__main__':
     main()
