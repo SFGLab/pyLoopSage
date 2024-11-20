@@ -12,8 +12,17 @@ from sys import stdout
 from mdtraj.reporters import HDF5Reporter
 from scipy import ndimage
 from openmm.app import PDBFile, PDBxFile, ForceField, Simulation, PDBReporter, PDBxReporter, DCDReporter, StateDataReporter, CharmmPsfFile
+import importlib.resources
 from .utils import *
 from .initial_structures import *
+
+# Dynamically set the default path to the XML file in the package
+try:
+    with importlib.resources.path('loopsage.forcefields', 'classic_sm_ff.xml') as default_xml_path:
+        default_xml_path = str(default_xml_path)
+except FileNotFoundError:
+    # If running in a development setup without the resource installed, fallback to a relative path
+    default_xml_path = 'loopsage/forcefields/classic_sm_ff.xml'
 
 class MD_LE:
     def __init__(self,M,N,N_beads,burnin,MC_step,path=None,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=10.0,ev_ff_power=3.0,tolerance=0.001):
@@ -36,7 +45,7 @@ class MD_LE:
         self.ev_ff_power = ev_ff_power
         self.tolerance = tolerance
     
-    def run_pipeline(self,run_MD=True, friction=0.1, integrator_step=100 * mm.unit.femtosecond, sim_step=1000, ff_path = 'forcefields/classic_sm_ff.xml',temperature=310, plots=False):
+    def run_pipeline(self,run_MD=True, friction=0.1, integrator_step=100 * mm.unit.femtosecond, sim_step=1000, ff_path=default_xml_path, temperature=310, plots=False):
         '''
         This is the basic function that runs the molecular simulation pipeline.
         '''
