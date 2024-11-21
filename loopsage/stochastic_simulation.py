@@ -5,6 +5,7 @@ import random as rd
 import scipy.stats as stats
 from numba import njit, prange
 from tqdm import tqdm
+import importlib.resources
 
 # scipy
 from scipy.stats import norm
@@ -15,6 +16,14 @@ from .preproc import *
 from .plots import *
 from .md import *
 from .em import *
+
+# Dynamically set the default path to the XML file in the package
+try:
+    with importlib.resources.path('loopsage.forcefields', 'classic_sm_ff.xml') as default_xml_path:
+        default_xml_path = str(default_xml_path)
+except FileNotFoundError:
+    # If running in a development setup without the resource installed, fallback to a relative path
+    default_xml_path = 'loopsage/forcefields/classic_sm_ff.xml'
 
 @njit
 def Kappa(mi,ni,mj,nj):
@@ -274,12 +283,12 @@ class StochasticSimulation:
         self.N_CTCF = np.max([np.count_nonzero(self.L),np.count_nonzero(self.R)])
         print('Number of CTCF:',self.N_CTCF)
 
-    def run_EM(self,platform='CPU',angle_ff_strength=200,le_distance=0.0,le_ff_strength=300000.0,ev_ff_strength=10.0,ev_ff_power=3.0,tolerance=0.001,friction=0.1,integrator_step=100*mm.unit.femtosecond,temperature=310,save_plots=True,ff_path='forcefields/classic_sm_ff.xml'):
+    def run_EM(self,platform='CPU',angle_ff_strength=200,le_distance=0.0,le_ff_strength=300000.0,ev_ff_strength=10.0,ev_ff_power=3.0,tolerance=0.001,friction=0.1,integrator_step=100*mm.unit.femtosecond,temperature=310,save_plots=True,ff_path=default_xml_path):
         em = EM_LE(self.Ms,self.Ns,self.N_beads,self.burnin,self.MC_step,self.path,platform,angle_ff_strength,le_distance,le_ff_strength,ev_ff_strength,ev_ff_power,tolerance)
         sim_heat = em.run_pipeline(plots=save_plots,friction=friction,integrator_step=integrator_step,temperature=temperature,ff_path=ff_path)
         corr_exp_heat(sim_heat,self.bedpe_file,self.region,self.chrom,self.N_beads,self.path)
     
-    def run_MD(self,platform='CPU',angle_ff_strength=200,le_distance=0.0,le_ff_strength=300000.0,ev_ff_strength=10.0,ev_ff_power=3.0,tolerance=0.001,friction=0.1,integrator_step=100*mm.unit.femtosecond,temperature=310,sim_step=1000,save_plots=True,ff_path='forcefields/classic_sm_ff.xml'):
+    def run_MD(self,platform='CPU',angle_ff_strength=200,le_distance=0.0,le_ff_strength=300000.0,ev_ff_strength=10.0,ev_ff_power=3.0,tolerance=0.001,friction=0.1,integrator_step=100*mm.unit.femtosecond,temperature=310,sim_step=1000,save_plots=True,ff_path=default_xml_path):
         md = MD_LE(self.Ms,self.Ns,self.N_beads,self.burnin,self.MC_step,self.path,platform,angle_ff_strength,le_distance,le_ff_strength,ev_ff_strength,ev_ff_power,tolerance)
         sim_heat = md.run_pipeline(plots=save_plots,sim_step=sim_step,friction=friction,integrator_step=integrator_step,temperature=temperature,ff_path=ff_path)
         corr_exp_heat(sim_heat,self.bedpe_file,self.region,self.chrom,self.N_beads,self.path)
