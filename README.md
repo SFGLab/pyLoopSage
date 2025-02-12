@@ -10,10 +10,11 @@ Updated version of the stochastic loop extrusion model: LoopSage with capability
 - Visualization functions.
 - Capability to run form terminal with a simple command `loopsage -c config.ini`.
 
-## Publication
-Please cite the method paper in case that you would like to use this model for your work,
+## Citation
+Please cite the method and biological paper in case that you would like to use this model for your work,
 
 * Korsak, Sevastianos, and Dariusz Plewczynski. "LoopSage: An energy-based Monte Carlo approach for the loop extrusion modelling of chromatin." Methods (2024).
+* Jodkowska, K., Parteka-Tojek, Z., Agarwal, A., Denkiewicz, M., Korsak, S., Chiliński, M., Banecki, K., & Plewczynski, D. (2024). Improved cohesin HiChIP protocol and bioinformatic analysis for robust detection of chromatin loops and stripes. In bioRxiv (p. 2024.05.16.594268). https://doi.org/10.1101/2024.05.16.594268
 
 ## The model
 
