@@ -12,20 +12,11 @@ from sys import stdout
 from mdtraj.reporters import HDF5Reporter
 from scipy import ndimage
 from openmm.app import PDBFile, PDBxFile, ForceField, Simulation, PDBReporter, PDBxReporter, DCDReporter, StateDataReporter, CharmmPsfFile
-import importlib.resources
 from .utils import *
 from .initial_structures import *
 
-# Dynamically set the default path to the XML file in the package
-try:
-    with importlib.resources.path('loopsage.forcefields', 'classic_sm_ff.xml') as default_xml_path:
-        default_xml_path = str(default_xml_path)
-except FileNotFoundError:
-    # If running in a development setup without the resource installed, fallback to a relative path
-    default_xml_path = 'loopsage/forcefields/classic_sm_ff.xml'
-
 class MD_LE:
-    def __init__(self,M,N,N_beads,burnin,MC_step,path=None,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=10.0,ev_ff_power=3.0,tolerance=0.001):
+    def __init__(self,M,N,N_beads,path=None,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=100.0,ev_ff_power=3.0,tolerance=0.001):
         '''
         M, N (np arrays): Position matrix of two legs of cohesin m,n. 
                           Rows represent  loops/cohesins and columns represent time
@@ -35,8 +26,8 @@ class MD_LE:
         '''
         self.M, self.N = M, N
         self.N_coh, self.N_steps = M.shape
-        self.N_beads, self.step, self.burnin = N_beads, MC_step, burnin//MC_step
-        self.path = path
+        self.N_beads = N_beads
+        self.path = path if path!=None else make_folder('../output')
         self.platform = platform
         self.angle_ff_strength = angle_ff_strength
         self.le_distance = le_distance
@@ -45,15 +36,12 @@ class MD_LE:
         self.ev_ff_power = ev_ff_power
         self.tolerance = tolerance
     
-    def run_pipeline(self,run_MD=True, friction=0.1, integrator_step=100 * mm.unit.femtosecond, sim_step=1000, ff_path=default_xml_path, temperature=310, plots=False):
+    def run_pipeline(self,run_MD=True, friction=0.1, integrator_step=1 * mm.unit.femtosecond, sim_step=100, ff_path = 'forcefields/classic_sm_ff.xml',temperature=310, p_ev=0, plots=False):
         '''
         This is the basic function that runs the molecular simulation pipeline.
         '''
         # Parameters
-        self.angle_ff_strength=200
-        self.le_distance=0.1
-        self.le_ff_strength=300000.0
-        self.tolerance=0.001
+        self.p_ev = p_ev
 
         # Define initial structure
         print('Building initial structure...')
@@ -91,15 +79,17 @@ class MD_LE:
             start = time.time()
             heats = list()
             for i in range(1,self.N_steps):
+                # Define probabilities that EV would be disabled
+                if p_ev>0: self.ps_ev = np.random.rand(self.N_beads)
+                # Change forcefield
                 self.change_loop(i)
+                self.change_ev()
                 self.simulation.step(sim_step)
-                if i>=self.burnin:
-                    self.state = self.simulation.context.getState(getPositions=True)
-                    PDBxFile.writeFile(pdb.topology, self.state.getPositions(), open(self.path+f'/ensemble/MDLE_{i-self.burnin+1}.cif', 'w'))
-                    heats.append(get_heatmap(self.state.getPositions(),save=False))
+                self.state = self.simulation.context.getState(getPositions=True)
+                PDBxFile.writeFile(pdb.topology, self.state.getPositions(), open(self.path+f'/ensemble/MDLE_{i}.cif', 'w'))
+                heats.append(get_heatmap(self.state.getPositions(),save=False))
             end = time.time()
             elapsed = end - start
-
             print(f'Everything is done! Simulation finished succesfully!\nMD finished in {elapsed/60:.2f} minutes.\n')
 
             self.avg_heat = np.average(heats,axis=0)
@@ -111,6 +101,12 @@ class MD_LE:
                 self.plot_heat(self.avg_heat,f'/plots/avg_heatmap.svg')
                 self.plot_heat(self.std_heat,f'/plots/std_heatmap.svg')
         return self.avg_heat
+
+    def change_ev(self):
+        ev_strength = (self.ps_ev>self.p_ev).astype(int)*np.sqrt(self.ev_ff_strength) if self.p_ev>0 else np.sqrt(self.ev_ff_strength)*np.ones(self.N_beads)
+        for n in range(self.N_beads):
+            self.ev_force.setParticleParameters(n,[ev_strength[n],0.05])
+        self.ev_force.updateParametersInContext(self.simulation.context)
     
     def change_loop(self,i):
         force_idx = self.system.getNumForces()-1
@@ -121,12 +117,12 @@ class MD_LE:
 
     def add_evforce(self):
         'Leonard-Jones potential for excluded volume'
-        self.ev_force = mm.CustomNonbondedForce(f'epsilon*((sigma1+sigma2)/(r+r_small))^{self.ev_ff_power}')
-        self.ev_force.addGlobalParameter('epsilon', defaultValue=self.ev_ff_strength)
-        self.ev_force.addGlobalParameter('r_small', defaultValue=0.01)
+        self.ev_force = mm.CustomNonbondedForce(f'(epsilon1*epsilon2*(sigma1*sigma2)/(r+r_small))^{self.ev_ff_power}')
+        self.ev_force.addGlobalParameter('r_small', defaultValue=0.1)
         self.ev_force.addPerParticleParameter('sigma')
+        self.ev_force.addPerParticleParameter('epsilon')
         for i in range(self.N_beads):
-            self.ev_force.addParticle([0.05])
+            self.ev_force.addParticle([np.sqrt(self.ev_ff_strength),0.05])
         self.system.addForce(self.ev_force)
 
     def add_bonds(self):
@@ -173,7 +169,7 @@ class MD_LE:
 
 def main():
     # A potential example
-    M = np.load('/home/skorsak/Dropbox/LoopSage/files/region_[48100000,48700000]_chr3/Annealing_Nbeads500_ncoh50/Ms.npy')
-    N = np.load('/home/skorsak/Dropbox/LoopSage/files/region_[48100000,48700000]_chr3/Annealing_Nbeads500_ncoh50/Ns.npy')
-    md = MD_LE(4*M,4*N,2000,5,1)
+    M = np.load('/home/skorsak/Projects/mine/RepliSage/output/other/Ms.npy')
+    N = np.load('/home/skorsak/Projects/mine/RepliSage/output/other/Ns.npy')
+    md = MD_LE(M,N,np.max(N)+1,platform='CUDA')
     md.run_pipeline()

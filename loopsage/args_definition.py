@@ -145,6 +145,7 @@ args = ListOfArgs([
     
     # Stochastic Simulation parameters
     Arg('LEF_RW', help="True in case that you would like to make cohesins slide as random walk, instead of sliding only in one direction.", type=bool, default='True', val='True'),
+    Arg('LEF_DRIFT', help="True in case that LEFs are pushed back when they encounter other LEFs.", type=bool, default='False', val='False'),
     Arg('N_STEPS', help="Number of Monte Carlo steps.", type=int, default='40000', val='40000'),
     Arg('N_LEF', help="Number of loop extrusion factors (condensins and cohesins). If you leave it empty it would add for LEFs twice the number of CTCFs.", type=int, default='', val=''),
     Arg('N_LEF2', help="Number of second family loop extrusion factors, in case that you would like to simulate a second group with different speed.", type=int, default='0', val='0'),
@@ -156,6 +157,7 @@ args = ListOfArgs([
     Arg('FOLDING_COEFF', help="Folding coefficient.", type=float, default='1.0', val='1.0'),
     Arg('FOLDING_COEFF2', help="Folding coefficient for the second family of LEFs.", type=float, default='0.0', val='0.0'),
     Arg('CROSS_COEFF', help="LEF crossing coefficient.", type=float, default='1.0', val='1.0'),
+    Arg('CROSS_LOOP', help="It true if the penalty is applied for situations mi<mj<ni<nj and mi=nj, and false if it is applied only for mi=nj.", type=bool, default='True', val='True'),
     Arg('BIND_COEFF', help="CTCF binding coefficient.", type=float, default='1.0', val='1.0'),
     Arg('SAVE_PLOTS', help="It should be true in case that you would like to save diagnostic plots. In case that you use small MC_STEP or large N_STEPS is better to mark it as False.", type=bool, default='True', val='True'),
     Arg('SAVE_MDT', help="In case that you would liketo save metadata of the stochastic simulation.", type=bool, default='True', val='True'),
@@ -168,7 +170,8 @@ args = ListOfArgs([
     Arg('ANGLE_FF_STRENGTH', help="Angle force strength.", type=float, default='200.0', val='200.0'),
     Arg('LE_FF_LENGTH', help="Equillibrium distance of loop forces.", type=float, default='0.1', val='0.1'),
     Arg('LE_FF_STRENGTH', help="Interaction Strength of loop forces.", type=float, default='50000.0', val='50000.0'),
-    Arg('EV_FF_STRENGTH', help="Excluded-volume strength.", type=float, default='10.0', val='10.0'),
+    Arg('EV_P', help="Probability that randomly excluded volume may be disabled.", type=float, default='0.0', val='0.0'),
+    Arg('EV_FF_STRENGTH', help="Excluded-volume strength.", type=float, default='100.0', val='100.0'),
     Arg('EV_FF_POWER', help="Excluded-volume power.", type=float, default='3.0', val='3.0'),
     Arg('FRICTION',help='Friction coefficient of the Langevin integrator.',type=float, default='0.1', val='0.1'),
     Arg('TOLERANCE', help="Tolerance that works as stopping condition for energy minimization.", type=float, default='0.001', val='0.001'),

@@ -26,13 +26,14 @@ except FileNotFoundError:
     default_xml_path = 'loopsage/forcefields/classic_sm_ff.xml'
 
 @njit
-def Kappa(mi,ni,mj,nj):
+def Kappa(mi,ni,mj,nj,cross_loop=True):
     '''
     Computes the crossing function of LoopSage.
     '''
     k=0.0
-    if mi<mj and mj<ni and ni<nj: k+=1 # np.abs(ni-mj)+1
-    if mj<mi and mi<nj and nj<ni: k+=1 # np.abs(nj-mi)+1
+    if cross_loop:
+        if mi<mj and mj<ni and ni<nj: k+=1 # np.abs(ni-mj)+1
+        if mj<mi and mi<nj and nj<ni: k+=1 # np.abs(nj-mi)+1
     if mj==ni or mi==nj or ni==nj or mi==mj: k+=1
     return k
 
@@ -46,14 +47,14 @@ def E_bind(L, R, ms, ns, bind_norm):
     return E_b
 
 @njit
-def E_cross(ms, ns, k_norm):
+def E_cross(ms, ns, k_norm, cross_loop):
     '''
     The crossing energy.
     '''
     crossing = 0.0
     for i in prange(len(ms)):
         for j in range(i + 1, len(ms)):
-            crossing += Kappa(ms[i], ns[i], ms[j], ns[j])
+            crossing += Kappa(ms[i], ns[i], ms[j], ns[j], cross_loop)
     return k_norm * crossing
 
 @njit
@@ -65,12 +66,12 @@ def E_fold(ms, ns, fold_norm):
     return fold_norm * folding
 
 @njit
-def get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, N_lef, N_lef2):
+def get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, N_lef, N_lef2, cross_loop):
     ''''
     The total energy.
     '''
-    energy = E_bind(L, R, ms, ns, bind_norm) + E_cross(ms, ns, k_norm) + E_fold(ms, ns, fold_norm)
-    if fold_norm2!=0: energy += E_fold(ms[N_lef:N_lef+N_lef2],ns[N_lef:N_lef+N_lef2],fold_norm2)
+    energy = E_bind(L, R, ms, ns, bind_norm) + E_cross(ms, ns, k_norm, cross_loop) + E_fold(ms, ns, fold_norm)
+    if fold_norm2!=0: energy += E_fold(ms[N_lef:N_lef+N_lef2],ns[N_lef:N_lef+N_lef2], fold_norm2)
     return energy
 
 @njit
@@ -88,19 +89,19 @@ def get_dE_fold(fold_norm,ms,ns,m_new,n_new,idx):
     return fold_norm*(np.log(n_new-m_new)-np.log(ns[idx]-ms[idx]))
 
 @njit
-def get_dE_cross(ms, ns, m_new, n_new, idx, k_norm):
+def get_dE_cross(ms, ns, m_new, n_new, idx, k_norm, cross_loop):
     '''
     Energy difference for crossing energy.
     '''
     K1, K2 = 0, 0
     for i in prange(len(ms)):
         if i != idx:
-            K1 += Kappa(ms[idx], ns[idx], ms[i], ns[i])
-            K2 += Kappa(m_new, n_new, ms[i], ns[i])
+            K1 += Kappa(ms[idx], ns[idx], ms[i], ns[i], cross_loop)
+            K2 += Kappa(m_new, n_new, ms[i], ns[i], cross_loop)
     return k_norm * (K2 - K1)
 
 @njit
-def get_dE(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, m_new, n_new, idx, N_lef, N_lef2):
+def get_dE(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, m_new, n_new, idx, N_lef, N_lef2, cross_loop):
     '''
     Total energy difference.
     '''
@@ -108,9 +109,9 @@ def get_dE(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, m_new, n_new,
     if idx<N_lef:
         dE += get_dE_fold(fold_norm,ms[:N_lef],ns[:N_lef],m_new,n_new,idx)
     else:
-        dE += get_dE_fold(fold_norm2,ms[N_lef:N_lef+N_lef2],ns[N_lef:N_lef2],m_new,n_new,idx-N_lef)
+        dE += get_dE_fold(fold_norm2,ms[N_lef:N_lef+N_lef2],ns[N_lef:N_lef+N_lef2],m_new,n_new,idx-N_lef)
     dE += get_dE_bind(L, R, bind_norm, ms, ns, m_new, n_new, idx)
-    dE += get_dE_cross(ms, ns, m_new, n_new, idx, k_norm)
+    dE += get_dE_cross(ms, ns, m_new, n_new, idx, k_norm, cross_loop)
     return dE
 
 @njit
@@ -123,7 +124,7 @@ def unbind_bind(N_beads):
     return int(m_new), int(n_new)
 
 @njit
-def slide(m_old, n_old, N_beads, rw=True):
+def slide(m_old, n_old, ms, ns, N_beads, rw=True, drift=True):
     '''
     Sliding Monte-Carlo step.
     '''
@@ -131,7 +132,11 @@ def slide(m_old, n_old, N_beads, rw=True):
     r1 = np.random.choice(choices) if rw else -1
     r2 = np.random.choice(choices) if rw else 1
     m_new = m_old + r1 if m_old + r1>=0 else 0
+    if np.any(ns==m_new) and drift and m_old-r1<n_old-1: 
+        m_new =  m_old - r1 if m_old + r1>=0 else 0
     n_new = n_old + r2 if n_old + r2<N_beads else N_beads-1
+    if np.any(ms==n_new) and drift and n_old-r2>m_old+1: 
+        n_new =  n_old - r2 if n_old + r2>=0 else 0
     return int(m_new), int(n_new)
 
 @njit
@@ -157,14 +162,14 @@ def initialize(N_beads,N_lef):
     return ms, ns
 
 @njit
-def run_simulation(N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,fold_norm2,bind_norm,k_norm,N_lef,N_lef2,L,R,mode,lef_rw=True):
+def run_simulation(N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,fold_norm2,bind_norm,k_norm,N_lef,N_lef2,L,R,mode,lef_rw=True,lef_drift=True,cross_loop=True):
     '''
     Runs the Monte Carlo simulation.
     '''
     Ti = T
     bi = burnin//MC_step
     ms, ns = initialize(N_beads,N_lef+N_lef2)
-    E = get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm,  ms, ns, N_lef, N_lef2)
+    E = get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm,  ms, ns, N_lef, N_lef2, cross_loop)
     Es,Ks,Fs,Bs,ufs = np.zeros(N_steps//MC_step, dtype=np.float64),np.zeros(N_steps//MC_step, dtype=np.float64),np.zeros(N_steps//MC_step, dtype=np.float64),np.zeros(N_steps//MC_step, dtype=np.float64),np.zeros(N_steps//MC_step, dtype=np.float64)
     Ms, Ns = np.zeros((N_lef+N_lef2,N_steps//MC_step), dtype=np.int64), np.zeros((N_lef+N_lef2,N_steps//MC_step), dtype=np.int64)
 
@@ -176,10 +181,10 @@ def run_simulation(N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,fold_norm2,b
             if r==0:
                 m_new, n_new = unbind_bind(N_beads)
             else:
-                m_new, n_new = slide(ms[j],ns[j],N_beads,lef_rw)
+                m_new, n_new = slide(ms[j],ns[j],ms,ns,N_beads,lef_rw,lef_drift)
 
             # Compute energy difference
-            dE = get_dE(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, m_new, n_new, j, N_lef, N_lef2)
+            dE = get_dE(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, m_new, n_new, j, N_lef, N_lef2, cross_loop)
             
             if dE <= 0 or np.exp(-dE/Ti) > np.random.rand():
                 ms[j], ns[j] = m_new, n_new
@@ -192,7 +197,7 @@ def run_simulation(N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,fold_norm2,b
         if i%MC_step==0:
             ufs[i//MC_step] = unfolding_metric(ms,ns,N_beads)
             Es[i//MC_step] = E
-            Ks[i//MC_step] = E_cross(ms,ns,k_norm)
+            Ks[i//MC_step] = E_cross(ms,ns,k_norm,cross_loop)
             Fs[i//MC_step] = E_fold(ms,ns,fold_norm)
             Bs[i//MC_step] = E_bind(L,R,ms,ns,bind_norm)
     return Ms, Ns, Es, Ks, Fs, Bs, ufs
@@ -222,7 +227,7 @@ class StochasticSimulation:
         print('Number of LEFs:',self.N_lef+self.N_lef2)
         self.path = make_folder(out_dir)
     
-    def run_energy_minimization(self,N_steps,MC_step,burnin,T=1,T_min=0,mode='Metropolis',viz=False,save=False, f=1.0, f2=0.0, b=1.0, kappa=1.0, lef_rw=True):
+    def run_energy_minimization(self,N_steps,MC_step,burnin,T=1,T_min=0,mode='Metropolis',viz=False,save=False, f=1.0, f2=0.0, b=1.0, kappa=1.0, lef_rw=True, lef_drift=True, cross_loop=True):
         '''
         Implementation of the stochastic Monte Carlo simulation.
 
@@ -242,7 +247,7 @@ class StochasticSimulation:
         print('\nRunning simulation (with parallelization across CPU cores)...')
         start = time.time()
         self.burnin = burnin
-        self.Ms, self.Ns, self.Es, self.Ks, self.Fs, self.Bs, self.ufs = run_simulation(self.N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,fold_norm2,bind_norm,k_norm,self.N_lef,self.N_lef2,self.L,self.R,mode,lef_rw)
+        self.Ms, self.Ns, self.Es, self.Ks, self.Fs, self.Bs, self.ufs = run_simulation(self.N_beads,N_steps,MC_step,burnin,T,T_min,fold_norm,fold_norm2,bind_norm,k_norm,self.N_lef,self.N_lef2,self.L,self.R,mode,lef_rw,lef_drift,cross_loop)
         end = time.time()
         elapsed = end - start
         print(f'Computation finished succesfully in {elapsed//3600:.0f} hours, {elapsed%3600//60:.0f} minutes and  {elapsed%60:.0f} seconds.')
@@ -251,13 +256,13 @@ class StochasticSimulation:
         if save:
             f = open(self.path+'/other/info.txt', "w")
             f.write(f'Number of beads {self.N_beads}.\n')
-            f.write(f'Number of cohesins {self.N_lef}. Number of CTCFs {self.N_CTCF}.\n')
+            f.write(f'Number of cohesins {self.N_lef}. Number of cohesins in second family {self.N_lef2}. Number of CTCFs {self.N_CTCF}. \n')
             f.write(f'Bedpe file for CTCF binding is {self.bedpe_file}.\n')
             f.write(f'Initial temperature {T}. Minimum temperature {T_min}.\n')
             f.write(f'Monte Carlo optimization method: {mode}.\n')
             f.write(f'Monte Carlo steps {N_steps}. Sampling frequency {MC_step}. Burnin period {burnin}.\n')
             f.write(f'Crossing energy in equilibrium is {np.average(self.Ks[burnin//MC_step:]):.2f}. Crossing coefficient kappa={kappa}.\n')
-            f.write(f'Folding energy in equilibrium is {np.average(self.Fs[burnin//MC_step:]):.2f}. Folding coefficient f={f}.\n')
+            f.write(f'Folding energy in equilibrium is {np.average(self.Fs[burnin//MC_step:]):.2f}. Folding coefficient f={f}. Folding coefficient for the second family f2={f2}\n')
             f.write(f'Binding energy in equilibrium is {np.average(self.Bs[burnin//MC_step:]):.2f}. Binding coefficient b={b}.\n')
             f.write(f'Energy at equillibrium: {np.average(self.Es[burnin//MC_step:]):.2f}.\n')
             f.close()
@@ -288,9 +293,9 @@ class StochasticSimulation:
         sim_heat = em.run_pipeline(plots=save_plots,friction=friction,integrator_step=integrator_step,temperature=temperature,ff_path=ff_path)
         corr_exp_heat(sim_heat,self.bedpe_file,self.region,self.chrom,self.N_beads,self.path)
     
-    def run_MD(self,platform='CPU',angle_ff_strength=200,le_distance=0.0,le_ff_strength=300000.0,ev_ff_strength=10.0,ev_ff_power=3.0,tolerance=0.001,friction=0.1,integrator_step=100*mm.unit.femtosecond,temperature=310,sim_step=1000,save_plots=True,ff_path=default_xml_path):
-        md = MD_LE(self.Ms,self.Ns,self.N_beads,self.burnin,self.MC_step,self.path,platform,angle_ff_strength,le_distance,le_ff_strength,ev_ff_strength,ev_ff_power,tolerance)
-        sim_heat = md.run_pipeline(plots=save_plots,sim_step=sim_step,friction=friction,integrator_step=integrator_step,temperature=temperature,ff_path=ff_path)
+    def run_MD(self,platform='CPU',angle_ff_strength=200,le_distance=0.0,le_ff_strength=300000.0,ev_ff_strength=10.0,ev_ff_power=3.0,tolerance=0.001,friction=0.1,integrator_step=100*mm.unit.femtosecond,temperature=310,sim_step=1000,save_plots=True,ff_path=default_xml_path,p_ev=0):
+        md = MD_LE(self.Ms,self.Ns,self.N_beads,self.path,platform,angle_ff_strength,le_distance,le_ff_strength,ev_ff_strength,ev_ff_power,tolerance)
+        sim_heat = md.run_pipeline(plots=save_plots,sim_step=sim_step,friction=friction,integrator_step=integrator_step,temperature=temperature,ff_path=ff_path,p_ev=p_ev)
         corr_exp_heat(sim_heat,self.bedpe_file,self.region,self.chrom,self.N_beads,self.path)
 
 def main():
