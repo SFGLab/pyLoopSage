@@ -136,7 +136,7 @@ def slide(m_old, n_old, ms, ns, N_beads, rw=True, drift=True):
         m_new =  m_old - r1 if m_old + r1>=0 else 0
     n_new = n_old + r2 if n_old + r2<N_beads else N_beads-1
     if np.any(ms==n_new) and drift and n_old-r2>m_old+1: 
-        n_new =  n_old - r2 if n_old + r2>=0 else 0
+        n_new =  n_old - r2 if n_old + r2<N_beads else N_beads-1
     return int(m_new), int(n_new)
 
 @njit

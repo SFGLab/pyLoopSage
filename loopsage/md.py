@@ -78,15 +78,14 @@ class MD_LE:
             print('Running molecular dynamics (wait for 100 steps)...')
             start = time.time()
             heats = list()
-            for i in range(1,self.N_steps):
+            for i in range(self.N_steps):
                 # Define probabilities that EV would be disabled
                 if p_ev>0: self.ps_ev = np.random.rand(self.N_beads)
-                # Change forcefield
                 self.change_loop(i)
                 self.change_ev()
                 self.simulation.step(sim_step)
                 self.state = self.simulation.context.getState(getPositions=True)
-                PDBxFile.writeFile(pdb.topology, self.state.getPositions(), open(self.path+f'/ensemble/MDLE_{i}.cif', 'w'))
+                PDBxFile.writeFile(pdb.topology, self.state.getPositions(), open(self.path+f'/ensemble/MDLE_{i+1}.cif', 'w'))
                 heats.append(get_heatmap(self.state.getPositions(),save=False))
             end = time.time()
             elapsed = end - start
