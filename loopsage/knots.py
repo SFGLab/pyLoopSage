@@ -2,26 +2,18 @@ import topoly as tp
 import numpy as np
 import matplotlib
 from tqdm import tqdm
+import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 import matplotlib.colors as mcolors
 import scipy.interpolate as si
-from scipy.interpolate import CubicSpline
 from scipy.spatial.distance import pdist, squareform
 from scipy.integrate import dblquad
+from scipy.interpolate import splprep, splev, CubicSpline
 from .uts import *
 
-def trefoil_knot(t):
-    """Generate a 3D trefoil knot as a list of points."""
-    x = np.sin(t) + 2 * np.sin(2 * t)
-    y = np.cos(t) - 2 * np.cos(2 * t)
-    z = -np.sin(3 * t)
-    V = np.column_stack((x, y, z))
-    V = np.vstack((V,[x[0],y[0],z[0]]))
-    return V
-
-def generate_trivial_knot(N=100, radius=1.0):
+def trivial_knot(N=100, radius=1.0):
     """
     Generate a 3D trivial (unknot) structure as a simple circle.
 
@@ -62,6 +54,76 @@ def toroidal_knot(p, q, num_points=500, R=2, r=1):
     V = np.column_stack((x, y, z))
     V = np.vstack((V,[x[0],y[0],z[0]]))
     return V
+
+def trefoil_knot(N=200, scale=0.8, offset=(0, 0, 0), rotation=None):
+    """Generate a 3D Trefoil Knot with transformations."""
+    t = np.linspace(0, 2 * np.pi-np.pi/36, N)
+    x = scale * (np.sin(t) + 2 * np.sin(2 * t)) + offset[0]
+    y = scale * (np.cos(t) - 2 * np.cos(2 * t)) + offset[1]
+    z = scale * (-np.sin(3 * t)) + offset[2]
+    
+    V = np.vstack((x, y, z)).T
+
+    if rotation is not None:
+        V = np.dot(V, rotation)  # Apply rotation matrix
+
+    return V
+
+def cinquefoil_knot(N=300, scale=0.8, offset=(0, 0, 0), rotation=None):
+    """Generate a 3D Cinquefoil (5_1) Knot with transformations."""
+    t = np.linspace(0, 2 * np.pi, N)
+    x = scale * (np.sin(2*t) + 2*np.sin(3*t))
+    y = scale * (np.cos(2*t) - 2*np.cos(3*t))
+    z = scale * (-np.sin(5*t))
+
+    V = np.vstack((x, y, z)).T
+    if rotation is not None:
+        V = np.dot(V, rotation)  # Apply rotation
+    return V + np.array(offset)  # Apply position offset
+
+def random_rotation_matrix():
+    """Generate a random 3D rotation matrix."""
+    theta, phi, z = np.random.uniform(0, 2*np.pi-np.pi/36, 3)
+    r = np.sqrt(z)
+    V = np.array([
+        [np.cos(theta) * np.cos(phi), -np.sin(theta), np.cos(theta) * np.sin(phi)],
+        [np.sin(theta) * np.cos(phi), np.cos(theta), np.sin(theta) * np.sin(phi)],
+        [-np.sin(phi), 0, np.cos(phi)]
+    ])
+    return V
+
+def smooth_linkage(start, end, N=50):
+    """Generate a smooth linking curve between two knots."""
+    t = np.linspace(0, 1, N)
+    x = (1 - t) * start[0] + t * end[0]
+    y = (1 - t) * start[1] + t * end[1]
+    z = (1 - t) * start[2] + t * end[2]
+    return np.vstack((x, y, z)).T
+
+def generate_knotted_structure(num_knots=5, N_per_knot=300):
+    """Generate a large 3D knotted structure by linking multiple knots."""
+    knots = []
+    previous_end = None
+
+    for i in range(num_knots):
+        knot_type = np.random.choice(["trefoil", "figure_eight"])
+        offset = previous_end + np.random.uniform(-3.0, 3.0, size=3) if previous_end is not None else np.random.uniform(-5, 5, size=3)
+        scale = np.random.uniform(0.5, 1.0)  # Vary knot sizes
+        rotation = random_rotation_matrix()
+        
+        if knot_type == "trefoil":
+            knot = trefoil_knot(N=N_per_knot, scale=scale, offset=offset, rotation=rotation)
+        else:
+            knot = cinquefoil_knot(N=N_per_knot, scale=scale, offset=offset, rotation=rotation)
+        
+        if previous_end is not None:
+            linkage = smooth_linkage(previous_end, knot[0], N=50)  # Smooth connection
+            knots.append(linkage)
+
+        knots.append(knot)
+        previous_end = knot[-1]
+
+    return np.vstack(knots)
 
 def smooth_knot_spline(V, num_interp=100, closed=True):
     """

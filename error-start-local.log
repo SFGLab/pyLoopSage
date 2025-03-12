@@ -1,0 +1,9 @@
+Error: docker compose up --wait command failed!
+Start-local version: 0.8.0
+Docker engine: Docker version 28.0.1, build 068a01e
+Docker compose: 2.33.1
+Distribution: Debian GNU/Linux
+Version: 12 (bookworm)
+-- Logs of service es-local-dev:
+-- Logs of service kibana-local-dev:
+-- Logs of service kibana_settings:
