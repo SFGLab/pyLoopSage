@@ -52,6 +52,8 @@ def binding_vectors_from_bedpe(bedpe_file,N_beads,region,chrom,normalization=Fal
             if df[7][i]>=0: R[x] += df[6][i]*df[7][i]
             if df[8][i]>=0: R[y] += df[6][i]*df[8][i]
         else:
+            if x>=N_beads: x=N_beads-1
+            if y>=N_beads: y=N_beads-1
             L[x] += df[6][i]
             L[y] += df[6][i]
             R[x] += df[6][i]

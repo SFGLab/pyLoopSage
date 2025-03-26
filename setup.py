@@ -6,7 +6,7 @@ with open('README.md', 'r', encoding='utf-8') as f:
 
 setup(
     name='pyLoopSage',  # Package name
-    version='1.0.18',  # Version of the software
+    version='1.0.19',  # Version of the software
     description='An energy-based stochastic model of loop extrusion in chromatin.',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -20,7 +20,7 @@ setup(
     'loopsage': ['forcefields/*'],
     },
     install_requires=[  # List your package dependencies here
-        'numpy',
+        'numpy==1.24.3',
         'numba',
         'scipy',
         'pandas',
