@@ -117,7 +117,7 @@ class MD_LE:
     def add_evforce(self):
         'Leonard-Jones potential for excluded volume'
         self.ev_force = mm.CustomNonbondedForce(f'(epsilon1*epsilon2*(sigma1*sigma2)/(r+r_small))^{self.ev_ff_power}')
-        self.ev_force.addGlobalParameter('r_small', defaultValue=0.01)
+        self.ev_force.addGlobalParameter('r_small', defaultValue=0.1)
         self.ev_force.addPerParticleParameter('sigma')
         self.ev_force.addPerParticleParameter('epsilon')
         for i in range(self.N_beads):

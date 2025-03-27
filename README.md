@@ -263,8 +263,8 @@ An example, illustrated with Chimera software, simulated trajectory of structure
 | EV_P                 | Probability that excluded volume is disabled. Enable it only in case of topoisomerase activity simulation.    | float      | 0.0                 |
 | EV_FF_STRENGTH       | Excluded-volume strength.                                                                                     | float      | 100.0               |
 | EV_FF_POWER          | Excluded-volume power.                                                                                        | float      | 3.0                 |
-| FRICTION             | Friction coefficient of the Langevin integrator.                                                              | float      | 0.1                 |
-| TOLERANCE            | Stopping condition for energy minimization.                                                                   | float      | 0.001               |
+| FRICTION             | Friction coefficient of the Langevin integrator.                                                              | float      | 0.1              |
+| TOLERANCE            | Stopping condition for energy minimization.     | float      | 0.001              |
 | VIZ_HEATS            | True to visualize the output average heatmap.                                                                | bool       | True                |
 | SIM_TEMP             | Temperature of the 3D simulation (EM or MD).                                                                  | Quantity   | 310 kelvin        |
 | SIM_STEP             | Amount of simulation steps for loop force adjustments.                                                        | int        | 1000                |
