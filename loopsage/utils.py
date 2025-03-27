@@ -13,14 +13,14 @@ from scipy.stats.stats import pearsonr, spearmanr, kendalltau
 from tqdm import tqdm
 
 def make_folder(folder_name):
-    try:
+    if not os.path.exists(folder_name):
         os.mkdir(folder_name)
-        os.mkdir(folder_name+'/plots')
-        os.mkdir(folder_name+'/other')
-        os.mkdir(folder_name+'/ensemble')
-    except OSError as error:
-        a=1
-        # print(f'Directory with name "{folder_name}" already exists! No problem lets continue!')
+    elif os.path.isdir(folder_name):
+        print(f'Directory with name "{folder_name}" already exists! No problem lets continue!')
+    else:
+        raise IOError(f'File with name "{folder_name}" already exists! Please change the name of the folder!')        
+    for subfolder in ['plots', 'other', 'ensemble']:
+        os.makedirs(os.path.join(folder_name, subfolder), exist_ok=True)
     return folder_name
 
 ############# Creation of mmcif and psf files #############
