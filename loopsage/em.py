@@ -41,13 +41,13 @@ class EM_LE:
         self.ev_ff_power = ev_ff_power
         self.tolerance = tolerance
     
-    def run_pipeline(self,plots=False, friction=0.1, ff_path=default_xml_path, integrator_step = 100 * mm.unit.femtosecond, temperature = 310):
+    def run_pipeline(self,plots=False, friction=0.1, ff_path=default_xml_path, integrator_step = 100 * mm.unit.femtosecond, temperature = 310, init_struct='rw'):
         '''
         This is the basic function that runs the molecular simulation pipeline.
         '''
         # Define initial structure
         print('Building initial structure...')
-        points = compute_init_struct(self.N_beads,mode='rw')
+        points = compute_init_struct(self.N_beads,mode=init_struct)
         write_mmcif(points,self.path+'/LE_init_struct.cif')
         generate_psf(self.N_beads,self.path+'/other/LE_init_struct.psf')
         print('Done brother ;D\n')

@@ -36,7 +36,7 @@ class MD_LE:
         self.ev_ff_power = ev_ff_power
         self.tolerance = tolerance
     
-    def run_pipeline(self,run_MD=True, friction=0.1, integrator_step=10 * mm.unit.femtosecond, sim_step=100, ff_path = 'forcefields/classic_sm_ff.xml',temperature=310, p_ev=0, plots=False):
+    def run_pipeline(self,run_MD=True, friction=0.1, integrator_step=10 * mm.unit.femtosecond, sim_step=100, ff_path = 'forcefields/classic_sm_ff.xml', init_struct='rw', temperature=310, p_ev=0, plots=False):
         '''
         This is the basic function that runs the molecular simulation pipeline.
         '''
