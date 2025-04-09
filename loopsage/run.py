@@ -17,7 +17,7 @@ def my_config_parser(config_parser: configparser.ConfigParser) -> List[tuple[str
             args_cp.append((name, value))
     return args_cp
 
-def get_config() -> ListOfArgs:
+def get_config():
     """Prepare list of arguments.
     First, defaults are set.
     Then, optionally config file values.
@@ -31,7 +31,7 @@ def get_config() -> ListOfArgs:
 
     for arg in args:
         arg_parser.add_argument(f"--{arg.name.lower()}", help=arg.help)
-
+    
     args_ap = arg_parser.parse_args()  # parse command-line arguments
     args_dict = vars(args_ap)
 

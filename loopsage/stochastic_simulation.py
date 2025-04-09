@@ -254,7 +254,7 @@ class StochasticSimulation:
 
         # Save simulation info
         if save:
-            save_dir = os.path.join(self.path, 'other')
+            save_dir = os.path.join(self.path, 'other') + '/'
             with open(save_dir + 'info.txt', "w") as f:
                 f.write(f'Number of beads {self.N_beads}.\n')
                 f.write(f'Number of cohesins {self.N_lef}. Number of cohesins in second family {self.N_lef2}. Number of CTCFs {self.N_CTCF}. \n')
