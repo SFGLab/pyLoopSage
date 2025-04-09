@@ -22,7 +22,7 @@ def get_config() -> ListOfArgs:
     First, defaults are set.
     Then, optionally config file values.
     Finally, CLI arguments overwrite everything."""
-
+    
     print("Reading config...")
 
     # Step 1: Setup argparse
