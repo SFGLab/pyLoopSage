@@ -251,21 +251,21 @@ class StochasticSimulation:
         end = time.time()
         elapsed = end - start
         print(f'Computation finished succesfully in {elapsed//3600:.0f} hours, {elapsed%3600//60:.0f} minutes and  {elapsed%60:.0f} seconds.')
-
+        
         # Save simulation info
         if save:
             save_dir = os.path.join(self.path, 'other') + '/'
-            with open(save_dir + 'info.txt', "w") as f:
-                f.write(f'Number of beads {self.N_beads}.\n')
-                f.write(f'Number of cohesins {self.N_lef}. Number of cohesins in second family {self.N_lef2}. Number of CTCFs {self.N_CTCF}. \n')
-                f.write(f'Bedpe file for CTCF binding is {self.bedpe_file}.\n')
-                f.write(f'Initial temperature {T}. Minimum temperature {T_min}.\n')
-                f.write(f'Monte Carlo optimization method: {mode}.\n')
-                f.write(f'Monte Carlo steps {N_steps}. Sampling frequency {self.MC_step}. Burnin period {burnin}.\n')
-                f.write(f'Crossing energy in equilibrium is {np.average(self.Ks[burnin//MC_step:]):.2f}. Crossing coefficient kappa={kappa}.\n')
-                f.write(f'Folding energy in equilibrium is {np.average(self.Fs[burnin//MC_step:]):.2f}. Folding coefficient f={f}. Folding coefficient for the second family f2={f2}\n')
-                f.write(f'Binding energy in equilibrium is {np.average(self.Bs[burnin//MC_step:]):.2f}. Binding coefficient b={b}.\n')
-                f.write(f'Energy at equillibrium: {np.average(self.Es[self.burnin//MC_step:]):.2f}.\n')
+            with open(save_dir + 'info.txt', "w") as file:
+                file.write(f'Number of beads {self.N_beads}.\n')
+                file.write(f'Number of cohesins {self.N_lef}. Number of cohesins in second family {self.N_lef2}. Number of CTCFs {self.N_CTCF}. \n')
+                file.write(f'Bedpe file for CTCF binding is {self.bedpe_file}.\n')
+                file.write(f'Initial temperature {T}. Minimum temperature {T_min}.\n')
+                file.write(f'Monte Carlo optimization method: {mode}.\n')
+                file.write(f'Monte Carlo steps {N_steps}. Sampling frequency {self.MC_step}. Burnin period {burnin}.\n')
+                file.write(f'Crossing energy in equilibrium is {np.average(self.Ks[burnin//MC_step:]):.2f}. Crossing coefficient kappa={kappa}.\n')
+                file.write(f'Folding energy in equilibrium is {np.average(self.Fs[burnin//MC_step:]):.2f}. Folding coefficient f={f}. Folding coefficient for the second family f2={f2}\n')
+                file.write(f'Binding energy in equilibrium is {np.average(self.Bs[burnin//MC_step:]):.2f}. Binding coefficient b={b}.\n')
+                file.write(f'Energy at equillibrium: {np.average(self.Es[self.burnin//MC_step:]):.2f}.\n')
             np.save(save_dir + 'Ms.npy', self.Ms)
             np.save(save_dir + 'Ns.npy', self.Ns)
             np.save(save_dir + 'ufs.npy', self.ufs)
