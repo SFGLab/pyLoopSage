@@ -170,6 +170,7 @@ args = ListOfArgs([
     Arg('ANGLE_FF_STRENGTH', help="Angle force strength.", type=float, default='200.0', val='200.0'),
     Arg('LE_FF_LENGTH', help="Equillibrium distance of loop forces.", type=float, default='0.1', val='0.1'),
     Arg('LE_FF_STRENGTH', help="Interaction Strength of loop forces.", type=float, default='50000.0', val='50000.0'),
+    Arg('CONTINUOUS_TOP', help="True if topoisomerase disables EV in a continuous region rather than a discrete set of points.", type=bool, default='False', val='False'),
     Arg('EV_P', help="Probability that randomly excluded volume may be disabled.", type=float, default='0.0', val='0.0'),
     Arg('EV_FF_STRENGTH', help="Excluded-volume strength.", type=float, default='100.0', val='100.0'),
     Arg('EV_FF_POWER', help="Excluded-volume power.", type=float, default='3.0', val='3.0'),

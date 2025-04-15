@@ -292,9 +292,9 @@ class StochasticSimulation:
         sim_heat = em.run_pipeline(plots=save_plots,friction=friction,integrator_step=integrator_step,temperature=temperature,ff_path=ff_path,init_struct=init_struct)
         corr_exp_heat(sim_heat,self.bedpe_file,self.region,self.chrom,self.N_beads,self.path)
     
-    def run_MD(self,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=100.0,ev_ff_power=3.0,tolerance=0.001,friction=0.1,integrator_step=100*mm.unit.femtosecond,temperature=310,init_struct='rw',sim_step=1000,save_plots=True,ff_path=default_xml_path,p_ev=0):
+    def run_MD(self,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=100.0,ev_ff_power=3.0,tolerance=0.001,friction=0.1,integrator_step=100*mm.unit.femtosecond,temperature=310,init_struct='rw',sim_step=1000,save_plots=True,ff_path=default_xml_path,p_ev=0,continuous_topoisomerase=False):
         md = MD_LE(self.Ms,self.Ns,self.N_beads,self.path,platform,angle_ff_strength,le_distance,le_ff_strength,ev_ff_strength,ev_ff_power,tolerance)
-        sim_heat = md.run_pipeline(plots=save_plots,sim_step=sim_step,friction=friction,integrator_step=integrator_step,temperature=temperature,ff_path=ff_path,p_ev=p_ev,init_struct=init_struct)
+        sim_heat = md.run_pipeline(plots=save_plots,sim_step=sim_step,friction=friction,integrator_step=integrator_step,temperature=temperature,ff_path=ff_path,p_ev=p_ev,init_struct=init_struct,continuous_topoisomerase=continuous_topoisomerase)
         corr_exp_heat(sim_heat,self.bedpe_file,self.region,self.chrom,self.N_beads,self.path)
 
 def main():
@@ -311,12 +311,12 @@ def main():
     region, chrom = [15550000,16850000], 'chr6'
     
     # Definition of data
-    output_name='../HiChIP_Annealing_T1_MD_region'
+    output_name='tmp'
     bedpe_file = '/home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe'
     
     sim = StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=1000,N_lef=N_lef,N_lef2=N_lef2)
     Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True,f=f,f2=f2, b=b, kappa=kappa, lef_rw=lew_rw)
-    sim.run_EM('CUDA')
+    sim.run_MD('CUDA',continuous_topoisomerase=True, p_ev=0.1)
 
 if __name__=='__main__':
     main()

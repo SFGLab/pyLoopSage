@@ -86,7 +86,7 @@ def main():
     if args.SIMULATION_TYPE=='EM':
         sim.run_EM(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.EV_FF_POWER,args.TOLERANCE,args.FRICTION,args.INTEGRATOR_STEP,args.SIM_TEMP,args.INITIAL_STRUCTURE_TYPE,args.VIZ_HEATS,args.FORCEFIELD_PATH)
     elif args.SIMULATION_TYPE=='MD':
-        sim.run_MD(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.EV_FF_POWER,args.TOLERANCE,args.FRICTION,args.INTEGRATOR_STEP,args.SIM_TEMP,args.INITIAL_STRUCTURE_TYPE,args.SIM_STEP,args.VIZ_HEATS,args.FORCEFIELD_PATH,args.EV_P)
+        sim.run_MD(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.EV_FF_POWER,args.TOLERANCE,args.FRICTION,args.INTEGRATOR_STEP,args.SIM_TEMP,args.INITIAL_STRUCTURE_TYPE,args.SIM_STEP,args.VIZ_HEATS,args.FORCEFIELD_PATH,args.EV_P,args.CONTINUOUS_TOPOISOMERASE)
     elif args.SIMULATION_TYPE==None:
         print('\n3D simulation did not run because it was not specified. Please specify argument SIMULATION_TYPE as EM or MD.')
     else:

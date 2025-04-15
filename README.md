@@ -260,6 +260,7 @@ An example, illustrated with Chimera software, simulated trajectory of structure
 | ANGLE_FF_STRENGTH     | Angle force strength.                                                                                          | float      | 200.0               |
 | LE_FF_LENGTH         | Equilibrium distance of loop forces.                                                                          | float      | 0.1                 |
 | LE_FF_STRENGTH       | Interaction Strength of loop forces.                                                                          | float      | 50000.0             |
+| CONTINUOUS_TOP       | True if the topological constraints are applied continuously during the simulation.                           | bool       | False               |
 | EV_P                 | Probability that excluded volume is disabled. Enable it only in case of topoisomerase activity simulation.    | float      | 0.0                 |
 | EV_FF_STRENGTH       | Excluded-volume strength.                                                                                     | float      | 100.0               |
 | EV_FF_POWER          | Excluded-volume power.                                                                                        | float      | 3.0                 |

@@ -36,18 +36,19 @@ class MD_LE:
         self.ev_ff_power = ev_ff_power
         self.tolerance = tolerance
     
-    def run_pipeline(self,run_MD=True, friction=0.1, integrator_step=10 * mm.unit.femtosecond, sim_step=100, ff_path = 'forcefields/classic_sm_ff.xml', init_struct='rw', temperature=310, p_ev=0, plots=False):
+    def run_pipeline(self, run_MD=True, friction=0.1, integrator_step=10 * mm.unit.femtosecond, sim_step=100, ff_path='forcefields/classic_sm_ff.xml', init_struct='rw', temperature=310, p_ev=0, plots=False, continuous_topoisomerase=False):
         '''
         This is the basic function that runs the molecular simulation pipeline.
         '''
         # Parameters
         self.p_ev = p_ev
+        self.continuous_topoisomerase = continuous_topoisomerase
 
         # Define initial structure
         print('Building initial structure...')
-        points = compute_init_struct(self.N_beads,mode='rw')
-        write_mmcif(points,self.path+'/LE_init_struct.cif')
-        generate_psf(self.N_beads,self.path+'/other/LE_init_struct.psf')
+        points = compute_init_struct(self.N_beads, mode='rw')
+        write_mmcif(points, self.path+'/LE_init_struct.cif')
+        generate_psf(self.N_beads, self.path+'/other/LE_init_struct.psf')
         print('Done brother ;D\n')
 
         # Define System
@@ -79,32 +80,39 @@ class MD_LE:
             start = time.time()
             heats = list()
             for i in range(self.N_steps):
-                # Define probabilities that EV would be disabled
-                if p_ev>0: self.ps_ev = np.random.rand(self.N_beads)
+                # Define probabilities or regions that EV would be disabled
+                if self.continuous_topoisomerase:
+                    region_length = max(1, int(self.p_ev * self.N_beads))  # Determine region length from p_ev
+                    start_idx = np.random.randint(0, self.N_beads - region_length -1)
+                    end_idx = start_idx + region_length
+                    self.ps_ev = np.zeros(self.N_beads)
+                    self.ps_ev[start_idx:end_idx] = 1
+                elif p_ev > 0:
+                    self.ps_ev = np.random.rand(self.N_beads)
                 self.change_loop(i)
                 self.change_ev()
                 self.simulation.step(sim_step)
                 self.state = self.simulation.context.getState(getPositions=True)
                 PDBxFile.writeFile(pdb.topology, self.state.getPositions(), open(self.path+f'/ensemble/MDLE_{i+1}.cif', 'w'))
-                heats.append(get_heatmap(self.state.getPositions(),save=False))
+                heats.append(get_heatmap(self.state.getPositions(), save=False))
             end = time.time()
             elapsed = end - start
-            print(f'Everything is done! Simulation finished succesfully!\nMD finished in {elapsed/60:.2f} minutes.\n')
+            print(f'Everything is done! Simulation finished successfully!\nMD finished in {elapsed/60:.2f} minutes.\n')
 
-            self.avg_heat = np.average(heats,axis=0)
-            self.std_heat = np.std(heats,axis=0)
+            self.avg_heat = np.average(heats, axis=0)
+            self.std_heat = np.std(heats, axis=0)
             
             if plots:
-                np.save(self.path+f'/other/avg_heatmap.npy',self.avg_heat)
-                np.save(self.path+f'/other/std_heatmap.npy',self.std_heat)
-                self.plot_heat(self.avg_heat,f'/plots/avg_heatmap.svg')
-                self.plot_heat(self.std_heat,f'/plots/std_heatmap.svg')
+                np.save(self.path+f'/other/avg_heatmap.npy', self.avg_heat)
+                np.save(self.path+f'/other/std_heatmap.npy', self.std_heat)
+                self.plot_heat(self.avg_heat, f'/plots/avg_heatmap.svg')
+                self.plot_heat(self.std_heat, f'/plots/std_heatmap.svg')
         return self.avg_heat
 
     def change_ev(self):
-        ev_strength = (self.ps_ev>self.p_ev).astype(int)*np.sqrt(self.ev_ff_strength) if self.p_ev>0 else np.sqrt(self.ev_ff_strength)*np.ones(self.N_beads)
+        ev_strength = (self.ps_ev > self.p_ev).astype(int) * np.sqrt(self.ev_ff_strength) if self.p_ev > 0 else np.sqrt(self.ev_ff_strength) * np.ones(self.N_beads)
         for n in range(self.N_beads):
-            self.ev_force.setParticleParameters(n,[ev_strength[n],0.05])
+            self.ev_force.setParticleParameters(n, [ev_strength[n], 0.05])
         self.ev_force.updateParametersInContext(self.simulation.context)
     
     def change_loop(self,i):
