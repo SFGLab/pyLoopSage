@@ -66,6 +66,18 @@ class ListOfArgs(list):
             raise ValueError(f"I Can't recognise unit {unit} in expression {val}. Example of valid quantity: 12.3 femtosecond.")
         return Quantity(value=float(value), unit=unit)
 
+    def parse_list_of_floats(self, s: str) -> list:
+        try:
+            return [float(x.strip()) for x in s.strip('[]').split(',')]
+        except ValueError:
+            raise argparse.ArgumentTypeError("Invalid list format. Must be a comma-separated list of floats.")
+
+    def parse_list_of_strings(self, s: str) -> list:
+        try:
+            return [x.strip() for x in s.strip('[]').split(',')]
+        except ValueError:
+            raise argparse.ArgumentTypeError("Invalid list format. Must be a comma-separated list of strings.")
+
     def to_python(self):
         """Casts string args to ints, floats, bool..."""
         for i in self:
@@ -80,10 +92,21 @@ class ListOfArgs(list):
             elif i.type == float:
                 i.val = float(i.val)
             elif i.type == list:
-                if isinstance(i.val, str):
-                    i.val = parse_list(i.val)
-                elif not isinstance(i.val, list):
-                    raise ValueError(f"Can't convert {i.val} into list type.")
+                if i.name == "BW_FILES" or i.name == "STRING_LIST":  # Handle lists of strings
+                    if isinstance(i.val, str):
+                        i.val = self.parse_list_of_strings(i.val)
+                    elif not isinstance(i.val, list):
+                        raise ValueError(f"Can't convert {i.val} into list of strings.")
+                elif i.name == "BW_STRENGTHS" or i.name == "FLOAT_LIST":  # Handle lists of floats
+                    if isinstance(i.val, str):
+                        i.val = self.parse_list_of_floats(i.val)
+                    elif not isinstance(i.val, list):
+                        raise ValueError(f"Can't convert {i.val} into list of floats.")
+                else:  # Handle lists of integers
+                    if isinstance(i.val, str):
+                        i.val = parse_list(i.val)
+                    elif not isinstance(i.val, list):
+                        raise ValueError(f"Can't convert {i.val} into list of integers.")
             elif i.type == bool:
                 if i.val.lower() in ['true', '1', 'y', 'yes']:
                     i.val = True
@@ -145,11 +168,13 @@ args = ListOfArgs([
     Arg('N_BEADS', help="Number of Simulation Beads.", type=int, default='', val=''),
     Arg('BEDPE_PATH', help="A .bedpe file path with loops. It is required.", type=str, default='', val=''),
     Arg('LEF_TRACK_FILE', help="An optional track file for cohesin or condensin in bw format. If this file is specified LEF preferentially binds were the signal is enriched.", type=str, default='', val=''),
-    Arg('BW_FILES', help="List of bigWig file paths for feature extraction.", type=str, nargs='+', default=[], val=[]),
+    Arg('BW_FILES', help="List of bigWig file paths for feature extraction.", type=list, nargs='+', default=[], val=[]),
     Arg('OUT_PATH', help="Output folder name.", type=str, default='../results', val='../results'),
     Arg('REGION_START', help="Starting region coordinate.", type=int, default='', val=''),
     Arg('REGION_END', help="Ending region coordinate.", type=int, default='', val=''),
     Arg('CHROM', help="Chromosome that corresponds the the modelling region of interest (in case that you do not want to model the whole genome).", type=str, default='', val=''),
+    Arg('FLOAT_LIST', help="List of floating-point numbers.", type=list, nargs='+', default=[], val=[]),
+    Arg('STRING_LIST', help="List of strings.", type=list, nargs='+', default=[], val=[]),
     
     # Stochastic Simulation parameters
     Arg('LEF_RW', help="True in case that you would like to make cohesins slide as random walk, instead of sliding only in one direction.", type=bool, default='True', val='True'),

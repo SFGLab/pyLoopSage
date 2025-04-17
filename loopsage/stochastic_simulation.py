@@ -139,7 +139,7 @@ def unbind_bind(N_beads, track=None):
     Rebinding Monte-Carlo step.
     '''
     if track is not None:
-        weights = track[:-2] / np.sum(track[:-2])
+        weights = track / np.sum(track)
         m_new = np.searchsorted(np.cumsum(weights), np.random.rand())
     else:
         m_new = np.random.randint(0, N_beads - 3)
@@ -275,7 +275,6 @@ class StochasticSimulation:
         print('\nRunning simulation (with parallelization across CPU cores)...')
         start = time.time()
         self.burnin = burnin
-        print('track:',self.lef_track)
         self.Ms, self.Ns, self.Es, self.Ks, self.Fs, self.Bs, self.ufs = run_simulation(self.N_beads, N_steps, MC_step, burnin, T, T_min, fold_norm, fold_norm2, bind_norm, k_norm, self.N_lef, self.N_lef2, self.L, self.R, mode, lef_rw, lef_drift, cross_loop, r, self.N_bws, self.BWs, self.lef_track)
         end = time.time()
         elapsed = end - start
@@ -319,6 +318,9 @@ class StochasticSimulation:
             self.BWs = None
             self.N_bws = 0
         else:
+            if isinstance(self.bw_files, str):
+                self.bw_files = [self.bw_files]
+                self.N_bws = 1
             self.BWs = np.zeros((self.N_bws, self.N_beads))
             for i, f in enumerate(self.bw_files):
                 self.BWs[i, :] = load_track(file=f, region=self.region, chrom=self.chrom, N_beads=self.N_beads, viz=False)

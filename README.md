@@ -226,38 +226,54 @@ An example, illustrated with Chimera software, simulated trajectory of structure
 
 ### Long-table of LoopSage arguments
 
+#### General Settings
 | Argument Name          | Description                                                                                                     | Type        | Default Value       |
 |------------------------|-----------------------------------------------------------------------------------------------------------------|------------|---------------------|
 | PLATFORM              | Name of the platform. Available choices: CPU, CUDA, OpenCL                                                      | str        | CPU               |
 | DEVICE                | Device index for CUDA or OpenCL (count from 0)                                                                  | str        | None                  |
-| N_BEADS               | Number of Simulation Beads.                                                                                     | int        | None                  |
+| OUT_PATH              | Output folder name.                                                                                             | str        | ../results       |
+| SAVE_MDT             | True to save metadata of the stochastic simulation.                                                            | bool       | True                |
+
+#### Input Data
+| Argument Name          | Description                                                                                                     | Type        | Default Value       |
+|------------------------|-----------------------------------------------------------------------------------------------------------------|------------|---------------------|
 | BEDPE_PATH            | A .bedpe file path with loops. It is required.                                                                  | str        | None                  |
 | LEF_TRACK_FILE        | Path to a bw file of cohesin or condensin density. If it is provided, then simulation LEFs preferentially bind in enriched regions. | str | None |
-| OUT_PATH              | Output folder name.                                                                                             | str        | ../results       |
+| BW_FILES              | List of paths to .bw files containing additional data for simulation. Enriched regions would act as barriers for cohesin.                | list       | None                  |
 | REGION_START          | Starting region coordinate.                                                                                     | int        | None                  |
 | REGION_END            | Ending region coordinate.                                                                                       | int        | None                  |
-| BW_FILES              | List of paths to .bw files containing additional data for simulation. Enriched regions would act as barriers for cohesin.                | list       | None                  |
-| BW_STRENGTHS          | List of strengths corresponding to each .bw file.                                                              | list       | None                  |
 | CHROM                 | Chromosome that corresponds to the modeling region of interest.                                                 | str        | None                  |
-| LEF_RW                | True if cohesins slide as a random walk instead of one direction.                                               | bool       | True                |
-| LEF_DRIFT             | True if LEFs are pushed back when they encounter other LEFs.                                                   | bool       | False               |
+
+#### Stochastic Simulation Parameters
+| Argument Name          | Description                                                                                                     | Type        | Default Value       |
+|------------------------|-----------------------------------------------------------------------------------------------------------------|------------|---------------------|
+| N_BEADS               | Number of Simulation Beads.                                                                                     | int        | None                  |
 | N_STEPS               | Number of Monte Carlo steps.                                                                                    | int        | 40000               |
-| N_LEF                 | Number of loop extrusion factors.                                                                               | int        | None                  |
-| N_LEF2                | Number of second family loop extrusion factors.                                                                | int        | 0                   |
 | MC_STEP               | Monte Carlo frequency to avoid autocorrelated ensembles.                                                       | int        | 200                 |
 | BURNIN               | Burn-in period (steps before equilibrium).                                                                      | int        | 1000                |
 | T_INIT                | Initial Temperature of the Stochastic Model.                                                                   | float      | 2.0                 |
 | T_FINAL               | Final Temperature of the Stochastic Model.                                                                     | float      | 1.0                 |
 | METHOD                | Stochastic modeling method (Metropolis or Simulated Annealing).                                                | str        | 'Annealing'         |
+| LEF_RW                | True if cohesins slide as a random walk instead of one direction.                                               | bool       | True                |
+| LEF_DRIFT             | True if LEFs are pushed back when they encounter other LEFs.                                                   | bool       | False               |
+| N_LEF                 | Number of loop extrusion factors.                                                                               | int        | None                  |
+| N_LEF2                | Number of second family loop extrusion factors.                                                                | int        | 0                   |
+
+#### Energy Coefficients
+| Argument Name          | Description                                                                                                     | Type        | Default Value       |
+|------------------------|-----------------------------------------------------------------------------------------------------------------|------------|---------------------|
 | FOLDING_COEFF         | Folding coefficient.                                                                                           | float      | 1.0                 |
 | FOLDING_COEFF2        | Folding coefficient for the second family of LEFs.                                                            | float      | 0.0                 |
 | CROSS_COEFF          | LEF crossing coefficient.                                                                                      | float      | 1.0                 |
 | CROSS_LOOP           | True if the penalty is applied when mi<mj<ni<nj. False if it applies only when mj=ni. When false it is better to enable LEF_DRIFT as well. | bool |True                |
 | BIND_COEFF           | CTCF binding coefficient.                                                                                      | float      | 1.0                 |
-| SAVE_PLOTS           | True to save diagnostic plots.                                                                                 | bool       | True                |
-| SAVE_MDT             | True to save metadata of the stochastic simulation.                                                            | bool       | True                |
-| INITIAL_STRUCTURE_TYPE | Choose from: rw, confined_rw, self_avoiding_rw, helix, circle, spiral, sphere.                                | str        | rw                |
+| BW_STRENGTHS          | List of strengths corresponding to each .bw file.                                                              | list       | None                  |
+
+#### Molecular Dynamics Simulation
+| Argument Name          | Description                                                                                                     | Type        | Default Value       |
+|------------------------|-----------------------------------------------------------------------------------------------------------------|------------|---------------------|
 | SIMULATION_TYPE       | Either EM (energy minimizations) or MD (molecular dynamics).                                                  | str        | None                  |
+| INITIAL_STRUCTURE_TYPE | Choose from: rw, confined_rw, self_avoiding_rw, helix, circle, spiral, sphere.                                | str        | rw                |
 | INTEGRATOR_STEP       | Step of the integrator.                                                                                        | Quantity   | 100 femtosecond   |
 | FORCEFIELD_PATH       | Path to XML file with forcefield.                                                                             | str        | default_xml_path    |
 | ANGLE_FF_STRENGTH     | Angle force strength.                                                                                          | float      | 200.0               |
@@ -269,10 +285,14 @@ An example, illustrated with Chimera software, simulated trajectory of structure
 | EV_FF_POWER          | Excluded-volume power.                                                                                        | float      | 3.0                 |
 | FRICTION             | Friction coefficient of the Langevin integrator.                                                              | float      | 0.1              |
 | TOLERANCE            | Stopping condition for energy minimization.     | float      | 0.001              |
-| VIZ_HEATS            | True to visualize the output average heatmap.                                                                | bool       | True                |
 | SIM_TEMP             | Temperature of the 3D simulation (EM or MD).                                                                  | Quantity   | 310 kelvin        |
 | SIM_STEP             | Amount of simulation steps for loop force adjustments.                                                        | int        | 1000                |
 
+#### Visualization
+| Argument Name          | Description                                                                                                     | Type        | Default Value       |
+|------------------------|-----------------------------------------------------------------------------------------------------------------|------------|---------------------|
+| VIZ_HEATS            | True to visualize the output average heatmap.                                                                | bool       | True                |
+| SAVE_PLOTS           | True to save diagnostic plots.                                                                                 | bool       | True                |
 
 ## Citation
 Please cite the method and biological paper in case that you would like to use this model for your work,
