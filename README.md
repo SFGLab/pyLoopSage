@@ -267,7 +267,7 @@ An example, illustrated with Chimera software, simulated trajectory of structure
 | CROSS_COEFF          | LEF crossing coefficient.                                                                                      | float      | 1.0                 |
 | CROSS_LOOP           | True if the penalty is applied when mi<mj<ni<nj. False if it applies only when mj=ni. When false it is better to enable LEF_DRIFT as well. | bool |True                |
 | BIND_COEFF           | CTCF binding coefficient.                                                                                      | float      | 1.0                 |
-| BW_STRENGTHS          | List of strengths corresponding to each .bw file.                                                              | list       | None                  |
+| BW_STRENGTHS          | List of strengths of the energy (floats) corresponding to each BW file. This equivalent to the `r` parameter in the LoopSage paper.                                                              | list       | None                  |
 
 #### Molecular Dynamics Simulation
 | Argument Name          | Description                                                                                                     | Type        | Default Value       |
