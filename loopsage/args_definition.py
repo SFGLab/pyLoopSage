@@ -23,6 +23,7 @@ class Arg(object):
     type: type
     default: Union[str, float, int, bool, Quantity, None]
     val: Union[str, float, int, bool, Quantity, None]
+    nargs: Union[str, None] = None  # Optional attribute for nargs
 
 # Define custom type to parse list from string
 def parse_list(s):
@@ -78,6 +79,11 @@ class ListOfArgs(list):
                 i.val = int(i.val)
             elif i.type == float:
                 i.val = float(i.val)
+            elif i.type == list:
+                if isinstance(i.val, str):
+                    i.val = parse_list(i.val)
+                elif not isinstance(i.val, list):
+                    raise ValueError(f"Can't convert {i.val} into list type.")
             elif i.type == bool:
                 if i.val.lower() in ['true', '1', 'y', 'yes']:
                     i.val = True
@@ -138,6 +144,8 @@ args = ListOfArgs([
     # Input data
     Arg('N_BEADS', help="Number of Simulation Beads.", type=int, default='', val=''),
     Arg('BEDPE_PATH', help="A .bedpe file path with loops. It is required.", type=str, default='', val=''),
+    Arg('LEF_TRACK_FILE', help="An optional track file for cohesin or condensin in bw format. If this file is specified LEF preferentially binds were the signal is enriched.", type=str, default='', val=''),
+    Arg('BW_FILES', help="List of bigWig file paths for feature extraction.", type=str, nargs='+', default=[], val=[]),
     Arg('OUT_PATH', help="Output folder name.", type=str, default='../results', val='../results'),
     Arg('REGION_START', help="Starting region coordinate.", type=int, default='', val=''),
     Arg('REGION_END', help="Ending region coordinate.", type=int, default='', val=''),
@@ -157,6 +165,7 @@ args = ListOfArgs([
     Arg('FOLDING_COEFF', help="Folding coefficient.", type=float, default='1.0', val='1.0'),
     Arg('FOLDING_COEFF2', help="Folding coefficient for the second family of LEFs.", type=float, default='0.0', val='0.0'),
     Arg('CROSS_COEFF', help="LEF crossing coefficient.", type=float, default='1.0', val='1.0'),
+    Arg('BW_STRENGTHS', help="List of strengths (floats) corresponding to each BW file.", type=list, nargs='+', default=[], val=[]),
     Arg('CROSS_LOOP', help="It true if the penalty is applied for situations mi<mj<ni<nj and mi=nj, and false if it is applied only for mi=nj.", type=bool, default='True', val='True'),
     Arg('BIND_COEFF', help="CTCF binding coefficient.", type=float, default='1.0', val='1.0'),
     Arg('SAVE_PLOTS', help="It should be true in case that you would like to save diagnostic plots. In case that you use small MC_STEP or large N_STEPS is better to mark it as False.", type=bool, default='True', val='True'),

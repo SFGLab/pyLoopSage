@@ -69,9 +69,11 @@ def main():
     N_beads, N_lef, N_lef2 = args.N_BEADS, args.N_LEF, args.N_LEF2
     N_steps, MC_step, burnin, T, T_min = args.N_STEPS, args.MC_STEP, args.BURNIN, args.T_INIT, args.T_FINAL
     mode = args.METHOD
+    bw_paths = args.BW_FILES
     
     # Simulation Strengths
     f, f2, b, kappa = args.FOLDING_COEFF,  args.FOLDING_COEFF2, args.BIND_COEFF, args.CROSS_COEFF
+    r = args.BW_STRENGTHS
     
     # Definition of region
     region, chrom = [args.REGION_START,args.REGION_END], args.CHROM
@@ -81,12 +83,12 @@ def main():
     bedpe_file = args.BEDPE_PATH
     
     # Run Simulation
-    sim = StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=N_beads,N_lef=N_lef,N_lef2=N_lef2)
-    Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=args.SAVE_PLOTS,save=args.SAVE_MDT,lef_rw=args.LEF_RW,f=f,f2=f2,b=b,kappa=kappa,lef_drift=args.LEF_DRIFT,cross_loop=args.CROSS_LOOP)
+    sim = StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=N_beads,N_lef=N_lef,N_lef2=N_lef2, bw_files=bw_paths, track_file=args.LEF_TRACK_FILE)
+    Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=args.SAVE_PLOTS,save=args.SAVE_MDT,lef_rw=args.LEF_RW,f=f,f2=f2,b=b,kappa=kappa,lef_drift=args.LEF_DRIFT,cross_loop=args.CROSS_LOOP,r=r)
     if args.SIMULATION_TYPE=='EM':
         sim.run_EM(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.EV_FF_POWER,args.TOLERANCE,args.FRICTION,args.INTEGRATOR_STEP,args.SIM_TEMP,args.INITIAL_STRUCTURE_TYPE,args.VIZ_HEATS,args.FORCEFIELD_PATH)
     elif args.SIMULATION_TYPE=='MD':
-        sim.run_MD(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.EV_FF_POWER,args.TOLERANCE,args.FRICTION,args.INTEGRATOR_STEP,args.SIM_TEMP,args.INITIAL_STRUCTURE_TYPE,args.SIM_STEP,args.VIZ_HEATS,args.FORCEFIELD_PATH,args.EV_P,args.CONTINUOUS_TOPOISOMERASE)
+        sim.run_MD(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.EV_FF_POWER,args.TOLERANCE,args.FRICTION,args.INTEGRATOR_STEP,args.SIM_TEMP,args.INITIAL_STRUCTURE_TYPE,args.SIM_STEP,args.VIZ_HEATS,args.FORCEFIELD_PATH,args.EV_P,args.CONTINUOUS_TOP)
     elif args.SIMULATION_TYPE==None:
         print('\n3D simulation did not run because it was not specified. Please specify argument SIMULATION_TYPE as EM or MD.')
     else:

@@ -232,9 +232,12 @@ An example, illustrated with Chimera software, simulated trajectory of structure
 | DEVICE                | Device index for CUDA or OpenCL (count from 0)                                                                  | str        | None                  |
 | N_BEADS               | Number of Simulation Beads.                                                                                     | int        | None                  |
 | BEDPE_PATH            | A .bedpe file path with loops. It is required.                                                                  | str        | None                  |
+| LEF_TRACK_FILE        | Path to a bw file of cohesin or condensin density. If it is provided, then simulation LEFs preferentially bind in enriched regions. | str | None |
 | OUT_PATH              | Output folder name.                                                                                             | str        | ../results       |
 | REGION_START          | Starting region coordinate.                                                                                     | int        | None                  |
 | REGION_END            | Ending region coordinate.                                                                                       | int        | None                  |
+| BW_FILES              | List of paths to .bw files containing additional data for simulation.                                           | list       | None                  |
+| BW_STRENGTHS          | List of strengths corresponding to each .bw file.                                                              | list       | None                  |
 | CHROM                 | Chromosome that corresponds to the modeling region of interest.                                                 | str        | None                  |
 | LEF_RW                | True if cohesins slide as a random walk instead of one direction.                                               | bool       | True                |
 | LEF_DRIFT             | True if LEFs are pushed back when they encounter other LEFs.                                                   | bool       | False               |

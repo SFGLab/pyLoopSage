@@ -39,6 +39,7 @@ setup(
         'imageio',
         'imageio[ffmpeg]',
         'pillow',
+        'pyBigWig',
     ],
     entry_points={
         'console_scripts': [

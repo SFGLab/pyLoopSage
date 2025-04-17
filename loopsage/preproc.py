@@ -2,7 +2,7 @@ import numpy as np
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
-# import pyBigWig
+import pyBigWig
 from matplotlib.pyplot import figure
 
 def binding_vectors_from_bedpe(bedpe_file,N_beads,region,chrom,normalization=False,viz=False):
@@ -101,24 +101,24 @@ def get_rnap_energy(path,region,chrom,N_beads,normalization):
 def distance_point_line(x0,y0,a=1,b=-1,c=0):
     return np.abs(a*x0+b*y0+c)/np.sqrt(a**2+b**2)
 
-# def load_track(file,region,chrom,N_beads,viz=False,roll=False):
-#     bw = pyBigWig.open(file)
-#     weights = bw_to_array(bw, region, chrom, N_beads,viz,roll)
-#     return weights[:N_beads]
+def load_track(file,region,chrom,N_beads,viz=False,roll=False):
+    bw = pyBigWig.open(file)
+    weights = bw_to_array(bw, region, chrom, N_beads,viz,roll)
+    return weights[:N_beads]
 
-# def bw_to_array(bw, region, chrom, N_beads, viz=False, roll=False):
-#     step = (region[1]-region[0])//N_beads
-#     bw_array = bw.values(chrom, region[0], region[1])
-#     bw_array = np.nan_to_num(bw_array)
-#     bw_array_new = list()
-#     for i in range(step,len(bw_array)+1,step):
-#         bw_array_new.append(np.average(bw_array[(i-step):i]))
-#     weights = (np.roll(np.array(bw_array_new),3)+np.roll(np.array(bw_array_new),-3))/2 if roll else bw_array_new
-#     if viz:
-#         figure(figsize=(15, 5))
-#         plt.plot(weights)
-#         plt.grid()
-#         plt.title('ChIP-Seq signal',fontsize=20)
-#         plt.close()
+def bw_to_array(bw, region, chrom, N_beads, viz=False, roll=False):
+    step = (region[1]-region[0])//N_beads
+    bw_array = bw.values(chrom, region[0], region[1])
+    bw_array = np.nan_to_num(bw_array)
+    bw_array_new = list()
+    for i in range(step,len(bw_array)+1,step):
+        bw_array_new.append(np.average(bw_array[(i-step):i]))
+    weights = (np.roll(np.array(bw_array_new),3)+np.roll(np.array(bw_array_new),-3))/2 if roll else bw_array_new
+    if viz:
+        figure(figsize=(15, 5))
+        plt.plot(weights)
+        plt.grid()
+        plt.title('ChIP-Seq signal',fontsize=20)
+        plt.close()
     
-#     return weights
+    return weights
