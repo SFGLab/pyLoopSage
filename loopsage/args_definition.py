@@ -190,7 +190,7 @@ args = ListOfArgs([
     Arg('FOLDING_COEFF', help="Folding coefficient.", type=float, default='1.0', val='1.0'),
     Arg('FOLDING_COEFF2', help="Folding coefficient for the second family of LEFs.", type=float, default='0.0', val='0.0'),
     Arg('CROSS_COEFF', help="LEF crossing coefficient.", type=float, default='1.0', val='1.0'),
-    Arg('BW_STRENGTHS', help="List of strengths (floats) corresponding to each BW file.", type=list, nargs='+', default=[], val=[]),
+    Arg('BW_STRENGTHS', help="List of strengths of the energy (floats) corresponding to each BW file. This equivalent to the `r` parameter in the LoopSage paper.", type=list, nargs='+', default=[], val=[]),
     Arg('CROSS_LOOP', help="It true if the penalty is applied for situations mi<mj<ni<nj and mi=nj, and false if it is applied only for mi=nj.", type=bool, default='True', val='True'),
     Arg('BIND_COEFF', help="CTCF binding coefficient.", type=float, default='1.0', val='1.0'),
     Arg('SAVE_PLOTS', help="It should be true in case that you would like to save diagnostic plots. In case that you use small MC_STEP or large N_STEPS is better to mark it as False.", type=bool, default='True', val='True'),
