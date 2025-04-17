@@ -236,7 +236,7 @@ An example, illustrated with Chimera software, simulated trajectory of structure
 | OUT_PATH              | Output folder name.                                                                                             | str        | ../results       |
 | REGION_START          | Starting region coordinate.                                                                                     | int        | None                  |
 | REGION_END            | Ending region coordinate.                                                                                       | int        | None                  |
-| BW_FILES              | List of paths to .bw files containing additional data for simulation.                                           | list       | None                  |
+| BW_FILES              | List of paths to .bw files containing additional data for simulation. Enriched regions would act as barriers for cohesin.                | list       | None                  |
 | BW_STRENGTHS          | List of strengths corresponding to each .bw file.                                                              | list       | None                  |
 | CHROM                 | Chromosome that corresponds to the modeling region of interest.                                                 | str        | None                  |
 | LEF_RW                | True if cohesins slide as a random walk instead of one direction.                                               | bool       | True                |
