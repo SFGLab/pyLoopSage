@@ -20,7 +20,7 @@ setup(
     'loopsage': ['forcefields/*'],
     },
     install_requires=[  # List your package dependencies here
-        'numpy==1.24.3',
+        'numpy>1.2,<2.0',
         'numba',
         'scipy',
         'pandas',
