@@ -154,12 +154,12 @@ def slide(m_old, n_old, ms, ns, N_beads, rw=True, drift=True):
     choices = np.array([-1, 1], dtype=np.int64)
     r1 = np.random.choice(choices) if rw else -1
     r2 = np.random.choice(choices) if rw else 1
-    m_new = m_old + r1 if m_old + r1>=0 else 0
-    if np.any(ns==m_new) and drift and m_old-r1<n_old-1: 
-        m_new =  m_old - r1 if m_old + r1>=0 else 0
-    n_new = n_old + r2 if n_old + r2<N_beads else N_beads-1
-    if np.any(ms==n_new) and drift and n_old-r2>m_old+1: 
-        n_new =  n_old - r2 if n_old + r2<N_beads else N_beads-1
+    m_new = max(m_old + r1, 0)
+    if np.any(ns == m_new) and drift and m_old - r1 < n_old - 1: 
+        m_new = max(m_old - r1, 0)
+    n_new = min(n_old + r2, N_beads - 1)
+    if np.any(ms == n_new) and drift and n_old - r2 > m_old + 1: 
+        n_new = min(n_old - r2, N_beads - 1)
     return int(m_new), int(n_new)
 
 @njit
