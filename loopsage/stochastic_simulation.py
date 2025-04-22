@@ -47,14 +47,15 @@ def E_bind(L, R, ms, ns, bind_norm):
     return E_b
 
 @njit
-def E_cross(ms, ns, k_norm, cross_loop):
+def E_cross(ms, ns, k_norm, N_lef, cross_loop=True, between_families_penalty=True):
     '''
     The crossing energy.
     '''
     crossing = 0.0
     for i in prange(len(ms)):
         for j in range(i + 1, len(ms)):
-            crossing += Kappa(ms[i], ns[i], ms[j], ns[j], cross_loop)
+            if between_families_penalty or (i < N_lef and j < N_lef) or (i >= N_lef and j >= N_lef):
+                crossing += Kappa(ms[i], ns[i], ms[j], ns[j], cross_loop)
     return k_norm * crossing
 
 @njit
@@ -76,11 +77,11 @@ def E_bw(N_bws, r, BWs, ms, ns):
     return E_bw
 
 @njit
-def get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, N_lef, N_lef2, cross_loop, r=None, N_bws=0, BWs=None):
+def get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, N_lef, N_lef2, cross_loop, r=None, N_bws=0, BWs=None, between_families_penalty=True):
     ''''
     The total energy.
     '''
-    energy = E_bind(L, R, ms, ns, bind_norm) + E_cross(ms, ns, k_norm, cross_loop) + E_fold(ms, ns, fold_norm)
+    energy = E_bind(L, R, ms, ns, bind_norm) + E_cross(ms, ns, k_norm, cross_loop, between_families_penalty) + E_fold(ms, ns, fold_norm)
     if fold_norm2!=0: energy += E_fold(ms[N_lef:N_lef+N_lef2],ns[N_lef:N_lef+N_lef2], fold_norm2)
     if r is not None and BWs is not None: energy += E_bw(N_bws, r, BWs, ms, ns)
     return energy
@@ -107,19 +108,20 @@ def get_dE_bw(N_bws, r, BWs, ms, ns, m_new, n_new, idx):
     return dE_bw
 
 @njit
-def get_dE_cross(ms, ns, m_new, n_new, idx, k_norm, cross_loop):
+def get_dE_cross(ms, ns, m_new, n_new, idx, k_norm, cross_loop, N_lef, between_families_penalty):
     '''
     Energy difference for crossing energy.
     '''
     K1, K2 = 0, 0
     for i in prange(len(ms)):
         if i != idx:
-            K1 += Kappa(ms[idx], ns[idx], ms[i], ns[i], cross_loop)
-            K2 += Kappa(m_new, n_new, ms[i], ns[i], cross_loop)
+            if between_families_penalty or (idx < N_lef and i < N_lef) or (idx >= N_lef and i >= N_lef):
+                K1 += Kappa(ms[idx], ns[idx], ms[i], ns[i], cross_loop)
+                K2 += Kappa(m_new, n_new, ms[i], ns[i], cross_loop)
     return k_norm * (K2 - K1)
 
 @njit
-def get_dE(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, m_new, n_new, idx, N_lef, N_lef2, cross_loop, r=None, N_bws=0, BWs=None):
+def get_dE(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, m_new, n_new, idx, N_lef, N_lef2, cross_loop, r=None, N_bws=0, BWs=None, between_families_penalty=True):
     '''
     Total energy difference.
     '''
@@ -129,7 +131,7 @@ def get_dE(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, m_new, n_new,
     else:
         dE += get_dE_fold(fold_norm2,ms[N_lef:N_lef+N_lef2],ns[N_lef:N_lef+N_lef2],m_new,n_new,idx-N_lef)
     dE += get_dE_bind(L, R, bind_norm, ms, ns, m_new, n_new, idx)
-    dE += get_dE_cross(ms, ns, m_new, n_new, idx, k_norm, cross_loop)
+    dE += get_dE_cross(ms, ns, m_new, n_new, idx, k_norm, cross_loop, N_lef, between_families_penalty)
     if r is not None and BWs is not None: dE += get_dE_bw(N_bws, r, BWs, ms, ns, m_new, n_new, idx)
     return dE
 
@@ -185,14 +187,14 @@ def initialize(N_beads, N_lef, track=None):
     return ms, ns
 
 @njit
-def run_simulation(N_beads, N_steps, MC_step, burnin, T, T_min, fold_norm, fold_norm2, bind_norm, k_norm, N_lef, N_lef2, L, R, mode, lef_rw=True, lef_drift=True, cross_loop=True, r=None, N_bws=0, BWs=None, track=None):
+def run_simulation(N_beads, N_steps, MC_step, burnin, T, T_min, fold_norm, fold_norm2, bind_norm, k_norm, N_lef, N_lef2, L, R, mode, lef_rw=True, lef_drift=True, cross_loop=True, r=None, N_bws=0, BWs=None, track=None, between_families_penalty=True):
     '''
     Runs the Monte Carlo simulation.
     '''
     Ti = T
     bi = burnin // MC_step
     ms, ns = initialize(N_beads, N_lef + N_lef2, track)
-    E = get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, N_lef, N_lef2, cross_loop, r, N_bws, BWs)
+    E = get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, N_lef, N_lef2, cross_loop, r, N_bws, BWs, between_families_penalty)
     Es, Ks, Fs, Bs, ufs = np.zeros(N_steps // MC_step, dtype=np.float64), np.zeros(N_steps // MC_step, dtype=np.float64), np.zeros(N_steps // MC_step, dtype=np.float64), np.zeros(N_steps // MC_step, dtype=np.float64), np.zeros(N_steps // MC_step, dtype=np.float64)
     Ms, Ns = np.zeros((N_lef + N_lef2, N_steps // MC_step), dtype=np.int64), np.zeros((N_lef + N_lef2, N_steps // MC_step), dtype=np.int64)
 
@@ -207,7 +209,7 @@ def run_simulation(N_beads, N_steps, MC_step, burnin, T, T_min, fold_norm, fold_
                 m_new, n_new = slide(ms[j], ns[j], ms, ns, N_beads, lef_rw, lef_drift)
 
             # Compute energy difference
-            dE = get_dE(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, m_new, n_new, j, N_lef, N_lef2, cross_loop, r, N_bws, BWs)
+            dE = get_dE(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, m_new, n_new, j, N_lef, N_lef2, cross_loop, r, N_bws, BWs, between_families_penalty)
             
             if dE <= 0 or np.exp(-dE / Ti) > np.random.rand():
                 ms[j], ns[j] = m_new, n_new
@@ -220,7 +222,7 @@ def run_simulation(N_beads, N_steps, MC_step, burnin, T, T_min, fold_norm, fold_
         if i % MC_step == 0:
             ufs[i // MC_step] = unfolding_metric(ms, ns, N_beads)
             Es[i // MC_step] = E
-            Ks[i // MC_step] = E_cross(ms, ns, k_norm, cross_loop)
+            Ks[i // MC_step] = E_cross(ms, ns, k_norm, cross_loop, N_lef, between_families_penalty)
             Fs[i // MC_step] = E_fold(ms, ns, fold_norm)
             Bs[i // MC_step] = E_bind(L, R, ms, ns, bind_norm)
     return Ms, Ns, Es, Ks, Fs, Bs, ufs
@@ -251,7 +253,7 @@ class StochasticSimulation:
         print('Number of LEFs:',self.N_lef+self.N_lef2)
         self.path = make_folder(out_dir)
     
-    def run_energy_minimization(self, N_steps, MC_step, burnin, T=1, T_min=0, mode='Metropolis', viz=False, save=False, f=1.0, f2=0.0, b=1.0, kappa=1.0, lef_rw=True, lef_drift=True, cross_loop=True, r=None):
+    def run_energy_minimization(self, N_steps, MC_step, burnin, T=1, T_min=0, mode='Metropolis', viz=False, save=False, f=1.0, f2=0.0, b=1.0, kappa=1.0, lef_rw=True, lef_drift=True, cross_loop=True, r=None, between_families_penalty=True):
         '''
         Implementation of the stochastic Monte Carlo simulation.
 
@@ -265,6 +267,7 @@ class StochasticSimulation:
         r (list): strength of each ChIP-Seq experiment.
         N_bws (int): number of binding weight matrices.
         BWs (np.ndarray): binding weight matrices.
+        between_families_penalty (bool): whether to apply penalty for interactions between families.
         '''
         # Define normalization constants
         fold_norm, fold_norm2, bind_norm, k_norm = -self.N_beads*f/((self.N_lef+self.N_lef2)*np.log(self.N_beads/(self.N_lef+self.N_lef2))), -self.N_beads*f2/((self.N_lef+self.N_lef2)*np.log(self.N_beads/(self.N_lef+self.N_lef2))), -self.N_beads*b/(np.sum(self.L)+np.sum(self.R)), kappa*1e4
@@ -275,7 +278,7 @@ class StochasticSimulation:
         print('\nRunning simulation (with parallelization across CPU cores)...')
         start = time.time()
         self.burnin = burnin
-        self.Ms, self.Ns, self.Es, self.Ks, self.Fs, self.Bs, self.ufs = run_simulation(self.N_beads, N_steps, MC_step, burnin, T, T_min, fold_norm, fold_norm2, bind_norm, k_norm, self.N_lef, self.N_lef2, self.L, self.R, mode, lef_rw, lef_drift, cross_loop, r, self.N_bws, self.BWs, self.lef_track)
+        self.Ms, self.Ns, self.Es, self.Ks, self.Fs, self.Bs, self.ufs = run_simulation(self.N_beads, N_steps, MC_step, burnin, T, T_min, fold_norm, fold_norm2, bind_norm, k_norm, self.N_lef, self.N_lef2, self.L, self.R, mode, lef_rw, lef_drift, cross_loop, r, self.N_bws, self.BWs, self.lef_track, between_families_penalty)
         end = time.time()
         elapsed = end - start
         print(f'Computation finished successfully in {elapsed//3600:.0f} hours, {elapsed%3600//60:.0f} minutes and {elapsed%60:.0f} seconds.')
@@ -294,7 +297,7 @@ class StochasticSimulation:
                 file.write(f'Folding energy in equilibrium is {np.average(self.Fs[burnin//MC_step:]):.2f}. Folding coefficient f={f}. Folding coefficient for the second family f2={f2}\n')
                 file.write(f'Binding energy in equilibrium is {np.average(self.Bs[burnin//MC_step:]):.2f}. Binding coefficient b={b}.\n')
                 if r is not None and self.BWs is not None:
-                    file.write(f'RNApII binding energy included with {N_bws} binding weight matrices.\n')
+                    file.write(f'RNApII binding energy included with {self.N_bws} binding weight matrices.\n')
                 file.write(f'Energy at equilibrium: {np.average(self.Es[self.burnin//MC_step:]):.2f}.\n')
             np.save(save_dir + 'Ms.npy', self.Ms)
             np.save(save_dir + 'Ns.npy', self.Ns)
@@ -342,22 +345,27 @@ def main():
     # Definition of Monte Carlo parameters
     N_steps, MC_step, burnin, T, T_min = int(4e4), int(5e2), 1000, 3.0, 1.0
     N_lef, N_lef2 = 100, 20
-    lew_rw=True
+    lew_rw = True
     mode = 'Annealing'
     
     # Simulation Strengths
     f, f2, b, kappa = 1.0, 2.0, 1.0, 1.0
     
     # Definition of region
-    region, chrom = [15550000,16850000], 'chr6'
+    region, chrom = [15550000, 16850000], 'chr6'
     
     # Definition of data
-    output_name='tmp'
+    output_name = 'tmp'
     bedpe_file = '/home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe'
     
-    sim = StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=1000,N_lef=N_lef,N_lef2=N_lef2)
-    Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True,f=f,f2=f2, b=b, kappa=kappa, lef_rw=lew_rw)
-    sim.run_MD('CUDA',continuous_topoisomerase=True, p_ev=0.01)
+    # Between family penalty
+    between_families_penalty = True
+    
+    sim = StochasticSimulation(region, chrom, bedpe_file, out_dir=output_name, N_beads=1000, N_lef=N_lef, N_lef2=N_lef2)
+    Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(
+        N_steps, MC_step, burnin, T, T_min, mode=mode, viz=True, save=True, f=f, f2=f2, b=b, kappa=kappa, lef_rw=lew_rw, between_families_penalty=between_families_penalty
+    )
+    sim.run_MD('CUDA', continuous_topoisomerase=True, p_ev=0.01)
 
 if __name__=='__main__':
     main()

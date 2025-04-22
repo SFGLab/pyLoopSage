@@ -258,6 +258,8 @@ An example, illustrated with Chimera software, simulated trajectory of structure
 | LEF_DRIFT             | True if LEFs are pushed back when they encounter other LEFs.                                                   | bool       | False               |
 | N_LEF                 | Number of loop extrusion factors.                                                                               | int        | None                  |
 | N_LEF2                | Number of second family loop extrusion factors.                                                                | int        | 0                   |
+| CROSS_LOOP           | True if the penalty is applied when mi<mj<ni<nj. False if it applies only when mj=ni. When false it is better to enable LEF_DRIFT as well. | bool |True                |
+| BETWEEN_FAMILIES_PENALTY | Penalty applied when loops from different LEF families cross.                                                | bool     | True                 |
 
 #### Energy Coefficients
 | Argument Name          | Description                                                                                                     | Type        | Default Value       |
@@ -265,7 +267,6 @@ An example, illustrated with Chimera software, simulated trajectory of structure
 | FOLDING_COEFF         | Folding coefficient.                                                                                           | float      | 1.0                 |
 | FOLDING_COEFF2        | Folding coefficient for the second family of LEFs.                                                            | float      | 0.0                 |
 | CROSS_COEFF          | LEF crossing coefficient.                                                                                      | float      | 1.0                 |
-| CROSS_LOOP           | True if the penalty is applied when mi<mj<ni<nj. False if it applies only when mj=ni. When false it is better to enable LEF_DRIFT as well. | bool |True                |
 | BIND_COEFF           | CTCF binding coefficient.                                                                                      | float      | 1.0                 |
 | BW_STRENGTHS          | List of strengths of the energy (floats) corresponding to each BW file. This equivalent to the `r` parameter in the LoopSage paper.                                                              | list       | None                  |
 
