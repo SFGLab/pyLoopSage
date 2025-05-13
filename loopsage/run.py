@@ -1,7 +1,6 @@
 from .stochastic_simulation import *
 from .args_definition import *
-import os
-import time
+from .knots import *
 import argparse
 import configparser
 from typing import List
@@ -95,5 +94,9 @@ def main():
     else:
         IndentationError('Uknown simulation type. It can be either MD or EM.')
 
+    # Knoting
+    if args.DETECT_KNOTS:
+        link_number_ensemble(path=args.OUT_PATH, viz=args.SAVE_PLOTS, mode=args.SIMULATION_TYPE)
+    
 if __name__=='__main__':
     main()

@@ -196,6 +196,7 @@ args = ListOfArgs([
     Arg('BIND_COEFF', help="CTCF binding coefficient.", type=float, default='1.0', val='1.0'),
     Arg('SAVE_PLOTS', help="It should be true in case that you would like to save diagnostic plots. In case that you use small MC_STEP or large N_STEPS is better to mark it as False.", type=bool, default='True', val='True'),
     Arg('SAVE_MDT', help="In case that you would liketo save metadata of the stochastic simulation.", type=bool, default='True', val='True'),
+    Arg('DETECT_KNOTS', help="In case that you would like to find out if there are knots in the structure.", type=bool, default='False', val='False'),
     
     # Molecular Dynamic Properties
     Arg('INITIAL_STRUCTURE_TYPE', help="you can choose between: rw, confined_rw, self_avoiding_rw, helix, circle, spiral, sphere.", type=str, default='rw', val='rw'),
