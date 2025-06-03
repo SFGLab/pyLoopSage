@@ -101,60 +101,70 @@ def average_pooling(mat,dim_new):
     im_resized = np.array(im.resize(size))
     return im_resized
 
-def correlation_plot(given_heatmap,T_range,path):
-    pearsons, spearmans, kendals = np.zeros(len(T_range)), np.zeros(len(T_range)), np.zeros(len(T_range))
-    exp_heat_dim = len(given_heatmap)
-    for i, T in enumerate(T_range):
-        N_beads,N_coh,kappa,f,b = 500,30,20000,-2000,-2000
-        N_steps, MC_step, burnin = int(1e4), int(1e2), 20
-        L, R = binding_vectors_from_bedpe_with_peaks("/mnt/raid/data/Zofia_Trios/bedpe/hg00731_CTCF_pulled_2.bedpe",N_beads,[178421513,179491193],'chr1',False)
-        sim = LoopSage(N_beads,N_coh,kappa,f,b,L,R)
-        Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,mode='Metropolis',viz=True,vid=False)
-        md = MD_LE(Ms,Ns,N_beads,burnin,MC_step)
-        heat = md.run_pipeline(write_files=False,plots=False)
-        if N_beads>exp_heat_dim:
-            heat = average_pooling(heat,exp_heat_dim)
-            L = exp_heat_dim
-        else:
-            given_heatmap = average_pooling(given_heatmap,N_beads)
-            L = N_beads
-        a, b = np.reshape(heat, (L**2, )), np.reshape(given_heatmap, (L**2, ))
-        pearsons[i] = scipy.stats.pearsonr(a,b)[0]
-        spearmans[i] = scipy.stats.spearmanr(a, b).correlation
-        kendals[i] = scipy.stats.kendalltau(a, b).correlation
-        print(f'\nTemperature:{T}, Pearson Correlation coefficient:{pearsons[i]}, Spearman:{spearmans[i]}, Kendal:{kendals[i]}\n\n')
+def coh_traj_plot(ms, ns, N_beads, path, jump_threshold=200, min_stable_time=10):
+    """
+    Plots the trajectories of cohesins as filled regions between their two ends over time.
 
-    figure(figsize=(10, 8), dpi=600)
-    plt.plot(T_range,pearsons,'bo-')
-    plt.plot(T_range,spearmans,'ro-')
-    plt.plot(T_range,kendals,'go-')
-    # plt.plot(T_range,Cross,'go-')
-    plt.ylabel('Correlation with Experimental Heatmap', fontsize=16)
-    plt.xlabel('Temperature', fontsize=16)
-    # plt.yscale('symlog')
-    plt.legend(['Pearson','Spearman','Kendall Tau'])
-    plt.grid()
-    save_path = path+'/plots/pearson_plot.pdf' if path!=None else 'pearson_plot.pdf'
-    plt.savefig(save_path,dpi=600)
-    plt.close()
+    Parameters:
+        ms (list of arrays): List where each element is an array of left-end positions of a cohesin over time.
+        ns (list of arrays): List where each element is an array of right-end positions of a cohesin over time.
+        N_beads (int): Total number of beads (simulation sites) in the system.
+        path (str): Directory path where the plots will be saved.
+        jump_threshold (int, optional): Maximum allowed jump (in bead units) between consecutive time points for both ends.
+            If the jump between two consecutive positions exceeds this threshold for either end, that segment is considered a jump and is masked out.
+            Lower values make the criterion for erasing (masking) trajectories more strict (more segments are erased), higher values make it less strict.
+        min_stable_time (int, optional): Minimum number of consecutive time points required for a region to be considered stable and shown.
+            Shorter stable regions (less than this value) are erased (masked out).
+            Higher values make the criterion more strict (only longer stable regions are shown), lower values make it less strict.
 
-def coh_traj_plot(ms,ns,N_beads,path):
+    The function highlights only stable, non-jumping regions of cohesin trajectories.
+    """
+    print('\nPlotting trajectories of cohesins...')
     N_coh = len(ms)
-    figure(figsize=(18, 25))
-    color = ["#"+''.join([rd.choice('0123456789ABCDEF') for j in range(6)]) for i in range(N_coh)]
-    size = 0.01 if (N_beads > 500 or N_coh > 20) else 0.1
-    
-    ls = 'None'
-    for nn in range(N_coh):
-        tr_m, tr_n = ms[nn], ns[nn]
-        plt.fill_between(np.arange(len(tr_m)), tr_m, tr_n, color=color[nn], alpha=0.4, interpolate=False, linewidth=0)
-    plt.xlabel('Simulation Step', fontsize=24)
-    plt.ylabel('Position of Cohesin', fontsize=24)
+    figure(figsize=(10, 10), dpi=200)
+    cmap = plt.get_cmap('prism')
+    colors = [cmap(i / N_coh) for i in range(N_coh)]
+
+    for nn in tqdm(range(N_coh)):
+        tr_m, tr_n = np.array(ms[nn]), np.array(ns[nn])
+        steps = np.arange(len(tr_m))
+
+        # Calculate jump size for tr_m and tr_n independently
+        jumps_m = np.abs(np.diff(tr_m))
+        jumps_n = np.abs(np.diff(tr_n))
+
+        # Create mask: True = good point, False = jump
+        jump_mask = np.ones_like(tr_m, dtype=bool)
+        jump_mask[1:] = (jumps_m < jump_threshold) & (jumps_n < jump_threshold)  # both must be below threshold
+
+        # Now we want to detect stable regions
+        stable_mask = np.copy(jump_mask)
+
+        # Find connected regions
+        current_length = 0
+        for i in range(len(stable_mask)):
+            if jump_mask[i]:
+                current_length += 1
+            else:
+                if current_length < min_stable_time:
+                    stable_mask[i-current_length:i] = False
+                current_length = 0
+        # Handle last region
+        if current_length < min_stable_time:
+            stable_mask[len(stable_mask)-current_length:] = False
+
+        # Apply mask
+        tr_m_masked = np.ma.masked_array(tr_m, mask=~stable_mask)
+        tr_n_masked = np.ma.masked_array(tr_n, mask=~stable_mask)
+
+        plt.fill_between(steps, tr_m_masked, tr_n_masked,
+                         color=colors[nn], alpha=0.6, interpolate=False, linewidth=0)
+    plt.xlabel('MC Step', fontsize=16)
+    plt.ylabel('Simulation Beads', fontsize=16)
     plt.gca().invert_yaxis()
-    save_path = path+'/plots/coh_trajectories.png' if path!=None else 'coh_trajectories.png'
-    plt.savefig(save_path, format='png', dpi=200)
-    save_path = path+'/plots/coh_trajectories.svg' if path!=None else 'coh_trajectories.svg'
-    plt.savefig(save_path, format='svg', dpi=200)
+    plt.ylim((0, N_beads))
+    save_path = path + '/plots/LEFs.png'
+    plt.savefig(save_path, format='png',dpi=200)
     plt.close()
 
 def coh_probdist_plot(ms,ns,N_beads,path):

@@ -205,6 +205,6 @@ def link_number_ensemble(path, step=1, mode='MD', viz=False):
         plt.title('Histogram of Number of Links')
         plt.savefig(path+'/plots/links_histogram.png')
         plt.close()
+    np.save(path+'/other/links.npy', nlinks)
     print(f'Average number of links: {avg_link_number:.2f} ± {std_link_number:.2f}')
-    print(f'Number of links: {nlinks}')
     return avg_link_number, std_link_number, nlinks

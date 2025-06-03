@@ -198,7 +198,16 @@ def run_simulation(N_beads, N_steps, MC_step, burnin, T, T_min, fold_norm, fold_
     Es, Ks, Fs, Bs, ufs = np.zeros(N_steps // MC_step, dtype=np.float64), np.zeros(N_steps // MC_step, dtype=np.float64), np.zeros(N_steps // MC_step, dtype=np.float64), np.zeros(N_steps // MC_step, dtype=np.float64), np.zeros(N_steps // MC_step, dtype=np.float64)
     Ms, Ns = np.zeros((N_lef + N_lef2, N_steps // MC_step), dtype=np.int64), np.zeros((N_lef + N_lef2, N_steps // MC_step), dtype=np.int64)
 
+    last_percent = -1
+
     for i in range(N_steps):
+        # Print progress every 5%
+        percent = int(100 * i / N_steps)
+        if percent % 5 == 0 and percent != last_percent:
+            # Numba can't use print with flush, so just print
+            print(f"Progress: {percent} % completed.")
+            last_percent = percent
+        
         Ti = T - (T - T_min) * (i + 1) / N_steps if mode == 'Annealing' else T
         for j in range(N_lef + N_lef2):
             # Randomly choose a move (sliding or rebinding)
@@ -275,7 +284,7 @@ class StochasticSimulation:
         r = np.full(self.N_bws, -self.N_beads / 10) if not r and self.N_bws > 0 else (None if not r else r)
 
         # Run simulation
-        print('\nRunning simulation (with parallelization across CPU cores)...')
+        print('\nRunning simulation (with numba acceleration)...')
         start = time.time()
         self.burnin = burnin
         self.Ms, self.Ns, self.Es, self.Ks, self.Fs, self.Bs, self.ufs = run_simulation(self.N_beads, N_steps, MC_step, burnin, T, T_min, fold_norm, fold_norm2, bind_norm, k_norm, self.N_lef, self.N_lef2, self.L, self.R, mode, lef_rw, lef_drift, cross_loop, r, self.N_bws, self.BWs, self.lef_track, between_families_penalty)

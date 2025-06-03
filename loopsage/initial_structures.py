@@ -117,7 +117,6 @@ def random_walk_structure(N_beads, step_size=1):
     
     return V
 
-
 def compute_init_struct(N_beads,mode='rw'):
     match mode:
         case 'rw':

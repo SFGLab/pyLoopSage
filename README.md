@@ -80,6 +80,51 @@ In general the user can run simulation in two different ways:
 
 Can be easily installed with `pip install pyLoopSage`. To have CUDA acceleration, it is needed to have cuda-toolkit installed in case that you use nvidia drivers (otherwise you can use OpenCL or parallelization across CPU cores).
 
+## 🐳 Running RepliSage with Docker
+
+To use RepliSage in a fully containerized and reproducible way, you can build and run it using Docker. This is a very efficient way when you want to use CUDA.
+
+### Step 1: Build the Docker Image
+
+Clone the repository and build the image:
+
+```bash
+docker build -t pyloopsage-cuda .
+```
+
+The `Dockerfile` can be found in the GitHub repo of pyLoopSage.
+
+### Step 2: Run the Simulation
+
+Use the following command to run your simulation:
+
+```bash
+docker run --rm -it --gpus all \
+  -v "$PWD/config.ini:/app/config.ini:ro" \
+  -v "$PWD/tmp:/app/output" \
+  -v "$HOME/Data:/home/blackpianocat/Data:ro" \
+  pyloopsage-cuda \
+  python -m loopsage.run -c /app/config.ini
+```
+
+**What this does:**
+
+* `--rm`: Automatically removes the container after it finishes.
+* `--gpus all`: It detects the gpus of the system.
+* `-it`: Runs with an interactive terminal.
+* `-v "$PWD/config.ini:/app/config.ini:ro"`: Mounts your local `config.ini` as read-only inside the container.
+* `-v "$PWD/tmp:/app/output"`: Maps the `tmp/` directory for outputs.
+* `-v "$HOME/Data:/home/blackpianocat/Data:ro"`: Mounts your full data directory so RepliSage can access input files.
+* The final command runs RepliSage with your config file.
+
+You do **not** need to manually stop or clean up anything—the container is temporary and self-destructs after it completes. The image (`pyloopsage-cuda`) remains available on your system and can be deleted anytime using:
+
+```bash
+docker rmi pyloopsage-cuda
+```
+
+**Note:** Install `nvidia-container-toolkit` in your system if you want to use the container with CUDA: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+
 ## How to use?
 
 ### Python Implementation

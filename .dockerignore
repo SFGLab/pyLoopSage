@@ -1,0 +1,44 @@
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+coverage.xml
+.cache
+.pytest_cache/
+
+# Packaging artifacts
+build/
+dist/
+*.egg-info/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Configs / logs / temp
+*.log
+*.tmp
+*.swp
+*.bak
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Git / VCS
+.git/
+.gitignore
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Ignore Docker-related outputs
+*.tar
+
