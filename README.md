@@ -80,9 +80,9 @@ In general the user can run simulation in two different ways:
 
 Can be easily installed with `pip install pyLoopSage`. To have CUDA acceleration, it is needed to have cuda-toolkit installed in case that you use nvidia drivers (otherwise you can use OpenCL or parallelization across CPU cores).
 
-## 🐳 Running RepliSage with Docker
+## 🐳 Running LoopSage with Docker
 
-To use RepliSage in a fully containerized and reproducible way, you can build and run it using Docker. This is a very efficient way when you want to use CUDA.
+To use LoopSage in a fully containerized and reproducible way, you can build and run it using Docker. This is a very efficient way when you want to use CUDA.
 
 ### Step 1: Build the Docker Image
 
@@ -114,8 +114,8 @@ docker run --rm -it --gpus all \
 * `-it`: Runs with an interactive terminal.
 * `-v "$PWD/config.ini:/app/config.ini:ro"`: Mounts your local `config.ini` as read-only inside the container.
 * `-v "$PWD/tmp:/app/output"`: Maps the `tmp/` directory for outputs.
-* `-v "$HOME/Data:/home/blackpianocat/Data:ro"`: Mounts your full data directory so RepliSage can access input files.
-* The final command runs RepliSage with your config file.
+* `-v "$HOME/Data:/home/blackpianocat/Data:ro"`: Mounts your full data directory so LoopSage can access input files.
+* The final command runs LoopSage with your config file.
 
 You do **not** need to manually stop or clean up anything—the container is temporary and self-destructs after it completes. The image (`pyloopsage-cuda`) remains available on your system and can be deleted anytime using:
 
