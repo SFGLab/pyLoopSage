@@ -121,6 +121,7 @@ You do **not** need to manually stop or clean up anything—the container is tem
 
 ```bash
 docker rmi pyloopsage-cuda
+docker system prune -a
 ```
 
 **Note:** Install `nvidia-container-toolkit` in your system if you want to use the container with CUDA: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
