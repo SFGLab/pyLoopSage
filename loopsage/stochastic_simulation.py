@@ -77,7 +77,7 @@ def E_bw(N_bws, r, BWs, ms, ns):
     return E_bw
 
 @njit
-def potts_energy(S, J, h, epi_norm):
+def E_potts(S, J, h, epi_norm):
     '''
     Potts model energy with:
     - sparse pairwise interaction J_ij (zeros are ignored)
@@ -131,7 +131,7 @@ def get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm,
 
     # Potts epigenetic energy
     if epi_norm != 0.0 and J is not None and h is not None and S is not None:
-        energy += potts_energy(S, J, h, epi_norm)
+        energy += E_potts(S, J, h, epi_norm)
 
     return energy
 
