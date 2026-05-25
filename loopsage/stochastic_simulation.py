@@ -77,13 +77,62 @@ def E_bw(N_bws, r, BWs, ms, ns):
     return E_bw
 
 @njit
-def get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, N_lef, N_lef2, cross_loop, r=None, N_bws=0, BWs=None, between_families_penalty=True):
-    ''''
-    The total energy.
+def potts_energy(S, J, h, epi_norm):
     '''
-    energy = E_bind(L, R, ms, ns, bind_norm) + E_cross(ms, ns, k_norm, cross_loop, between_families_penalty) + E_fold(ms, ns, fold_norm)
-    if fold_norm2!=0: energy += E_fold(ms[N_lef:N_lef+N_lef2],ns[N_lef:N_lef+N_lef2], fold_norm2)
-    if r is not None and BWs is not None: energy += E_bw(N_bws, r, BWs, ms, ns)
+    Potts model energy with:
+    - sparse pairwise interaction J_ij (zeros are ignored)
+    - external field h_i(state)
+    '''
+    N_beads = len(S)
+    E = 0.0
+    # Pairwise interaction term
+    for i in range(N_beads):
+        Si = S[i]
+        for j in range(i + 1, N_beads):
+            Jij = J[i, j]
+            # skip zero entries (sparsity exploitation)
+            if Jij != 0.0:
+                # Potts delta: only same states interact
+                if S[j] == Si:
+                    E -= Jij
+
+    # External field term
+    for i in range(N_beads):
+        E -= h[i, S[i]]
+
+    return epi_norm*E
+
+@njit
+def get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm,
+          ms, ns, N_lef, N_lef2,
+          cross_loop,
+          r=None, N_bws=0, BWs=None,
+          between_families_penalty=True,
+          S=None, J=None, h=None, epi_norm=0.0):
+    '''
+    Total energy including optional Potts epigenetic term.
+    '''
+
+    energy = (
+        E_bind(L, R, ms, ns, bind_norm)
+        + E_cross(ms, ns, k_norm, cross_loop, between_families_penalty)
+        + E_fold(ms, ns, fold_norm)
+    )
+
+    # second LEF family folding
+    if fold_norm2 != 0:
+        energy += E_fold(ms[N_lef:N_lef+N_lef2],
+                         ns[N_lef:N_lef+N_lef2],
+                         fold_norm2)
+
+    # binding tracks
+    if r is not None and BWs is not None:
+        energy += E_bw(N_bws, r, BWs, ms, ns)
+
+    # Potts epigenetic energy
+    if epi_norm != 0.0 and J is not None and h is not None and S is not None:
+        energy += potts_energy(S, J, h, epi_norm)
+
     return energy
 
 @njit
@@ -108,6 +157,38 @@ def get_dE_bw(N_bws, r, BWs, ms, ns, m_new, n_new, idx):
     return dE_bw
 
 @njit
+def get_dE_potts(S, J, h, epi_norm, k, s_new):
+    '''
+    Energy difference for Potts model when updating a single site k:
+    S[k] -> s_new
+    '''
+
+    s_old = S[k]
+    if s_old == s_new:
+        return 0.0
+
+    dE = 0.0
+    N_beads = len(S)
+
+    # Pairwise term
+    for j in range(N_beads):
+        if j == k:
+            continue
+        Jij = J[k, j]
+        if Jij != 0.0:
+            # old contribution
+            if S[j] == s_old:
+                dE += Jij
+            # new contribution
+            if S[j] == s_new:
+                dE -= Jij
+
+    # Field term
+    dE += h[k, s_old] - h[k, s_new]
+
+    return epi_norm * dE
+
+@njit
 def get_dE_cross(ms, ns, m_new, n_new, idx, k_norm, cross_loop, N_lef, between_families_penalty):
     '''
     Energy difference for crossing energy.
@@ -121,19 +202,52 @@ def get_dE_cross(ms, ns, m_new, n_new, idx, k_norm, cross_loop, N_lef, between_f
     return k_norm * (K2 - K1)
 
 @njit
-def get_dE(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, m_new, n_new, idx, N_lef, N_lef2, cross_loop, r=None, N_bws=0, BWs=None, between_families_penalty=True):
+def get_dE_edges(L, R, bind_norm, fold_norm, fold_norm2, k_norm,
+                 ms, ns, m_new, n_new, idx,
+                 N_lef, N_lef2, cross_loop,
+                 r=None, N_bws=0, BWs=None,
+                 between_families_penalty=True):
     '''
-    Total energy difference.
+    Energy difference for LEF (edge) updates only.
     '''
+
     dE = 0.0
-    if idx<N_lef:
-        dE += get_dE_fold(fold_norm,ms[:N_lef],ns[:N_lef],m_new,n_new,idx)
+
+    # Folding
+    if idx < N_lef:
+        dE += get_dE_fold(fold_norm,
+                         ms[:N_lef], ns[:N_lef],
+                         m_new, n_new, idx)
     else:
-        dE += get_dE_fold(fold_norm2,ms[N_lef:N_lef+N_lef2],ns[N_lef:N_lef+N_lef2],m_new,n_new,idx-N_lef)
+        dE += get_dE_fold(fold_norm2,
+                         ms[N_lef:N_lef+N_lef2],
+                         ns[N_lef:N_lef+N_lef2],
+                         m_new, n_new, idx - N_lef)
+
+    # Binding
     dE += get_dE_bind(L, R, bind_norm, ms, ns, m_new, n_new, idx)
-    dE += get_dE_cross(ms, ns, m_new, n_new, idx, k_norm, cross_loop, N_lef, between_families_penalty)
-    if r is not None and BWs is not None: dE += get_dE_bw(N_bws, r, BWs, ms, ns, m_new, n_new, idx)
+
+    # Crossing
+    dE += get_dE_cross(ms, ns, m_new, n_new, idx,
+                       k_norm, cross_loop, N_lef,
+                       between_families_penalty)
+
+    # Optional BW term
+    if r is not None and BWs is not None:
+        dE += get_dE_bw(N_bws, r, BWs, ms, ns, m_new, n_new, idx)
+
     return dE
+
+@njit
+def get_dE_nodes(S, J, h, epi_norm, k_spin, s_new):
+    '''
+    Energy difference for a single spin (node) update.
+    '''
+
+    if epi_norm == 0.0 or J is None or h is None or S is None:
+        return 0.0
+
+    return get_dE_potts(S, J, h, epi_norm, k_spin, s_new)
 
 @njit
 def unbind_bind(N_beads, track=None):
@@ -177,64 +291,171 @@ def unfolding_metric(ms,ns,N_beads):
     return unfold
 
 @njit
-def initialize(N_beads, N_lef, track=None):
+def initialize(N_beads, N_lef, track=None, n_states=3, S_mode="random"):
     '''
-    Random initialization of polymer DNA fiber with some cohesin positions.
+    Random initialization of polymer DNA fiber with LEFs + epigenetic Potts states.
+
+    Parameters
+    ----------
+    N_beads : int
+        Number of monomers in polymer.
+    N_lef : int
+        Number of loop extrusion factors.
+    track : array or None
+        Optional bias for LEF placement.
+    n_states : int
+        Number of epigenetic Potts states.
+    S_mode : str
+        "random" -> random Potts states in [0, n_states-1]
+        "uniform" -> all beads in same state
+
+    Returns
+    -------
+    ms : int64 array (N_lef,)
+    ns : int64 array (N_lef,)
+    S  : int64 array (N_beads,)
     '''
-    ms, ns = np.zeros(N_lef,dtype=np.int64), np.zeros(N_lef,dtype=np.int64)
+
+    # Initialize LEF positions
+    ms = np.zeros(N_lef, dtype=np.int64)
+    ns = np.zeros(N_lef, dtype=np.int64)
+
     for i in range(N_lef):
         ms[i], ns[i] = unbind_bind(N_beads, track)
-    return ms, ns
+
+    # Initialize epigenetic states
+    S = np.zeros(N_beads, dtype=np.int64)
+
+    if S_mode == "random":
+        for i in range(N_beads):
+            S[i] = np.random.randint(0, n_states)
+    else:
+        S[:] = 0
+
+    return ms, ns, S
 
 @njit
-def run_simulation(N_beads, N_steps, MC_step, burnin, T, T_min, fold_norm, fold_norm2, bind_norm, k_norm, N_lef, N_lef2, L, R, mode, lef_rw=True, lef_drift=True, cross_loop=True, r=None, N_bws=0, BWs=None, track=None, between_families_penalty=True):
+def run_simulation(N_beads, N_steps, MC_step, burnin,
+                   T, T_min,
+                   fold_norm, fold_norm2, bind_norm, k_norm,
+                   N_lef, N_lef2,
+                   L, R,
+                   mode,
+                   lef_rw=True, lef_drift=True,
+                   cross_loop=True,
+                   r=None, N_bws=0, BWs=None,
+                   track=None,
+                   between_families_penalty=True,
+                   # --- Potts additions ---
+                   J=None, h=None, epi_norm=0.0,
+                   n_states=3,
+                   p_spin=0.5):
     '''
-    Runs the Monte Carlo simulation.
+    Runs the Monte Carlo simulation with LEF + Potts dynamics.
     '''
+
     Ti = T
     bi = burnin // MC_step
-    ms, ns = initialize(N_beads, N_lef + N_lef2, track)
-    E = get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, N_lef, N_lef2, cross_loop, r, N_bws, BWs, between_families_penalty)
-    Es, Ks, Fs, Bs, ufs = np.zeros(N_steps // MC_step, dtype=np.float64), np.zeros(N_steps // MC_step, dtype=np.float64), np.zeros(N_steps // MC_step, dtype=np.float64), np.zeros(N_steps // MC_step, dtype=np.float64), np.zeros(N_steps // MC_step, dtype=np.float64)
-    Ms, Ns = np.zeros((N_lef + N_lef2, N_steps // MC_step), dtype=np.int64), np.zeros((N_lef + N_lef2, N_steps // MC_step), dtype=np.int64)
+
+    # Initialization
+    ms, ns, S = initialize(N_beads, N_lef + N_lef2, track, n_states)
+
+    E = get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm,
+              ms, ns, N_lef, N_lef2, cross_loop,
+              r, N_bws, BWs, between_families_penalty,
+              S, J, h, epi_norm)
+
+    # Storage
+    n_save = N_steps // MC_step
+
+    Es = np.zeros(n_save, dtype=np.float64)
+    Ks = np.zeros(n_save, dtype=np.float64)
+    Fs = np.zeros(n_save, dtype=np.float64)
+    Bs = np.zeros(n_save, dtype=np.float64)
+    ufs = np.zeros(n_save, dtype=np.float64)
+
+    Ms = np.zeros((N_lef + N_lef2, n_save), dtype=np.int64)
+    Ns = np.zeros((N_lef + N_lef2, n_save), dtype=np.int64)
+
+    # NEW: epigenetic states trajectory
+    epi_states = np.zeros((N_beads, n_save), dtype=np.int64)
 
     last_percent = -1
 
+    # MAIN LOOP
     for i in range(N_steps):
-        # Print progress every 5%
+
         percent = int(100 * i / N_steps)
         if percent % 5 == 0 and percent != last_percent:
-            # Numba can't use print with flush, so just print
             print(f"Progress: {percent} % completed.")
             last_percent = percent
-        
-        Ti = T - (T - T_min) * (i + 1) / N_steps if mode == 'Annealing' else T
-        for j in range(N_lef + N_lef2):
-            # Randomly choose a move (sliding or rebinding)
-            r_move = np.random.choice(np.array([0, 1]))
-            if r_move == 0:
-                m_new, n_new = unbind_bind(N_beads, track)
-            else:
-                m_new, n_new = slide(ms[j], ns[j], ms, ns, N_beads, lef_rw, lef_drift)
 
-            # Compute energy difference
-            dE = get_dE(L, R, bind_norm, fold_norm, fold_norm2, k_norm, ms, ns, m_new, n_new, j, N_lef, N_lef2, cross_loop, r, N_bws, BWs, between_families_penalty)
-            
-            if dE <= 0 or np.exp(-dE / Ti) > np.random.rand():
-                ms[j], ns[j] = m_new, n_new
-                E += dE
-            # Compute Metrics
-            if i % MC_step == 0:
-                Ms[j, i // MC_step], Ns[j, i // MC_step] = ms[j], ns[j]
-            
-        # Compute Metrics
+        Ti = T - (T - T_min) * (i + 1) / N_steps if mode == 'Annealing' else T
+
+        # Choose move type
+        if np.random.rand() < p_spin:
+            # SPIN MOVE
+            if epi_norm != 0.0 and J is not None and h is not None:
+
+                k = np.random.randint(0, N_beads)
+                s_old = S[k]
+
+                # propose new state (different)
+                s_new = np.random.randint(0, n_states)
+                if s_new == s_old:
+                    s_new = (s_old + 1) % n_states
+
+                dE = get_dE_potts(S, J, h, epi_norm, k, s_new)
+
+                if dE <= 0 or np.exp(-dE / Ti) > np.random.rand():
+                    S[k] = s_new
+                    E += dE
+
+        else:
+            # LEF MOVES (original)
+            for j in range(N_lef + N_lef2):
+
+                r_move = np.random.choice(np.array([0, 1]))
+
+                if r_move == 0:
+                    m_new, n_new = unbind_bind(N_beads, track)
+                else:
+                    m_new, n_new = slide(ms[j], ns[j], ms, ns,
+                                         N_beads, lef_rw, lef_drift)
+
+                dE = get_dE_edges(L, R, bind_norm,
+                                  fold_norm, fold_norm2, k_norm,
+                                  ms, ns, m_new, n_new, j,
+                                  N_lef, N_lef2,
+                                  cross_loop,
+                                  r, N_bws, BWs,
+                                  between_families_penalty)
+
+                if dE <= 0 or np.exp(-dE / Ti) > np.random.rand():
+                    ms[j], ns[j] = m_new, n_new
+                    E += dE
+
+                if i % MC_step == 0:
+                    Ms[j, i // MC_step] = ms[j]
+                    Ns[j, i // MC_step] = ns[j]
+
+        # Metrics
         if i % MC_step == 0:
-            ufs[i // MC_step] = unfolding_metric(ms, ns, N_beads)
-            Es[i // MC_step] = E
-            Ks[i // MC_step] = E_cross(ms, ns, k_norm, cross_loop, N_lef, between_families_penalty)
-            Fs[i // MC_step] = E_fold(ms, ns, fold_norm)
-            Bs[i // MC_step] = E_bind(L, R, ms, ns, bind_norm)
-    return Ms, Ns, Es, Ks, Fs, Bs, ufs
+
+            idx_save = i // MC_step
+
+            ufs[idx_save] = unfolding_metric(ms, ns, N_beads)
+            Es[idx_save] = E
+            Ks[idx_save] = E_cross(ms, ns, k_norm, cross_loop,
+                                   N_lef, between_families_penalty)
+            Fs[idx_save] = E_fold(ms, ns, fold_norm)
+            Bs[idx_save] = E_bind(L, R, ms, ns, bind_norm)
+
+            # NEW: save epigenetic states
+            for b in range(N_beads):
+                epi_states[b, idx_save] = S[b]
+
+    return Ms, Ns, Es, Ks, Fs, Bs, ufs, epi_states
 
 class StochasticSimulation:
     def __init__(self,region,chrom,bedpe_file,N_beads=None,N_lef=None,N_lef2=0,out_dir=None, bw_files=None, track_file=None):
