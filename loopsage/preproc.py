@@ -30,13 +30,31 @@ def binding_vectors_from_bedpe(
 
     J : (N_beads, N_beads)
         Interaction (adjacency) matrix.
-
+    
     J_mode
     -------
     binary   : strict graph adjacency (0/1 only, no weights)
     strength : weighted by BEDPE score
     distance : exponential decay with loop size
     '''
+
+    # --------------------------------------------------
+    # Validate inputs
+    # --------------------------------------------------
+    if J_mode not in ["binary", "strength", "distance"]:
+        raise ValueError(f"Invalid J_mode: {J_mode}")
+
+    if J_norm not in [None, "global", "row"]:
+        raise ValueError(f"Invalid J_norm: {J_norm}")
+
+    if N_beads <= 10:
+        raise ValueError("N_beads too small")
+
+    if region[1] <= region[0]:
+        raise ValueError("Invalid region: end must be > start")
+
+    if alpha <= 0 and J_mode == "distance":
+        raise ValueError("alpha must be positive for distance mode")
 
     df = pd.read_csv(bedpe_file, sep='\t', header=None)
 
@@ -305,7 +323,7 @@ def main():
         chrom=chrom,
         normalization=True,
         viz=True,          # we will do custom viz below
-        J_mode="strength",
+        J_mode="binary",
         J_norm="global",
         alpha=0.01,
         smooth=True,
