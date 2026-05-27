@@ -69,9 +69,19 @@ def main():
     N_steps, MC_step, burnin, T, T_min = args.N_STEPS, args.MC_STEP, args.BURNIN, args.T_INIT, args.T_FINAL
     mode = args.METHOD
     bw_paths = args.BW_FILES
+
+    # Compartment inputs (NEW)
+    comp_bw_file = getattr(args, "COMP_BW_FILE", "") or None
+    comp_bed_file = getattr(args, "COMP_BED_FILE", "") or None
+
+    # optional: enforce exclusivity if both provided
+    if comp_bw_file and comp_bed_file:
+        raise ValueError("Provide only one compartment file: BW or BED, not both.")
+
+    comp_file = comp_bw_file if comp_bw_file else comp_bed_file
     
     # Simulation Strengths
-    f, f2, b, kappa = args.FOLDING_COEFF,  args.FOLDING_COEFF2, args.BIND_COEFF, args.CROSS_COEFF
+    f, f2, b, kappa, epi_coeff = args.FOLDING_COEFF,  args.FOLDING_COEFF2, args.BIND_COEFF, args.CROSS_COEFF, args.EPI_COEFF
     r = args.BW_STRENGTHS
     between_families_penalty = args.BETWEEN_FAMILIES_PENALTY  # Added argument
     
@@ -82,17 +92,90 @@ def main():
     output_name = args.OUT_PATH
     bedpe_file = args.BEDPE_PATH
     
-    # Run Simulation
-    sim = StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=N_beads,N_lef=N_lef,N_lef2=N_lef2, bw_files=bw_paths, track_file=args.LEF_TRACK_FILE)
-    Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=args.SAVE_PLOTS,save=args.SAVE_MDT,lef_rw=args.LEF_RW,f=f,f2=f2,b=b,kappa=kappa,lef_drift=args.LEF_DRIFT,cross_loop=args.CROSS_LOOP,r=r,between_families_penalty=between_families_penalty)
-    if args.SIMULATION_TYPE=='EM':
-        sim.run_EM(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.EV_FF_POWER,args.TOLERANCE,args.FRICTION,args.INTEGRATOR_STEP,args.SIM_TEMP,args.INITIAL_STRUCTURE_TYPE,args.VIZ_HEATS,args.FORCEFIELD_PATH)
-    elif args.SIMULATION_TYPE=='MD':
-        sim.run_MD(args.PLATFORM,args.ANGLE_FF_STRENGTH,args.LE_FF_LENGTH,args.LE_FF_STRENGTH,args.EV_FF_STRENGTH,args.EV_FF_POWER,args.TOLERANCE,args.FRICTION,args.INTEGRATOR_STEP,args.SIM_TEMP,args.INITIAL_STRUCTURE_TYPE,args.SIM_STEP,args.VIZ_HEATS,args.FORCEFIELD_PATH,args.EV_P,args.CONTINUOUS_TOP)
-    elif args.SIMULATION_TYPE==None:
-        print('\n3D simulation did not run because it was not specified. Please specify argument SIMULATION_TYPE as EM or MD.')
+    # Run stochastic simulation
+    sim = StochasticSimulation(
+        region=region,
+        chrom=chrom,
+        bedpe_file=bedpe_file,
+        out_dir=output_name,
+        N_beads=N_beads,
+        N_lef=N_lef,
+        N_lef2=N_lef2,
+        bw_files=bw_paths,
+        lef_density_file=args.LEF_TRACK_FILE,
+        comp_file=comp_file
+    )
+
+    Es, Ms, Ns, Bs, Ks, Fs, ufs, spins = sim.run_energy_minimization(
+        N_steps,
+        MC_step,
+        burnin,
+        T,
+        T_min,
+        mode=mode,
+        N_epi_states=args.N_EPI_STATES,
+        epi_coeff=args.EPI_COEFF,
+        viz=args.SAVE_PLOTS,
+        save=args.SAVE_MDT,
+        lef_rw=args.LEF_RW,
+        lef_drift=args.LEF_DRIFT,
+        cross_loop=args.CROSS_LOOP,
+        r=r,
+        f=f,
+        f2=f2,
+        b=b,
+        kappa=kappa,
+        between_families_penalty=between_families_penalty
+    )
+
+    # Optional 3D structure reconstruction
+    simulation_type = args.SIMULATION_TYPE
+
+    if simulation_type == "EM":
+        sim.run_EM(
+            args.PLATFORM,
+            args.ANGLE_FF_STRENGTH,
+            args.LE_FF_LENGTH,
+            args.LE_FF_STRENGTH,
+            args.EV_FF_STRENGTH,
+            args.EV_FF_POWER,
+            args.TOLERANCE,
+            args.FRICTION,
+            args.INTEGRATOR_STEP,
+            args.SIM_TEMP,
+            args.INITIAL_STRUCTURE_TYPE,
+            args.VIZ_HEATS,
+            args.FORCEFIELD_PATH
+        )
+
+    elif simulation_type == "MD":
+        sim.run_MD(
+            args.PLATFORM,
+            args.ANGLE_FF_STRENGTH,
+            args.LE_FF_LENGTH,
+            args.LE_FF_STRENGTH,
+            args.EV_FF_STRENGTH,
+            args.EV_FF_POWER,
+            args.TOLERANCE,
+            args.FRICTION,
+            args.INTEGRATOR_STEP,
+            args.SIM_TEMP,
+            args.INITIAL_STRUCTURE_TYPE,
+            args.SIM_STEP,
+            args.VIZ_HEATS,
+            args.FORCEFIELD_PATH,
+            args.EV_P,
+            args.CONTINUOUS_TOP
+        )
+
+    elif simulation_type is None:
+        print(
+            "\n3D simulation skipped: SIMULATION_TYPE not specified "
+            "(expected 'EM' or 'MD')."
+        )
+
     else:
-        IndentationError('Uknown simulation type. It can be either MD or EM.')
+        raise ValueError(f"Unknown SIMULATION_TYPE: {simulation_type}")
 
     # Knoting
     if args.DETECT_KNOTS:

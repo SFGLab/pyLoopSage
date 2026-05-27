@@ -1,17 +1,28 @@
 import imageio
 import shutil
+import os
 import numpy as np
 import random as rd
 import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
 from matplotlib.pyplot import figure
+import matplotlib.colors as mcolors
 from matplotlib.pyplot import cm
 import seaborn as sns
 from statsmodels.graphics.tsaplots import plot_acf
 import scipy.stats
 from tqdm import tqdm
 from scipy import stats
+
+METHODS = ("binary", "loop_fill", "gaussian", "tanh")
+ 
+_META = {
+    "binary":    ("Binary\n(anchor contacts only)",           "Oranges"),
+    "loop_fill": ("Loop-fill\n(uniform interior)",            "Blues"),
+    "gaussian":  ("Gaussian-weighted\n(decay from axis)",     "Greens"),
+    "tanh":      ("Tanh-sigmoid\n(smooth boundary roll-off)", "Purples"),
+}
 
 def make_loop_hist(Ms,Ns,path=None):
     Ls = np.abs(Ns-Ms).flatten()
@@ -101,6 +112,71 @@ def average_pooling(mat,dim_new):
     im_resized = np.array(im.resize(size))
     return im_resized
 
+def plot_epi_trajectory(epi_states, path=None, cmap="bwr"):
+    """
+    Plot epigenetic state trajectory as a heatmap.
+
+    Parameters
+    ----------
+    epi_states : array (N_beads, N_steps)
+        Epigenetic states over time
+
+    path : str or None
+        Output directory (optional)
+
+    vmin, vmax : float
+        Color scale limits (default assumes [-1, 1])
+
+    cmap : str
+        Colormap (default: blue-white-red)
+    """
+
+    # Ensure numpy array (important for consistency)
+    epi_states = np.asarray(epi_states, dtype=np.float64)
+    vmin = np.min(epi_states)
+    vmax = np.max(epi_states)
+
+    # --------------------------------------------------
+    # Figure (publication style)
+    # --------------------------------------------------
+    plt.figure(figsize=(10, 10), dpi=200)
+
+    im = plt.imshow(
+        epi_states,
+        aspect="auto",        # time stretched nicely
+        origin="lower",       # bead 0 at bottom
+        cmap=cmap,
+        vmin=vmin,
+        vmax=vmax
+    )
+
+    # --------------------------------------------------
+    # Labels
+    # --------------------------------------------------
+    plt.xlabel("Monte Carlo step")
+    plt.ylabel("Bead index")
+    plt.title("Epigenetic trajectory")
+
+    # --------------------------------------------------
+    # Colorbar
+    # --------------------------------------------------
+    cbar = plt.colorbar(im)
+    cbar.set_label("Epigenetic signal")
+
+    # --------------------------------------------------
+    # Save
+    # --------------------------------------------------
+    if path is not None:
+        save_path = path + "/plots/epigenetic_trajectory.svg"
+        plt.savefig(save_path, format="svg", dpi=600)
+        save_path = path + "/plots/epigenetic_trajectory.png"
+        plt.savefig(save_path, format="png", dpi=600)
+        save_path = path + "/plots/epigenetic_trajectory.pdf"
+        plt.savefig(save_path, format="pdf", dpi=600)
+
+    plt.tight_layout()
+    plt.close()
+
 def coh_traj_plot(ms, ns, N_beads, path, jump_threshold=200, min_stable_time=10):
     """
     Plots the trajectories of cohesins as filled regions between their two ends over time.
@@ -184,40 +260,180 @@ def coh_probdist_plot(ms,ns,N_beads,path):
     plt.savefig(save_path, format='png', dpi=200)
     plt.close()
 
-def stochastic_heatmap(ms,ns,step,L,path,comm_prop=True,fill_square=True):
-    N_coh, N_steps = ms.shape
-    mats = list()
-    for t in range(0,N_steps):
-        # add a loop where there is a cohesin
-        mat = np.zeros((L,L))
-        for m, n in zip(ms[:,t],ns[:,t]):
-            mat[m,n] = 1
-            mat[n,m] = 1
-        
-        # if a->b and b->c then a->c
-        if comm_prop:
-            for iter in range(3):
-                xs, ys = np.nonzero(mat)
-                for i, n in enumerate(ys):
-                    if len(np.where(xs==(n+1))[0])>0:
-                        j = np.where(xs==(n+1))[0]
-                        mat[xs[i],ys[j]] = 2*iter+1
-                        mat[ys[j],xs[i]] = 2*iter+1
+def stochastic_heatmap(ms, ns, L, path, method="gaussian", viz=True):
+    """
+    Compute an averaged Hi-C heatmap from cohesin (LEF) trajectories.
+ 
+    All four methods are fully vectorised over N_lef × T using NumPy
+    broadcasting — no Python loops over time steps or LEFs.
+ 
+    Parameters
+    ----------
+    ms : np.ndarray, shape (N_lef, T)
+        Left-anchor bead positions over time (0-indexed, values in [0, L-1]).
+    ns : np.ndarray, shape (N_lef, T)
+        Right-anchor bead positions over time (0-indexed, values in [0, L-1]).
+    L : int
+        Number of polymer beads (output matrix is L × L).
+    path : str
+        Root output directory; SVG saved to <path>/plots/stochastic_heatmap.svg.
+    method : str
+        Reconstruction method: "binary" | "loop_fill" | "gaussian" | "tanh" | "all".
+        Default: "gaussian".
+    viz : bool
+        If True (default) plot and save the heatmap SVG. If False, skip plotting.
+ 
+    Returns
+    -------
+    dict[str, np.ndarray]
+        {method_name: contact_matrix (L, L)}.
+ 
+    Method descriptions
+    -------------------
+    binary    — accumulates +1 only at the two anchor positions (i0, i1) per LEF
+                per snapshot; produces a sparse map of cohesin anchor co-localisation.
+ 
+    loop_fill — every bead pair inside [i0, i1] × [i0, i1] receives +1, modelling
+                uniform 3-D proximity of the extruded loop; gives TAD-like blocks.
+ 
+    gaussian  — a 2-D Gaussian blob centred at the loop midpoint, width σ = loop/3,
+                mimics polymer contact-probability decay; smooth diagonal stripes.
+ 
+    tanh      — per-bead weight is tanh((b-i0+0.5)/s)·tanh((i1-b+0.5)/s) with
+                s = max(loop×0.05, 1); flat plateau inside the loop, sigmoidal edges.
+    """
+    assert ms.shape == ns.shape, "ms and ns must have the same shape (N_lef, T)"
+ 
+    method = method.lower()
+    if method not in METHODS and method != "all":
+        raise ValueError(f"method must be one of {('all',) + METHODS}, got '{method}'")
+ 
+    N_lef, T = ms.shape
+    left  = np.clip(np.minimum(ms, ns).astype(np.int32), 0, L - 1)  # (N_lef, T)
+    right = np.clip(np.maximum(ms, ns).astype(np.int32), 0, L - 1)  # (N_lef, T)
+ 
+    # Flat view: work with all N_lef*T pairs at once
+    l_flat = left.ravel()   # (N_lef*T,)
+    r_flat = right.ravel()  # (N_lef*T,)
+    S      = l_flat.size    # total number of (LEF, snapshot) pairs
+    b      = np.arange(L, dtype=np.float32)  # bead indices (L,)
+ 
+    selected = list(METHODS) if method == "all" else [method]
+    results  = {}
+ 
+    for name in selected:
+        mat = np.zeros((L, L), dtype=np.float64)
+ 
+        # ---- chunk size: balance memory vs progress-bar granularity ----
+        chunk = max(1, min(S, 4096))
+        n_chunks = (S + chunk - 1) // chunk
+ 
+        with tqdm(total=S, desc=f"{name:10s}", unit="LEF·t",
+                  dynamic_ncols=True, colour="green") as pbar:
+ 
+            for start in range(0, S, chunk):
+                sl  = slice(start, start + chunk)
+                l_c = l_flat[sl]   # (C,)
+                r_c = r_flat[sl]   # (C,)
+ 
+                if name == "binary":
+                    # Accumulate anchor pairs via np.add.at (no Python loop)
+                    np.add.at(mat, (l_c, r_c), 1.0)
+                    np.add.at(mat, (r_c, l_c), 1.0)
+ 
+                elif name == "loop_fill":
+                    # Build indicator vectors in one broadcast, then outer-sum
+                    # w[c, b] = 1 if l_c[c] <= b <= r_c[c] else 0  →  (C, L)
+                    w = ((b[None, :] >= l_c[:, None]) &
+                         (b[None, :] <= r_c[:, None])).astype(np.float32)
+                    mat += w.T @ w   # (L, L)
+ 
+                elif name == "gaussian":
+                    loop_len = np.maximum(r_c - l_c, 1).astype(np.float32)  # (C,)
+                    sigma    = loop_len / 3.0                                  # (C,)
+                    center   = (l_c + r_c) / 2.0                              # (C,)
+                    # (C, L) weight matrix
+                    w = np.exp(-0.5 * ((b[None, :] - center[:, None]) /
+                                       sigma[:, None]) ** 2).astype(np.float32)
+                    # Zero out beads outside [l_c, r_c]
+                    w *= ((b[None, :] >= l_c[:, None]) &
+                          (b[None, :] <= r_c[:, None]))
+                    mat += w.T @ w   # (L, L)  — single BLAS call
+ 
+                elif name == "tanh":
+                    loop_len  = np.maximum(r_c - l_c, 1).astype(np.float32)
+                    sharpness = np.maximum(loop_len * 0.05, 1.0)              # (C,)
+                    # (C, L)
+                    w = (np.tanh((b[None, :] - l_c[:, None] + 0.5) /
+                                 sharpness[:, None]) *
+                         np.tanh((r_c[:, None] - b[None, :] + 0.5) /
+                                 sharpness[:, None])).astype(np.float32)
+                    w = np.clip(w, 0.0, None)
+                    mat += w.T @ w
+ 
+                pbar.update(l_c.size)
+ 
+        results[name] = mat / T
+ 
+    if viz:
+        _plot_and_save(results, path)
+ 
+    return results
+ 
+ 
+def _plot_and_save(results, path):
+    os.makedirs(os.path.join(path, "plots"), exist_ok=True)
+ 
+    # Red colormap: white → pink → red → dark red (classic Hi-C look)
+    hic_red = mcolors.LinearSegmentedColormap.from_list(
+        "hic_red", ["#ffffff", "#ffcccc", "#ff4444", "#cc0000", "#6b0000"]
+    )
+ 
+    n = len(results)
+    fig, axes = plt.subplots(1, n, figsize=(5.5 * n, 5.2), squeeze=False)
+    axes = axes[0]
+    fig.patch.set_facecolor("white")
+ 
+    for ax, (name, mat) in zip(axes, results.items()):
+        title, _ = _META[name]   # cmap from _META ignored; always use hic_red
+ 
+        eps  = mat[mat > 0].min() * 0.01 if mat.any() else 1e-6
+        norm = mcolors.LogNorm(vmin=eps, vmax=mat.max() + eps)
+ 
+        im = ax.imshow(mat, cmap=hic_red, norm=norm, origin="upper",
+                       aspect="equal", interpolation="nearest")
+ 
+        cb = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+        cb.ax.yaxis.set_tick_params(color="black")
+        plt.setp(cb.ax.yaxis.get_ticklabels(), color="black", fontsize=7)
+        cb.set_label("Contact frequency", color="black", fontsize=8)
+        cb.outline.set_edgecolor("black")
+ 
+        ax.set_title(title, color="black", fontsize=10, pad=8)
+        ax.set_xlabel("Bead index", color="black", fontsize=8)
+        ax.set_ylabel("Bead index", color="black", fontsize=8)
+        ax.tick_params(colors="black", labelsize=7)
+        for spine in ax.spines.values():
+            spine.set_edgecolor("black")
+        ax.set_facecolor("white")
+ 
+    fig.suptitle(
+        "Stochastic Hi-C — LEF trajectory-averaged contact maps\n"
+        f"[{', '.join(results)}]",
+        color="black", fontsize=12, y=1.02, fontweight="bold",
+    )
+    plt.tight_layout()
+ 
+    plots_dir = os.path.join(path, "plots")
+    for fmt, dpi in [("svg", 600), ("pdf", 600), ("png", 600)]:
+        out = os.path.join(plots_dir, f"stochastic_heatmap.{fmt}")
+        plt.savefig(out, format=fmt, dpi=dpi, bbox_inches="tight",
+                    facecolor=fig.get_facecolor())
+        print(f"Saved → {out}")
+ 
+    plt.close(fig)
 
-        # feel the square that it is formed by each loop (m,n)
-        if fill_square:
-            xs, ys = np.nonzero(mat)
-            for x, y in zip(xs,ys):
-                if y>x: mat[x:y,x:y] += 0.01*mat[x,y]
 
-        mats.append(mat)
-    avg_mat = np.average(mats,axis=0)
-    figure(figsize=(10, 10))
-    plt.imshow(avg_mat,cmap="Reds",vmax=np.average(avg_mat)+3*np.std(avg_mat))
-    save_path = path+f'/plots/stochastic_heatmap.svg' if path!=None else 'stochastic_heatmap.svg'
-    plt.savefig(save_path,format='svg',dpi=200)
-    # plt.colorbar()
-    plt.close()
 
 def combine_matrices(path_upper,path_lower,label_upper,label_lower,th1=0,th2=50,color="Reds"):
     mat1 = np.load(path_upper)

@@ -50,4 +50,5 @@ slurm-*.out
 # Custom temp folders
 tmp/
 temp/
-
+test/
+results/

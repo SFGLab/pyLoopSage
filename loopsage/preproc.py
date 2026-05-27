@@ -6,8 +6,36 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import UnivariateSpline
 from matplotlib.pyplot import figure
 
+CHROM_LENGTHS = {
+    "chr1": 248_956_422,
+    "chr2": 242_193_529,
+    "chr3": 198_295_559,
+    "chr4": 190_214_555,
+    "chr5": 181_538_259,
+    "chr6": 170_805_979,
+    "chr7": 159_345_973,
+    "chr8": 145_138_636,
+    "chr9": 138_394_717,
+    "chr10": 133_797_422,
+    "chr11": 135_086_622,
+    "chr12": 133_275_309,
+    "chr13": 114_364_328,
+    "chr14": 107_043_718,
+    "chr15": 101_991_189,
+    "chr16": 90_338_345,
+    "chr17": 83_257_441,
+    "chr18": 80_373_285,
+    "chr19": 58_617_616,
+    "chr20": 64_444_167,
+    "chr21": 46_709_983,
+    "chr22": 50_818_468,
+    "chrX": 156_040_895,
+    "chrY": 57_227_415,
+    "chrM": 16_569
+}
+
 def binding_vectors_from_bedpe(
-        bedpe_file, N_beads, region, chrom,
+        bedpe_file, N_beads, chrom, region=None,
         normalization=False,
         viz=False,
         diagonal_interactions=True,
@@ -37,6 +65,12 @@ def binding_vectors_from_bedpe(
     strength : weighted by BEDPE score
     distance : exponential decay with loop size
     '''
+
+    if region is None:
+        if chrom not in CHROM_LENGTHS:
+            raise ValueError(f"Unknown chromosome: {chrom}")
+
+        region = [0, CHROM_LENGTHS[chrom]]
 
     # --------------------------------------------------
     # Validate inputs
@@ -100,7 +134,6 @@ def binding_vectors_from_bedpe(
         # J construction
         # ==================================================
         if J_mode == "binary":
-            # STRICT adjacency: no weights, no accumulation
             J[x, y] = 1.0
             J[y, x] = 1.0
 
@@ -114,7 +147,6 @@ def binding_vectors_from_bedpe(
             else:
                 weight = 1.0
 
-            # accumulate weighted block
             for a in range(x, y):
                 for b in range(x, y):
                     J[a, b] += weight
@@ -181,6 +213,65 @@ def binding_vectors_from_bedpe(
         R = R / (np.sum(R) + 1e-12)
 
     # --------------------------------------------------
+    # STATISTICS (NEW ADDITION)
+    # --------------------------------------------------
+
+    distances_arr = np.array(distances)
+
+    # only real loop edges (exclude backbone)
+    loop_edges = np.argwhere(J > 0)
+
+    # remove backbone neighbors
+    loop_edges = np.array([
+        (i, j) for (i, j) in loop_edges
+        if np.abs(i - j) > 1
+    ])
+
+    if len(loop_edges) > 0:
+        loop_lengths = np.abs(loop_edges[:, 1] - loop_edges[:, 0])
+    else:
+        loop_lengths = np.array([])
+
+    statistics = {
+        "n_loops": int(len(loop_lengths)),
+        "distance_between_loops": {
+            "mean": float(np.mean(distances_arr)) if len(distances_arr) else 0.0,
+            "median": float(np.median(distances_arr)) if len(distances_arr) else 0.0,
+            "min": float(np.min(distances_arr)) if len(distances_arr) else 0.0,
+            "max": float(np.max(distances_arr)) if len(distances_arr) else 0.0,
+        },
+        "loop_length": {
+            "mean": float(np.mean(loop_lengths)) if len(loop_lengths) else 0.0,
+            "median": float(np.median(loop_lengths)) if len(loop_lengths) else 0.0,
+            "min": float(np.min(loop_lengths)) if len(loop_lengths) else 0.0,
+            "max": float(np.max(loop_lengths)) if len(loop_lengths) else 0.0,
+        }
+    }
+
+    if viz:
+        print("\n" + "=" * 60)
+        print("              LOOP STATISTICS (beads units)")
+        print("=" * 60)
+
+        print(f"\nNumber of loops (non-backbone): {statistics['n_loops']}\n")
+
+        d = statistics["distance_between_loops"]
+        print("Distance between loop anchors:")
+        print(f"  mean   : {d['mean']:.3f}")
+        print(f"  median : {d['median']:.3f}")
+        print(f"  min    : {d['min']:.3f}")
+        print(f"  max    : {d['max']:.3f}")
+
+        l = statistics["loop_length"]
+        print("\nLoop length:")
+        print(f"  mean   : {l['mean']:.3f}")
+        print(f"  median : {l['median']:.3f}")
+        print(f"  min    : {l['min']:.3f}")
+        print(f"  max    : {l['max']:.3f}")
+
+        print("\n" + "=" * 60 + "\n")
+
+    # --------------------------------------------------
     # Visualization
     # --------------------------------------------------
     if viz:
@@ -193,7 +284,7 @@ def binding_vectors_from_bedpe(
         axs[0].legend()
         axs[0].grid()
 
-        sns.histplot(distances, bins=80, ax=axs[1])
+        sns.histplot(distances, bins=10, ax=axs[1])
         axs[1].set_title("Loop size distribution")
         axs[1].grid()
 
@@ -201,28 +292,43 @@ def binding_vectors_from_bedpe(
         plt.show()
 
         # --------------------------------------------------
-        # Graph view of J
+        # Heatmap (separate figure)
         # --------------------------------------------------
-        fig, axs = plt.subplots(1, 3, figsize=(18, 5))
+        fig, ax = plt.subplots(1, 1, figsize=(6, 5))
 
-        im = axs[0].imshow(J, cmap="viridis", origin="lower")
-        axs[0].set_title("Adjacency matrix J")
-        plt.colorbar(im, ax=axs[0], fraction=0.046)
+        im = ax.imshow(J, cmap="viridis", origin="lower")
+        ax.set_title("Adjacency matrix J")
+        ax.set_xlabel("bead i")
+        ax.set_ylabel("bead j")
 
-        strength = np.sum(J, axis=0)
-
-        axs[1].plot(strength, color="black")
-        axs[1].set_title("Node strength")
-        axs[1].grid()
-
-        axs[2].hist(strength, bins=50, color="steelblue", edgecolor="black")
-        axs[2].set_title("Strength distribution")
-        axs[2].grid()
-
+        plt.colorbar(im, ax=ax, fraction=0.046)
         plt.tight_layout()
         plt.show()
 
-    return L, R, J
+
+        # --------------------------------------------------
+        # Graph diagnostics (strength + distribution)
+        # --------------------------------------------------
+        fig, axs = plt.subplots(1, 2, figsize=(12, 4))
+
+        strength = np.sum(J, axis=0)
+
+        axs[0].plot(strength, color="black")
+        axs[0].set_title("Node strength")
+        axs[0].set_xlabel("bead index")
+        axs[0].set_ylabel("strength")
+        axs[0].grid()
+
+        axs[1].hist(strength, bins=10, color="steelblue", edgecolor="black")
+        axs[1].set_title("Strength distribution")
+        axs[1].set_xlabel("strength")
+        axs[1].set_ylabel("count")
+        axs[1].grid()
+
+        plt.tight_layout()
+        plt.show()
+    
+    return L, R, J, statistics
 
 def get_rnap_energy(path,region,chrom,N_beads,normalization):
     '''
@@ -241,29 +347,303 @@ def get_rnap_energy(path,region,chrom,N_beads,normalization):
 def distance_point_line(x0,y0,a=1,b=-1,c=0):
     return np.abs(a*x0+b*y0+c)/np.sqrt(a**2+b**2)
 
-def load_track(file,region,chrom,N_beads,viz=False,roll=False):
-    bw = pyBigWig.open(file)
-    weights = bw_to_array(bw, region, chrom, N_beads,viz,roll)
-    return weights[:N_beads]
+class BWExporter:
+    """
+    Lightweight exporter for genomic signal tracks from BigWig files.
 
-def bw_to_array(bw, region, chrom, N_beads, viz=False, roll=False):
-    step = (region[1]-region[0])//N_beads
-    bw_array = bw.values(chrom, region[0], region[1])
-    bw_array = np.nan_to_num(bw_array)
-    bw_array_new = list()
-    for i in range(step,len(bw_array)+1,step):
-        bw_array_new.append(np.average(bw_array[(i-step):i]))
-    weights = (np.roll(np.array(bw_array_new),3)+np.roll(np.array(bw_array_new),-3))/2 if roll else bw_array_new
+    Supports:
+    - ChIP-seq
+    - compartments
+    - any continuous genomic signal
+    """
+
+    def __init__(self, path, N_beads, chrom, region=None):
+        """
+        Core configuration is now stored inside the object.
+        """
+        self.file = path
+        self.region = region
+        self.chrom = chrom
+        self.N_beads = N_beads
+
+        if region is None:
+            if chrom not in CHROM_LENGTHS:
+                raise ValueError(f"Unknown chromosome: {chrom}")
+
+            region = [0, CHROM_LENGTHS[chrom]]
+
+    # --------------------------------------------------
+    # Core loader
+    # --------------------------------------------------
+    def load_track(self,
+                   viz=False,
+                   roll=False,
+                   norm=None,
+                   scale_minus1_1=False):
+        """
+        Load BigWig track and convert to bead resolution.
+
+        Parameters
+        ----------
+        norm:
+            None        -> raw
+            "log"       -> log(1 + x)
+            "zscore"    -> standardize
+            "minmax"    -> [0,1]
+
+        scale_minus1_1:
+            if True -> map signal from [0,1] to [-1,1]
+        """
+
+        bw = pyBigWig.open(self.file)
+        weights = self.bw_to_array(
+            bw,
+            self.region,
+            self.chrom,
+            self.N_beads,
+            viz=False,
+            roll=roll
+        )
+        bw.close()
+
+        weights = np.array(weights[:self.N_beads], dtype=np.float64)
+
+        # --------------------------------------------------
+        # normalization stage
+        # --------------------------------------------------
+        if norm is not None:
+            weights = self.normalize(weights, method=norm)
+
+        # --------------------------------------------------
+        # optional [-1,1] scaling
+        # --------------------------------------------------
+        if scale_minus1_1:
+            xmin, xmax = np.min(weights), np.max(weights)
+            if xmax > xmin:
+                weights = 2.0 * (weights - xmin) / (xmax - xmin) - 1.0
+            else:
+                weights = weights * 0.0
+
+        # --------------------------------------------------
+        # VISUALIZATION (centralized here)
+        # --------------------------------------------------
+        if viz:
+
+            x = np.arange(len(weights))
+
+            fig, axs = plt.subplots(3, 1, figsize=(14, 8), sharex=True)
+
+            # --------------------------
+            # 1. main signal
+            # --------------------------
+            axs[0].plot(x, weights, color="black", lw=1.5)
+            axs[0].axhline(0, color="red", ls="--", lw=1)
+            axs[0].set_title("BigWig signal (bead-resolved)")
+            axs[0].set_ylabel("signal")
+            axs[0].grid(alpha=0.3)
+
+            # --------------------------
+            # 2. histogram (distribution)
+            # --------------------------
+            axs[1].hist(weights, bins=40, color="steelblue", edgecolor="black")
+            axs[1].set_title("Signal distribution")
+            axs[1].set_ylabel("count")
+            axs[1].grid(alpha=0.3)
+
+            # --------------------------
+            # 3. running smooth view (structure intuition)
+            # --------------------------
+            smooth = (np.roll(weights, 1) + weights + np.roll(weights, -1)) / 3
+
+            axs[2].plot(x, smooth, color="darkgreen", lw=1.5)
+            axs[2].set_title("Smoothed signal (local structure)")
+            axs[2].set_xlabel("bead index")
+            axs[2].set_ylabel("signal")
+            axs[2].grid(alpha=0.3)
+
+            plt.tight_layout()
+            plt.show()
+
+        return weights
+
+    # --------------------------------------------------
+    # BigWig -> bead array
+    # --------------------------------------------------
+    def bw_to_array(self, bw, region, chrom, N_beads,
+                    viz=False, roll=False):
+
+        step = (region[1] - region[0]) // N_beads
+
+        raw = bw.values(chrom, region[0], region[1])
+        raw = np.nan_to_num(raw)
+
+        binned = []
+        for i in range(step, len(raw) + 1, step):
+            binned.append(np.mean(raw[i - step:i]))
+
+        weights = np.array(binned, dtype=np.float64)
+
+        if roll:
+            weights = (np.roll(weights, 3) + np.roll(weights, -3)) / 2
+
+        return weights
+
+    # --------------------------------------------------
+    # Normalization utilities
+    # --------------------------------------------------
+    def normalize(self, x, method="log"):
+
+        if method == "log":
+            return np.log1p(x)
+
+        elif method == "zscore":
+            std = np.std(x)
+            if std == 0:
+                return x - np.mean(x)
+            return (x - np.mean(x)) / std
+
+        elif method == "minmax":
+            xmin, xmax = np.min(x), np.max(x)
+            if xmax == xmin:
+                return x * 0
+            return (x - xmin) / (xmax - xmin)
+
+        else:
+            raise ValueError(f"Unknown normalization: {method}")
+
+def load_compartments_bed(
+    bed_file,
+    region,
+    chrom,
+    N_beads,
+    use_score=True,
+    spline_smooth=False,
+    spline_s=1.0,            # 0 = no smoothing, ~1 light, >1 stronger
+    scale_minus1_1=True,
+    viz=False,
+    debug=False
+):
+    """
+    Load compartment BED file and convert to bead-level signal.
+    """
+    # Load + filter
+    df = pd.read_csv(bed_file, sep="\t", header=None)
+
+    df = df[
+        (df[0] == chrom) &
+        (df[1] < region[1]) &
+        (df[2] > region[0])
+    ].reset_index(drop=True)
+
+    if len(df) == 0:
+        raise ValueError("No compartments found in region")
+
+    signal = np.zeros(N_beads, dtype=np.float64)
+    counts = np.zeros(N_beads, dtype=np.float64)
+
+    resolution = (region[1] - region[0]) // N_beads
+
+    # label parser
+    def parse_label(label):
+        if not isinstance(label, str):
+            return 0.0
+
+        if label.startswith("A"):
+            sign = +1.0
+        elif label.startswith("B"):
+            sign = -1.0
+        else:
+            return 0.0
+
+        depth = len(label.split("."))
+        return sign * (1.0 + 0.2 * (depth - 1))
+
+    # fill signal
+    for i in range(len(df)):
+
+        start = max(df[1][i], region[0])
+        end   = min(df[2][i], region[1])
+
+        b0 = int((start - region[0]) // resolution)
+        b1 = int((end   - region[0]) // resolution)
+
+        b0 = max(0, min(N_beads - 1, b0))
+        b1 = max(0, min(N_beads - 1, b1))
+
+        val = None
+
+        if use_score:
+            try:
+                val = 2.0 * float(df[4][i]) - 1.0
+            except:
+                val = None
+
+        if val is None:
+            val = parse_label(df[3][i])
+            if debug:
+                print(f"[DEBUG] label fallback: {df[3][i]} -> {val:.3f}")
+
+        signal[b0:b1 + 1] += val
+        counts[b0:b1 + 1] += 1.0
+
+    # normalize coverage
+    mask = counts > 0
+    signal[mask] /= counts[mask]
+
+    # FIXED smoothing
+    if spline_smooth:
+        x = np.arange(N_beads)
+        valid = mask & np.isfinite(signal)
+        if np.sum(valid) > 3:
+            # STEP 1: fill gaps BEFORE spline (important fix)
+            signal_filled = signal.copy()
+            signal_filled[~valid] = np.interp(
+                x[~valid],
+                x[valid],
+                signal[valid]
+            )
+            # STEP 2: normalize smoothing scale correctly
+            spline = UnivariateSpline(x, signal_filled, s=spline_s)
+            signal = spline(x)
+
+    # final scaling
+    if scale_minus1_1:
+        xmin, xmax = np.min(signal), np.max(signal)
+
+        if xmax > xmin:
+            signal = 2.0 * (signal - xmin) / (xmax - xmin) - 1.0
+        else:
+            signal[:] = 0.0
+
+    # visualization
     if viz:
-        figure(figsize=(15, 5))
-        plt.plot(weights)
-        plt.grid()
-        plt.title('ChIP-Seq signal',fontsize=20)
-        plt.close()
-    
-    return weights
+
+        x = np.arange(N_beads)
+
+        plt.figure(figsize=(14, 4))
+        plt.plot(x, signal, color="black", lw=1.5)
+
+        plt.fill_between(x, 0, signal, where=(signal > 0),
+                         color="red", alpha=0.5, label="A")
+
+        plt.fill_between(x, 0, signal, where=(signal < 0),
+                         color="blue", alpha=0.5, label="B")
+
+        plt.axhline(0, color="black", ls="--", lw=1)
+
+        plt.title("Compartment signal (stable spline smoothing)")
+        plt.xlabel("bead index")
+        plt.ylabel("signal [-1,1]")
+        plt.legend()
+        plt.grid(alpha=0.3)
+        
+        plt.tight_layout()
+        plt.show()
+
+    return signal
 
 def main():
+    print("========= Loop Preprocessing ==========")
     # ------------------------------------------------------------
     # CONFIG
     # ------------------------------------------------------------
@@ -316,7 +696,7 @@ def main():
     # ------------------------------------------------------------
     N_beads = 200
 
-    L, R, J = binding_vectors_from_bedpe(
+    L, R, J, _ = binding_vectors_from_bedpe(
         bedpe_file=bedpe_file,
         N_beads=N_beads,
         region=region,
@@ -328,6 +708,53 @@ def main():
         alpha=0.01,
         smooth=True,
         smooth_sigma=2.0
+    )
+
+    # ------------------------------------------------------------
+    # STEP 5: Compartments (BW)
+    # ------------------------------------------------------------
+
+    print("========= Load Compartments ============")
+
+    bw_file = "/home/blackpianocat/Data/ENCODE/ENCSR968KAY_HiC/ENCFF412CDH_comps.bigWig"
+    chrom = "chr1"
+    region = region
+    N_beads = 200
+
+    # INIT exporter (now stores everything inside)
+    exporter = BWExporter(
+        path=bw_file,
+        region=region,
+        chrom=chrom,
+        N_beads=N_beads
+    )
+    
+    # LOAD COMPARTMENT SIGNAL
+    comps = exporter.load_track(
+        viz=True,
+        roll=True,
+        norm=None,        # "log", "minmax", None
+        scale_minus1_1=True  # optional, default behavior
+    )
+
+    # ------------------------------------------------------------
+    # STEP 5: Compartments (BED)
+    # ------------------------------------------------------------
+    print("========= Load Compartments (BED) ==========")
+
+    bed_comp_file = "/home/blackpianocat/Data/Trios/HiChIP/HiChIP_Subcompartments/calder_subc_50k/bed/dsGM19238_30.bed"
+
+    comps_bed = load_compartments_bed(
+        bed_file=bed_comp_file,
+        region=region,
+        chrom=chrom,
+        N_beads=N_beads,
+        use_score=True,
+        spline_smooth=True,     # NEW
+        spline_s=1.0,            # NEW (smoothing strength)
+        scale_minus1_1=True,
+        viz=True,
+        debug=True             # useful to see fallback behavior
     )
 
 if __name__ == "__main__":

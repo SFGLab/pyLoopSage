@@ -77,30 +77,31 @@ def E_bw(N_bws, r, BWs, ms, ns):
     return E_bw
 
 @njit
-def E_potts(S, J, h, epi_norm):
+def E_epi(S, J, h, epi_norm):
     '''
-    Potts model energy with:
-    - sparse pairwise interaction J_ij (zeros are ignored)
-    - external field h_i(state)
+    Potts model energy:
+    - sparse pairwise J (zeros ignored)
+    - optional external field h (can be None)
     '''
+
     N_beads = len(S)
     E = 0.0
-    # Pairwise interaction term
+
+    # Pairwise term
     for i in range(N_beads):
         Si = S[i]
         for j in range(i + 1, N_beads):
             Jij = J[i, j]
-            # skip zero entries (sparsity exploitation)
             if Jij != 0.0:
-                # Potts delta: only same states interact
                 if S[j] == Si:
                     E -= Jij
 
-    # External field term
-    for i in range(N_beads):
-        E -= h[i, S[i]]
+    # External field (optional)
+    if h is not None:
+        for i in range(N_beads):
+            E -= h[i] * S[i]
 
-    return epi_norm*E
+    return epi_norm * E
 
 @njit
 def get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm,
@@ -131,7 +132,7 @@ def get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm,
 
     # Potts epigenetic energy
     if epi_norm != 0.0 and J is not None and h is not None and S is not None:
-        energy += E_potts(S, J, h, epi_norm)
+        energy += E_epi(S, J, h, epi_norm)
 
     return energy
 
@@ -157,34 +158,49 @@ def get_dE_bw(N_bws, r, BWs, ms, ns, m_new, n_new, idx):
     return dE_bw
 
 @njit
-def get_dE_potts(S, J, h, epi_norm, k, s_new):
+def get_dE_epi(S, J, h, epi_norm, k, s_new):
     '''
     Energy difference for Potts model when updating a single site k:
     S[k] -> s_new
-    '''
 
+    Supports:
+    - sparse J
+    - optional field h (can be None)
+    '''
+    
     s_old = S[k]
+
+    # no change -> no cost
     if s_old == s_new:
         return 0.0
 
     dE = 0.0
     N_beads = len(S)
 
-    # Pairwise term
     for j in range(N_beads):
-        if j == k:
-            continue
-        Jij = J[k, j]
-        if Jij != 0.0:
-            # old contribution
-            if S[j] == s_old:
-                dE += Jij
-            # new contribution
-            if S[j] == s_new:
-                dE -= Jij
+        if j != k:
+            Jij = J[k, j]
+            if Jij != 0.0:
+                dE += Jij * ((S[j] == s_old) - (S[j] == s_new))
 
-    # Field term
-    dE += h[k, s_old] - h[k, s_new]
+    # # Pairwise interaction term
+    # for j in range(N_beads):
+    #     if j == k:
+    #         continue
+    #     Jij = J[k, j]
+    #     # skip zeros (critical for speed)
+    #     if Jij != 0.0:
+    #         Sj = S[j]
+    #         # remove old contribution
+    #         if Sj == s_old:
+    #             dE += Jij
+    #         # add new contribution
+    #         if Sj == s_new:
+    #             dE -= Jij
+    
+    # External field term (optional)
+    if h is not None:
+        dE += h[k] * (s_old - s_new)
 
     return epi_norm * dE
 
@@ -247,35 +263,78 @@ def get_dE_nodes(S, J, h, epi_norm, k_spin, s_new):
     if epi_norm == 0.0 or J is None or h is None or S is None:
         return 0.0
 
-    return get_dE_potts(S, J, h, epi_norm, k_spin, s_new)
+    return get_dE_epi(S, J, h, epi_norm, k_spin, s_new)
 
 @njit
-def unbind_bind(N_beads, track=None):
+def has_cross(m, n, ms, ns, N_lef):
+    """
+    Checks if a candidate LEF (m, n) crosses any existing LEF.
+    Only scans relevant LEFs.
+    """
+    for i in range(N_lef):
+        mi = ms[i]
+        ni = ns[i]
+
+        # ignore identical index in updates externally if needed
+
+        # crossing condition
+        if (mi < m and m < ni and n > ni) or (m < mi and mi < n and ni > n):
+            return True
+
+    return False
+
+@njit
+def unbind_bind(N_beads, track, ms, ns, N_lef, enforce_no_cross=False):
     '''
-    Rebinding Monte-Carlo step.
+    Rebinding Monte-Carlo step with optional crossing constraint.
     '''
-    if track is not None:
-        weights = track / np.sum(track)
-        m_new = np.searchsorted(np.cumsum(weights), np.random.rand())
-    else:
-        m_new = np.random.randint(0, N_beads - 3)
-    n_new = m_new + 2
+
+    max_tries = 20  # small fixed budget for speed safety
+
+    for _ in range(max_tries):
+        # propose m_new
+        if track is not None:
+            weights = track / np.sum(track)
+            m_new = np.searchsorted(np.cumsum(weights), np.random.rand())
+        else:
+            m_new = np.random.randint(0, N_beads - 3)
+
+        n_new = m_new + 2
+
+        # enforce non-crossing
+        if enforce_no_cross:
+            if not has_cross(m_new, n_new, ms, ns, N_lef):
+                return int(m_new), int(n_new)
+        else:
+            return int(m_new), int(n_new)
+
+    # fallback (if stuck, return old-style safe move)
     return int(m_new), int(n_new)
 
 @njit
-def slide(m_old, n_old, ms, ns, N_beads, rw=True, drift=True):
+def slide(m_old, n_old, ms, ns, N_beads, rw=True, drift=True, enforce_no_cross=False, idx=0, N_lef=0):
     '''
-    Sliding Monte-Carlo step.
+    Sliding Monte-Carlo step with optional crossing constraint.
     '''
+
     choices = np.array([-1, 1], dtype=np.int64)
+
     r1 = np.random.choice(choices) if rw else -1
     r2 = np.random.choice(choices) if rw else 1
+
     m_new = max(m_old + r1, 0)
-    if np.any(ns == m_new) and drift and m_old - r1 < n_old - 1: 
+    if np.any(ns == m_new) and drift and m_old - r1 < n_old - 1:
         m_new = max(m_old - r1, 0)
+
     n_new = min(n_old + r2, N_beads - 1)
-    if np.any(ms == n_new) and drift and n_old - r2 > m_old + 1: 
+    if np.any(ms == n_new) and drift and n_old - r2 > m_old + 1:
         n_new = min(n_old - r2, N_beads - 1)
+
+    # crossing constraint check
+    if enforce_no_cross:
+        if has_cross(m_new, n_new, ms, ns, N_lef):
+            return int(m_old), int(n_old)
+
     return int(m_new), int(n_new)
 
 @njit
@@ -291,46 +350,33 @@ def unfolding_metric(ms,ns,N_beads):
     return unfold
 
 @njit
-def initialize(N_beads, N_lef, track=None, n_states=3, S_mode="random"):
-    '''
-    Random initialization of polymer DNA fiber with LEFs + epigenetic Potts states.
+def initialize(N_beads, N_lef, track, N_epi_states, S_mode_random=True):
+    """
+    Numba-safe initialization of LEFs + epigenetic states.
 
-    Parameters
-    ----------
-    N_beads : int
-        Number of monomers in polymer.
-    N_lef : int
-        Number of loop extrusion factors.
-    track : array or None
-        Optional bias for LEF placement.
-    n_states : int
-        Number of epigenetic Potts states.
-    S_mode : str
-        "random" -> random Potts states in [0, n_states-1]
-        "uniform" -> all beads in same state
+    Notes
+    -----
+    - S_mode_random = True -> random states
+    - S_mode_random = False -> uniform state (0)
+    """
 
-    Returns
-    -------
-    ms : int64 array (N_lef,)
-    ns : int64 array (N_lef,)
-    S  : int64 array (N_beads,)
-    '''
-
-    # Initialize LEF positions
+    # LEF arrays
     ms = np.zeros(N_lef, dtype=np.int64)
     ns = np.zeros(N_lef, dtype=np.int64)
 
     for i in range(N_lef):
-        ms[i], ns[i] = unbind_bind(N_beads, track)
+        m, n = unbind_bind(N_beads, track, ms, ns, N_lef)
+        ms[i] = m
+        ns[i] = n
 
-    # Initialize epigenetic states
+    # Epigenetic states
     S = np.zeros(N_beads, dtype=np.int64)
 
-    if S_mode == "random":
+    if S_mode_random:
         for i in range(N_beads):
-            S[i] = np.random.randint(0, n_states)
+            S[i] = np.random.randint(0, N_epi_states)
     else:
-        S[:] = 0
+        pass
 
     return ms, ns, S
 
@@ -346,10 +392,10 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
                    r=None, N_bws=0, BWs=None,
                    track=None,
                    between_families_penalty=True,
-                   # --- Potts additions ---
                    J=None, h=None, epi_norm=0.0,
-                   n_states=3,
+                   N_epi_states=3,
                    p_spin=0.5):
+
     '''
     Runs the Monte Carlo simulation with LEF + Potts dynamics.
     '''
@@ -357,8 +403,22 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
     Ti = T
     bi = burnin // MC_step
 
+    # NEW: decide if spin moves are allowed
+    spin_allowed = (J is not None) and (epi_norm != 0.0)
+
+    # NEW: diagnostics (WARNING: only safe if NOT inside full njit strict mode)
+    if spin_allowed:
+        print("SPIN: allowed -> J present and epi_norm != 0")
+    else:
+        if J is None:
+            print("SPIN: NOT allowed -> J is None")
+        elif epi_norm == 0.0:
+            print("SPIN: NOT allowed -> epi_norm is zero")
+        else:
+            print("SPIN: NOT allowed -> unknown reason")
+
     # Initialization
-    ms, ns, S = initialize(N_beads, N_lef + N_lef2, track, n_states)
+    ms, ns, S = initialize(N_beads, N_lef + N_lef2, track, N_epi_states, True)
 
     E = get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm,
               ms, ns, N_lef, N_lef2, cross_loop,
@@ -377,10 +437,12 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
     Ms = np.zeros((N_lef + N_lef2, n_save), dtype=np.int64)
     Ns = np.zeros((N_lef + N_lef2, n_save), dtype=np.int64)
 
-    # NEW: epigenetic states trajectory
     epi_states = np.zeros((N_beads, n_save), dtype=np.int64)
 
     last_percent = -1
+
+    # NEW: total MC proposals per step
+    N_swift = 2 * (N_lef + N_lef2)
 
     # MAIN LOOP
     for i in range(N_steps):
@@ -392,33 +454,36 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
 
         Ti = T - (T - T_min) * (i + 1) / N_steps if mode == 'Annealing' else T
 
-        # Choose move type
-        if np.random.rand() < p_spin:
-            # SPIN MOVE
-            if epi_norm != 0.0 and J is not None and h is not None:
+        # ---------------------------------------------------
+        # NEW MC SCHEME: N_swift proposals per step
+        # ---------------------------------------------------
+        for _ in range(N_swift):
 
+            do_spin = spin_allowed and (np.random.rand() < p_spin)
+
+            if do_spin:
+                # SPIN MOVE
                 k = np.random.randint(0, N_beads)
                 s_old = S[k]
 
-                # propose new state (different)
-                s_new = np.random.randint(0, n_states)
+                s_new = np.random.randint(0, N_epi_states)
                 if s_new == s_old:
-                    s_new = (s_old + 1) % n_states
+                    s_new = (s_old + 1) % N_epi_states
 
-                dE = get_dE_potts(S, J, h, epi_norm, k, s_new)
+                dE = get_dE_epi(S, J, h, epi_norm, k, s_new)
 
                 if dE <= 0 or np.exp(-dE / Ti) > np.random.rand():
                     S[k] = s_new
                     E += dE
 
-        else:
-            # LEF MOVES (original)
-            for j in range(N_lef + N_lef2):
+            else:
+                # LEF MOVE (single LEF updated per proposal)
+                j = np.random.randint(0, N_lef + N_lef2)
 
-                r_move = np.random.choice(np.array([0, 1]))
+                r_move = np.random.randint(0, 2)
 
                 if r_move == 0:
-                    m_new, n_new = unbind_bind(N_beads, track)
+                    m_new, n_new = unbind_bind(N_beads, track, ms, ns, N_lef)
                 else:
                     m_new, n_new = slide(ms[j], ns[j], ms, ns,
                                          N_beads, lef_rw, lef_drift)
@@ -435,11 +500,9 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
                     ms[j], ns[j] = m_new, n_new
                     E += dE
 
-                if i % MC_step == 0:
-                    Ms[j, i // MC_step] = ms[j]
-                    Ns[j, i // MC_step] = ns[j]
-
-        # Metrics
+        # ---------------------------------------------------
+        # SAVE STATE (unchanged logic)
+        # ---------------------------------------------------
         if i % MC_step == 0:
 
             idx_save = i // MC_step
@@ -451,39 +514,100 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
             Fs[idx_save] = E_fold(ms, ns, fold_norm)
             Bs[idx_save] = E_bind(L, R, ms, ns, bind_norm)
 
-            # NEW: save epigenetic states
             for b in range(N_beads):
                 epi_states[b, idx_save] = S[b]
+
+            for j in range(N_lef + N_lef2):
+                Ms[j, idx_save] = ms[j]
+                Ns[j, idx_save] = ns[j]
 
     return Ms, Ns, Es, Ks, Fs, Bs, ufs, epi_states
 
 class StochasticSimulation:
-    def __init__(self,region,chrom,bedpe_file,N_beads=None,N_lef=None,N_lef2=0,out_dir=None, bw_files=None, track_file=None):
-        '''
-        Definition of simulation parameters and input files.
-        
-        region (list): [start,end].
-        chrom (str): indicator of chromosome.
-        bedpe_file (str): path where is the bedpe file with CTCF loops.
-        N_beads (int): number of monomers in the polymer chain.
-        N_lef (int): number of cohesins in the system.
-        kappa (float): LEF crossing coefficient of Hamiltonian.
-        f (float): folding coeffient of Hamiltonian.
-        b (float): binding coefficient of Hamiltonian.
-        r (list): strength of each ChIP-Seq experinment.
-        '''
-        self.N_beads = N_beads if N_beads!=None else int(np.round((region[1]-region[0])/2000))
-        self.N_bws = len(bw_files) if bw_files else 0
-        print('Number of beads:',self.N_beads)
-        self.chrom, self.region = chrom, region
-        self.bedpe_file, self.bw_files, self.track_file = bedpe_file, bw_files, track_file
-        self.preprocessing()
-        self.N_lef = 2*self.N_CTCF if N_lef==None else N_lef
-        self.N_lef2 = N_lef2
-        print('Number of LEFs:',self.N_lef+self.N_lef2)
-        self.path = make_folder(out_dir)
+    def __init__(
+            self,
+            bedpe_file,
+            chrom,
+            region=None,
+            N_beads=None,
+            N_lef=None,
+            N_lef2=0,
+            out_dir=None,
+            bw_files=None,
+            lef_density_file=None,
+            comp_file=None
+        ):
+            """
+            Chromatin stochastic simulation initializer.
+
+            Parameters
+            ----------
+            region : list[int, int]
+                Genomic region [start, end] in base pairs.
+
+            chrom : str
+                Chromosome name (e.g. "chr1").
+
+            bedpe_file : str
+                BEDPE file containing CTCF/loop interactions.
+
+            N_beads : int or None
+                Number of polymer beads. If None, inferred from region at ~2kb resolution.
+
+            N_lef : int or None
+                Number of loop extrusion factors (LEFs). If None, inferred from CTCF count.
+
+            N_lef2 : int
+                Second LEF population size (optional heterogeneous population).
+
+            out_dir : str or None
+                Output directory for simulation results.
+
+            bw_files : list[str] or None
+                BigWig signal tracks (e.g. ChIP-seq, compartments).
+
+            lef_density_file : str or None
+                Optional track defining spatial LEF loading probability.
+
+            comp_file : str or None
+                Compartment track (BigWig or BED format).
+            """
+            # Basic geometry
+            self.region = region
+            self.chrom = chrom
+
+            self.N_beads = (
+                N_beads
+                if N_beads is not None
+                else int(np.round((region[1] - region[0]) / 2000))
+            )
+
+            # Input data
+            self.bedpe_file = bedpe_file
+            self.bw_files = bw_files
+            self.lef_density_file = lef_density_file
+            self.comp_file = comp_file
+
+            self.N_bws = len(bw_files) if bw_files is not None else 0
+
+            # Print basic setup
+            print(f"Number of beads: {self.N_beads}")
+            self.preprocessing()
+
+            # LEF initialization
+            self.N_lef = (
+                2 * self.N_CTCF
+                if N_lef is None
+                else N_lef
+            )
+            self.N_lef2 = N_lef2
+
+            print(f"Number of LEFs: {self.N_lef + self.N_lef2}")
+
+            # Output setup
+            self.path = make_folder(out_dir)
     
-    def run_energy_minimization(self, N_steps, MC_step, burnin, T=1, T_min=0, mode='Metropolis', viz=False, save=False, f=1.0, f2=0.0, b=1.0, kappa=1.0, lef_rw=True, lef_drift=True, cross_loop=True, r=None, between_families_penalty=True):
+    def run_energy_minimization(self, N_steps, MC_step, burnin, T=1, T_min=0, mode='Metropolis', viz=False, save=False, f=1.0, f2=0.0, b=1.0, kappa=1.0, epi_coeff=0.0, N_epi_states=3, p_spin=0.5, lef_rw=True, lef_drift=True, cross_loop=True, r=None, between_families_penalty=True):
         '''
         Implementation of the stochastic Monte Carlo simulation.
 
@@ -500,7 +624,15 @@ class StochasticSimulation:
         between_families_penalty (bool): whether to apply penalty for interactions between families.
         '''
         # Define normalization constants
-        fold_norm, fold_norm2, bind_norm, k_norm = -self.N_beads*f/((self.N_lef+self.N_lef2)*np.log(self.N_beads/(self.N_lef+self.N_lef2))), -self.N_beads*f2/((self.N_lef+self.N_lef2)*np.log(self.N_beads/(self.N_lef+self.N_lef2))), -self.N_beads*b/(np.sum(self.L)+np.sum(self.R)), kappa*1e4
+        N_lef_tot = self.N_lef + self.N_lef2
+        log_term = np.log((self.N_beads) / (N_lef_tot))
+        fold_norm = -self.N_beads * f  / (N_lef_tot * log_term )
+        fold_norm2 = -self.N_beads * f2 / (N_lef_tot * log_term )
+        bind_sum = np.sum(self.L) + np.sum(self.R)
+        bind_norm = -self.N_beads * b / bind_sum
+        k_norm = kappa * 1e6
+        epi_scale = self.N_beads + 0.5 * self.N_CTCF
+        epi_norm = epi_coeff / epi_scale
         self.N_steps, self.MC_step = N_steps, MC_step
         r = np.full(self.N_bws, -self.N_beads / 10) if not r and self.N_bws > 0 else (None if not r else r)
 
@@ -508,7 +640,36 @@ class StochasticSimulation:
         print('\nRunning simulation (with numba acceleration)...')
         start = time.time()
         self.burnin = burnin
-        self.Ms, self.Ns, self.Es, self.Ks, self.Fs, self.Bs, self.ufs = run_simulation(self.N_beads, N_steps, MC_step, burnin, T, T_min, fold_norm, fold_norm2, bind_norm, k_norm, self.N_lef, self.N_lef2, self.L, self.R, mode, lef_rw, lef_drift, cross_loop, r, self.N_bws, self.BWs, self.lef_track, between_families_penalty)
+        self.Ms, self.Ns, self.Es, self.Ks, self.Fs, self.Bs, self.ufs, self.epi_states = run_simulation(
+            self.N_beads,
+            N_steps,
+            MC_step,
+            burnin,
+            T,
+            T_min,
+            fold_norm,
+            fold_norm2,
+            bind_norm,
+            k_norm,
+            self.N_lef,
+            self.N_lef2,
+            self.L,
+            self.R,
+            mode,
+            lef_rw,
+            lef_drift,
+            cross_loop,
+            r,
+            self.N_bws,
+            self.BWs,
+            self.lef_track,
+            between_families_penalty,
+            J=self.J,                 # NEW
+            h=self.h,                 # NEW
+            epi_norm=epi_norm,   # NEW
+            N_epi_states=N_epi_states,   # NEW
+            p_spin=p_spin        # NEW
+        )        
         end = time.time()
         elapsed = end - start
         print(f'Computation finished successfully in {elapsed//3600:.0f} hours, {elapsed%3600//60:.0f} minutes and {elapsed%60:.0f} seconds.')
@@ -538,28 +699,144 @@ class StochasticSimulation:
             np.save(save_dir + 'Ks.npy', self.Ks)
         
         # Some visualizations
-        if viz: coh_traj_plot(self.Ms, self.Ns, self.N_beads, self.path)
-        if viz: make_timeplots(self.Es, self.Bs, self.Ks, self.Fs, burnin//MC_step, mode, self.path)
-        if viz: coh_probdist_plot(self.Ms, self.Ns, self.N_beads, self.path)
-        if viz and self.N_beads <= 2000: stochastic_heatmap(self.Ms, self.Ns, MC_step, self.N_beads, self.path)
+        if viz: 
+            coh_traj_plot(self.Ms, self.Ns, self.N_beads, self.path)
+            plot_epi_trajectory(self.epi_states, self.path)
+            make_timeplots(self.Es, self.Bs, self.Ks, self.Fs, burnin//MC_step, mode, self.path)
+            coh_probdist_plot(self.Ms, self.Ns, self.N_beads, self.path)
+            stochastic_heatmap(self.Ms, self.Ns, self.N_beads, self.path, method='tanh')
         
-        return self.Es, self.Ms, self.Ns, self.Bs, self.Ks, self.Fs, self.ufs
+        return self.Es, self.Ms, self.Ns, self.Bs, self.Ks, self.Fs, self.ufs, self.epi_states
 
     def preprocessing(self):
-        self.L, self.R, self.dists = binding_vectors_from_bedpe(self.bedpe_file,self.N_beads,self.region,self.chrom,False,False)
+        """
+        Preprocessing pipeline using updated BEDPE + BigWig exporters.
+
+        Produces:
+        - L, R, J interaction structures
+        - BW tracks (compartments, ChIP, etc.)
+        - LEF track
+        - basic dataset statistics
+        """
+
+        # 1. Chromatin structure from BEDPE
+        L, R, J, stats = binding_vectors_from_bedpe(
+            bedpe_file=self.bedpe_file,
+            N_beads=self.N_beads,
+            region=self.region,
+            chrom=self.chrom,
+            normalization=False,
+            viz=False,
+            diagonal_interactions=True,
+            J_mode="binary",
+            J_norm=None,
+            alpha=1.0,
+            smooth=False,
+            smooth_sigma=2.0
+        )
+
+        self.L = L
+        self.R = R
+        self.J = J
+        self.loop_stats = stats
+
+        # 2. CTCF / loop count estimate
+        self.N_CTCF = int(stats["n_loops"])
+        print("Number of CTCF:", self.N_CTCF)
+
+        # 3. BigWig tracks (compartments, ChIP, etc.)
         if not self.bw_files:
             self.BWs = None
             self.N_bws = 0
+
         else:
             if isinstance(self.bw_files, str):
                 self.bw_files = [self.bw_files]
-                self.N_bws = 1
-            self.BWs = np.zeros((self.N_bws, self.N_beads))
+
+            self.N_bws = len(self.bw_files)
+            self.BWs = np.zeros((self.N_bws, self.N_beads), dtype=np.float64)
+
             for i, f in enumerate(self.bw_files):
-                self.BWs[i, :] = load_track(file=f, region=self.region, chrom=self.chrom, N_beads=self.N_beads, viz=False)
-        self.lef_track = load_track(self.track_file,self.region,self.chrom,self.N_beads,False,True) if self.track_file else None
-        self.N_CTCF = np.max([np.count_nonzero(self.L),np.count_nonzero(self.R)])
-        print('Number of CTCF:',self.N_CTCF)
+                exporter = BWExporter(
+                    path=f,
+                    region=self.region,
+                    chrom=self.chrom,
+                    N_beads=self.N_beads
+                )
+
+                self.BWs[i, :] = exporter.load_track(
+                    viz=False,
+                    roll=False,
+                    norm=None,
+                    scale_minus1_1=False
+                )
+
+        # 4. LEF / epigenetic track
+        if self.lef_density_file:
+            exporter = BWExporter(
+                path=self.lef_density_file,
+                region=self.region,
+                chrom=self.chrom,
+                N_beads=self.N_beads
+            )
+
+            self.lef_track = exporter.load_track(
+                viz=False,
+                roll=True,
+                norm=None,
+                scale_minus1_1=False
+            )
+        else:
+            self.lef_track = None
+        
+        # 5. Compartments -> continuous external field h
+        if self.comp_file:
+
+            f = self.comp_file.lower()
+
+            # CASE 1: BigWig
+            if f.endswith((".bw", ".bigwig")):
+
+                exporter = BWExporter(
+                    path=self.comp_file,
+                    region=self.region,
+                    chrom=self.chrom,
+                    N_beads=self.N_beads
+                )
+
+                self.h = exporter.load_track(
+                    viz=False,
+                    roll=False,
+                    norm=None,
+                    scale_minus1_1=True
+                )
+
+            # CASE 2: BED-like compartments
+            elif f.endswith((".bed", ".bed.gz")):
+
+                self.h = load_compartments_bed(
+                    bed_file=self.comp_file,
+                    region=self.region,
+                    chrom=self.chrom,
+                    N_beads=self.N_beads,
+                    use_score=True,
+                    spline_smooth=True,
+                    spline_s=0.8,
+                    scale_minus1_1=True,
+                    viz=False,
+                    debug=False
+                )
+
+            # fallback
+            else:
+                raise ValueError(
+                    f"Unsupported compartment format: {self.comp_file}"
+                )
+
+            self.h = np.asarray(self.h, dtype=np.float64)
+
+        else:
+            self.h = None
 
     def run_EM(self,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=100.0,ev_ff_power=3.0,tolerance=0.001,friction=0.1,integrator_step=100*mm.unit.femtosecond,temperature=310,init_struct='rw',save_plots=True,ff_path=default_xml_path):
         em = EM_LE(self.Ms,self.Ns,self.N_beads,self.burnin,self.MC_step,self.path,platform,angle_ff_strength,le_distance,le_ff_strength,ev_ff_strength,ev_ff_power,tolerance)
