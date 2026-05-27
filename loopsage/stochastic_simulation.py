@@ -177,26 +177,20 @@ def get_dE_epi(S, J, h, epi_norm, k, s_new):
     dE = 0.0
     N_beads = len(S)
 
+    # Pairwise interaction term
     for j in range(N_beads):
-        if j != k:
-            Jij = J[k, j]
-            if Jij != 0.0:
-                dE += Jij * ((S[j] == s_old) - (S[j] == s_new))
-
-    # # Pairwise interaction term
-    # for j in range(N_beads):
-    #     if j == k:
-    #         continue
-    #     Jij = J[k, j]
-    #     # skip zeros (critical for speed)
-    #     if Jij != 0.0:
-    #         Sj = S[j]
-    #         # remove old contribution
-    #         if Sj == s_old:
-    #             dE += Jij
-    #         # add new contribution
-    #         if Sj == s_new:
-    #             dE -= Jij
+        if j == k:
+            continue
+        Jij = J[k, j]
+        # skip zeros (critical for speed)
+        if Jij != 0.0:
+            Sj = S[j]
+            # remove old contribution
+            if Sj == s_old:
+                dE += Jij
+            # add new contribution
+            if Sj == s_new:
+                dE -= Jij
     
     # External field term (optional)
     if h is not None:
@@ -260,7 +254,7 @@ def get_dE_nodes(S, J, h, epi_norm, k_spin, s_new):
     Energy difference for a single spin (node) update.
     '''
 
-    if epi_norm == 0.0 or J is None or h is None or S is None:
+    if epi_norm == 0.0 or J is None or S is None:
         return 0.0
 
     return get_dE_epi(S, J, h, epi_norm, k_spin, s_new)
@@ -470,7 +464,7 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
                 if s_new == s_old:
                     s_new = (s_old + 1) % N_epi_states
 
-                dE = get_dE_epi(S, J, h, epi_norm, k, s_new)
+                dE = get_dE_nodes(S, J, h, epi_norm, k, s_new)
 
                 if dE <= 0 or np.exp(-dE / Ti) > np.random.rand():
                     S[k] = s_new
@@ -589,6 +583,7 @@ class StochasticSimulation:
             self.comp_file = comp_file
 
             self.N_bws = len(bw_files) if bw_files is not None else 0
+            self.path = make_folder(out_dir)
 
             # Print basic setup
             print(f"Number of beads: {self.N_beads}")
@@ -603,9 +598,6 @@ class StochasticSimulation:
             self.N_lef2 = N_lef2
 
             print(f"Number of LEFs: {self.N_lef + self.N_lef2}")
-
-            # Output setup
-            self.path = make_folder(out_dir)
     
     def run_energy_minimization(self, N_steps, MC_step, burnin, T=1, T_min=0, mode='Metropolis', viz=False, save=False, f=1.0, f2=0.0, b=1.0, kappa=1.0, epi_coeff=0.0, N_epi_states=3, p_spin=0.5, lef_rw=True, lef_drift=True, cross_loop=True, r=None, between_families_penalty=True):
         '''
@@ -631,8 +623,8 @@ class StochasticSimulation:
         bind_sum = np.sum(self.L) + np.sum(self.R)
         bind_norm = -self.N_beads * b / bind_sum
         k_norm = kappa * 1e6
-        epi_scale = 1 #self.N_beads + 0.5 * self.N_CTCF
-        epi_norm = - epi_coeff / epi_scale
+        # epi_scale = self.N_beads + 0.5 * self.N_CTCF
+        epi_norm = epi_coeff
         self.N_steps, self.MC_step = N_steps, MC_step
         r = np.full(self.N_bws, -self.N_beads / 10) if not r and self.N_bws > 0 else (None if not r else r)
 
@@ -725,13 +717,14 @@ class StochasticSimulation:
             N_beads=self.N_beads,
             region=self.region,
             chrom=self.chrom,
+            out_path=self.path,
             normalization=False,
-            viz=False,
+            viz=True,
             diagonal_interactions=True,
             J_mode="binary",
             J_norm=None,
             alpha=1.0,
-            smooth=False,
+            smooth=True,
             smooth_sigma=2.0
         )
 
@@ -765,9 +758,10 @@ class StochasticSimulation:
                 )
 
                 self.BWs[i, :] = exporter.load_track(
-                    viz=False,
+                    viz=True,
                     roll=False,
                     norm=None,
+                    out_path=self.path,
                     scale_minus1_1=False
                 )
 
@@ -781,9 +775,10 @@ class StochasticSimulation:
             )
 
             self.lef_track = exporter.load_track(
-                viz=False,
+                viz=True,
                 roll=True,
                 norm=None,
+                out_path=self.path,
                 scale_minus1_1=False
             )
         else:
@@ -805,7 +800,7 @@ class StochasticSimulation:
                 )
 
                 self.h = exporter.load_track(
-                    viz=False,
+                    viz=True,
                     roll=False,
                     norm=None,
                     scale_minus1_1=True
@@ -817,13 +812,14 @@ class StochasticSimulation:
                 self.h = load_compartments_bed(
                     bed_file=self.comp_file,
                     region=self.region,
+                    out_path=self.path,
                     chrom=self.chrom,
                     N_beads=self.N_beads,
                     use_score=True,
                     spline_smooth=True,
                     spline_s=0.8,
                     scale_minus1_1=True,
-                    viz=False,
+                    viz=True,
                     debug=False
                 )
 

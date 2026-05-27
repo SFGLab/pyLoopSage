@@ -35,7 +35,7 @@ CHROM_LENGTHS = {
 }
 
 def binding_vectors_from_bedpe(
-        bedpe_file, N_beads, chrom, region=None,
+        bedpe_file, N_beads, chrom, region=None, out_path=None,
         normalization=False,
         viz=False,
         diagonal_interactions=True,
@@ -288,8 +288,16 @@ def binding_vectors_from_bedpe(
         axs[1].set_title("Loop size distribution")
         axs[1].grid()
 
+        if out_path is not None:
+            save_path = out_path + "/plots/LR_data.svg"
+            plt.savefig(save_path, format="svg", dpi=600)
+            save_path = out_path + "/plots/LR_data.png"
+            plt.savefig(save_path, format="png", dpi=600)
+            save_path = out_path + "/plots/LR_data.pdf"
+            plt.savefig(save_path, format="pdf", dpi=600)
+
         plt.tight_layout()
-        plt.show()
+        plt.close()
 
         # --------------------------------------------------
         # Heatmap (separate figure)
@@ -303,7 +311,14 @@ def binding_vectors_from_bedpe(
 
         plt.colorbar(im, ax=ax, fraction=0.046)
         plt.tight_layout()
-        plt.show()
+        if out_path is not None:
+            save_path = out_path + "/plots/J_data.svg"
+            plt.savefig(save_path, format="svg", dpi=600)
+            save_path = out_path + "/plots/J_data.png"
+            plt.savefig(save_path, format="png", dpi=600)
+            save_path = out_path + "/plots/J_data.pdf"
+            plt.savefig(save_path, format="pdf", dpi=600)
+        plt.close()
 
 
         # --------------------------------------------------
@@ -326,7 +341,7 @@ def binding_vectors_from_bedpe(
         axs[1].grid()
 
         plt.tight_layout()
-        plt.show()
+        plt.close()
     
     return L, R, J, statistics
 
@@ -379,6 +394,7 @@ class BWExporter:
                    viz=False,
                    roll=False,
                    norm=None,
+                   out_path=None,
                    scale_minus1_1=False):
         """
         Load BigWig track and convert to bead resolution.
@@ -461,8 +477,16 @@ class BWExporter:
             axs[2].set_ylabel("signal")
             axs[2].grid(alpha=0.3)
 
+            if out_path is not None:
+                save_path = out_path + "/plots/bw_dataset.svg"
+                plt.savefig(save_path, format="svg", dpi=600)
+                save_path = out_path + "/plots/bw_dataset.png"
+                plt.savefig(save_path, format="png", dpi=600)
+                save_path = out_path + "/plots/bw_dataset.pdf"
+                plt.savefig(save_path, format="pdf", dpi=600)
+
             plt.tight_layout()
-            plt.show()
+            plt.close()
 
         return weights
 
@@ -516,6 +540,7 @@ def load_compartments_bed(
     region,
     chrom,
     N_beads,
+    out_path=None,
     use_score=True,
     spline_smooth=False,
     spline_s=1.0,            # 0 = no smoothing, ~1 light, >1 stronger
@@ -638,7 +663,14 @@ def load_compartments_bed(
         plt.grid(alpha=0.3)
         
         plt.tight_layout()
-        plt.show()
+        if out_path is not None:
+            save_path = out_path + "/plots/comparments.svg"
+            plt.savefig(save_path, format="svg", dpi=600)
+            save_path = out_path + "/plots/comparments.png"
+            plt.savefig(save_path, format="png", dpi=600)
+            save_path = out_path + "/plots/comparments.pdf"
+            plt.savefig(save_path, format="pdf", dpi=600)
+        plt.close()
 
     return signal
 
