@@ -631,8 +631,8 @@ class StochasticSimulation:
         bind_sum = np.sum(self.L) + np.sum(self.R)
         bind_norm = -self.N_beads * b / bind_sum
         k_norm = kappa * 1e6
-        epi_scale = self.N_beads + 0.5 * self.N_CTCF
-        epi_norm = epi_coeff / epi_scale
+        epi_scale = 1 #self.N_beads + 0.5 * self.N_CTCF
+        epi_norm = - epi_coeff / epi_scale
         self.N_steps, self.MC_step = N_steps, MC_step
         r = np.full(self.N_bws, -self.N_beads / 10) if not r and self.N_bws > 0 else (None if not r else r)
 
