@@ -725,7 +725,7 @@ class StochasticSimulation:
             J_norm=None,
             alpha=1.0,
             smooth=True,
-            smooth_sigma=2.0
+            smooth_sigma=self.N_beads/200
         )
 
         self.L = L
@@ -817,7 +817,7 @@ class StochasticSimulation:
                     N_beads=self.N_beads,
                     use_score=True,
                     spline_smooth=True,
-                    spline_s=0.8,
+                    spline_s=self.N_beads/200,
                     scale_minus1_1=True,
                     viz=True,
                     debug=False
