@@ -512,6 +512,21 @@ class BWExporter:
 
         return weights
 
+    def compute_global_minmax(self):
+        """
+        Computes genome-wide min/max from BigWig.
+        This is the KEY FIX for consistent normalization.
+        """
+
+        bw = pyBigWig.open(self.file)
+
+        values = bw.values(self.chrom, 0, CHROM_LENGTHS[self.chrom])
+        values = np.nan_to_num(values)
+
+        bw.close()
+
+        self.global_minmax = (np.min(values), np.max(values))
+
     # --------------------------------------------------
     # Normalization utilities
     # --------------------------------------------------
@@ -527,7 +542,7 @@ class BWExporter:
             return (x - np.mean(x)) / std
 
         elif method == "minmax":
-            xmin, xmax = np.min(x), np.max(x)
+            xmin, xmax = self.global_minmax()
             if xmax == xmin:
                 return x * 0
             return (x - xmin) / (xmax - xmin)
@@ -543,7 +558,7 @@ def load_compartments_bed(
     out_path=None,
     use_score=True,
     spline_smooth=False,
-    spline_s=1.0,            # 0 = no smoothing, ~1 light, >1 stronger
+    spline_s=1.0,
     scale_minus1_1=True,
     viz=False,
     debug=False
@@ -551,39 +566,74 @@ def load_compartments_bed(
     """
     Load compartment BED file and convert to bead-level signal.
     """
-    # Load + filter
-    df = pd.read_csv(bed_file, sep="\t", header=None)
 
-    df = df[
-        (df[0] == chrom) &
-        (df[1] < region[1]) &
-        (df[2] > region[0])
+    # --------------------------------------------------
+    # Load FULL genome once (IMPORTANT FIX)
+    # --------------------------------------------------
+    df_full = pd.read_csv(bed_file, sep="\t", header=None)
+
+    # region-specific view (used for signal only)
+    df = df_full[
+        (df_full[0] == chrom) &
+        (df_full[1] < region[1]) &
+        (df_full[2] > region[0])
     ].reset_index(drop=True)
 
     if len(df) == 0:
         raise ValueError("No compartments found in region")
 
+    # --------------------------------------------------
+    # GLOBAL normalization reference (CRITICAL FIX)
+    # --------------------------------------------------
+    def extract_val(row):
+        if use_score:
+            try:
+                return 2.0 * float(row[4]) - 1.0
+            except:
+                pass
+
+        # fallback label
+        label = row[3]
+        if isinstance(label, str):
+            if label.startswith("A"):
+                sign = +1.0
+            elif label.startswith("B"):
+                sign = -1.0
+            else:
+                return 0.0
+            depth = len(label.split("."))
+            return sign * (1.0 + 0.2 * (depth - 1))
+
+        return 0.0
+
+    # compute global min/max ON FULL DATASET
+    global_vals = np.array([extract_val(df_full.iloc[i]) for i in range(len(df_full))])
+
+    gmin, gmax = np.min(global_vals), np.max(global_vals)
+
+    # --------------------------------------------------
+    # build signal
+    # --------------------------------------------------
     signal = np.zeros(N_beads, dtype=np.float64)
     counts = np.zeros(N_beads, dtype=np.float64)
 
     resolution = (region[1] - region[0]) // N_beads
 
-    # label parser
     def parse_label(label):
         if not isinstance(label, str):
             return 0.0
-
         if label.startswith("A"):
             sign = +1.0
         elif label.startswith("B"):
             sign = -1.0
         else:
             return 0.0
-
         depth = len(label.split("."))
         return sign * (1.0 + 0.2 * (depth - 1))
 
-    # fill signal
+    # --------------------------------------------------
+    # fill signal (UNCHANGED LOGIC)
+    # --------------------------------------------------
     for i in range(len(df)):
 
         start = max(df[1][i], region[0])
@@ -615,33 +665,39 @@ def load_compartments_bed(
     mask = counts > 0
     signal[mask] /= counts[mask]
 
-    # FIXED smoothing
+    # --------------------------------------------------
+    # smoothing (UNCHANGED)
+    # --------------------------------------------------
     if spline_smooth:
+        from scipy.interpolate import UnivariateSpline
+
         x = np.arange(N_beads)
         valid = mask & np.isfinite(signal)
+
         if np.sum(valid) > 3:
-            # STEP 1: fill gaps BEFORE spline (important fix)
             signal_filled = signal.copy()
             signal_filled[~valid] = np.interp(
-                x[~valid],
-                x[valid],
-                signal[valid]
+                x[~valid], x[valid], signal[valid]
             )
-            # STEP 2: normalize smoothing scale correctly
+
             spline = UnivariateSpline(x, signal_filled, s=spline_s)
             signal = spline(x)
 
-    # final scaling
+    # --------------------------------------------------
+    # GLOBAL normalization FIX (THIS IS THE IMPORTANT CHANGE)
+    # --------------------------------------------------
     if scale_minus1_1:
-        xmin, xmax = np.min(signal), np.max(signal)
-
-        if xmax > xmin:
-            signal = 2.0 * (signal - xmin) / (xmax - xmin) - 1.0
+        if gmax > gmin:
+            signal = 2.0 * (signal - gmin) / (gmax - gmin) - 1.0
         else:
             signal[:] = 0.0
 
-    # visualization
+    # --------------------------------------------------
+    # visualization (UNCHANGED)
+    # --------------------------------------------------
     if viz:
+
+        import matplotlib.pyplot as plt
 
         x = np.arange(N_beads)
 
@@ -649,27 +705,23 @@ def load_compartments_bed(
         plt.plot(x, signal, color="black", lw=1.5)
 
         plt.fill_between(x, 0, signal, where=(signal > 0),
-                         color="red", alpha=0.5, label="A")
+                         color="red", alpha=0.5)
 
         plt.fill_between(x, 0, signal, where=(signal < 0),
-                         color="blue", alpha=0.5, label="B")
+                         color="blue", alpha=0.5)
 
         plt.axhline(0, color="black", ls="--", lw=1)
 
-        plt.title("Compartment signal (stable spline smoothing)")
+        plt.title("Compartment signal (global normalization)")
         plt.xlabel("bead index")
         plt.ylabel("signal [-1,1]")
-        plt.legend()
         plt.grid(alpha=0.3)
-        
+
         plt.tight_layout()
+
         if out_path is not None:
-            save_path = out_path + "/plots/comparments.svg"
-            plt.savefig(save_path, format="svg", dpi=600)
-            save_path = out_path + "/plots/comparments.png"
-            plt.savefig(save_path, format="png", dpi=600)
-            save_path = out_path + "/plots/comparments.pdf"
-            plt.savefig(save_path, format="pdf", dpi=600)
+            plt.savefig(out_path + "/plots/comparments.svg", format="svg", dpi=600)
+
         plt.close()
 
     return signal

@@ -400,17 +400,6 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
     # NEW: decide if spin moves are allowed
     spin_allowed = (J is not None) and (epi_norm != 0.0)
 
-    # NEW: diagnostics (WARNING: only safe if NOT inside full njit strict mode)
-    if spin_allowed:
-        print("SPIN: allowed -> J present and epi_norm != 0")
-    else:
-        if J is None:
-            print("SPIN: NOT allowed -> J is None")
-        elif epi_norm == 0.0:
-            print("SPIN: NOT allowed -> epi_norm is zero")
-        else:
-            print("SPIN: NOT allowed -> unknown reason")
-
     # Initialization
     ms, ns, S = initialize(N_beads, N_lef + N_lef2, track, N_epi_states, True)
 
@@ -448,9 +437,7 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
 
         Ti = T - (T - T_min) * (i + 1) / N_steps if mode == 'Annealing' else T
 
-        # ---------------------------------------------------
         # NEW MC SCHEME: N_swift proposals per step
-        # ---------------------------------------------------
         for _ in range(N_swift):
 
             do_spin = spin_allowed and (np.random.rand() < p_spin)
@@ -494,9 +481,7 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
                     ms[j], ns[j] = m_new, n_new
                     E += dE
 
-        # ---------------------------------------------------
         # SAVE STATE (unchanged logic)
-        # ---------------------------------------------------
         if i % MC_step == 0:
 
             idx_save = i // MC_step
@@ -591,7 +576,7 @@ class StochasticSimulation:
 
             # LEF initialization
             self.N_lef = (
-                2 * self.N_CTCF
+                self.N_CTCF//2
                 if N_lef is None
                 else N_lef
             )
@@ -617,11 +602,11 @@ class StochasticSimulation:
         '''
         # Define normalization constants
         N_lef_tot = self.N_lef + self.N_lef2
-        log_term = np.log((self.N_beads) / (N_lef_tot))
-        fold_norm = -self.N_beads * f  / (N_lef_tot * log_term )
-        fold_norm2 = -self.N_beads * f2 / (N_lef_tot * log_term )
-        bind_sum = np.sum(self.L) + np.sum(self.R)
-        bind_norm = -self.N_beads * b / bind_sum
+        fold_norm = -2*(2-np.log(self.avg_length)/np.log(self.max_length))*f#-self.N_beads * f  / (N_lef_tot * log_term )
+        print("Folding coefficient after normalization:",fold_norm)
+        fold_norm2 = -2*(2-np.log(self.avg_length)/np.log(self.max_length))*f2
+        bind_norm = -self.N_beads * b / (np.sum(self.L) + np.sum(self.R))
+        print("Binding coefficient after normalization:",bind_norm)
         k_norm = kappa * 1e6
         # epi_scale = self.N_beads + 0.5 * self.N_CTCF
         epi_norm = epi_coeff
@@ -691,7 +676,7 @@ class StochasticSimulation:
             np.save(save_dir + 'Ks.npy', self.Ks)
         
         # Some visualizations
-        if viz: 
+        if viz:
             coh_traj_plot(self.Ms, self.Ns, self.N_beads, self.path)
             plot_epi_trajectory(self.epi_states, self.path)
             make_timeplots(self.Es, self.Bs, self.Ks, self.Fs, burnin//MC_step, mode, self.path)
@@ -735,6 +720,8 @@ class StochasticSimulation:
 
         # 2. CTCF / loop count estimate
         self.N_CTCF = int(stats["n_loops"])
+        self.avg_length = int(stats["loop_length"]["mean"])
+        self.max_length = int(stats["loop_length"]["max"])
         print("Number of CTCF:", self.N_CTCF)
 
         # 3. BigWig tracks (compartments, ChIP, etc.)
@@ -817,7 +804,7 @@ class StochasticSimulation:
                     N_beads=self.N_beads,
                     use_score=True,
                     spline_smooth=True,
-                    spline_s=self.N_beads/200,
+                    spline_s=self.N_beads/100,
                     scale_minus1_1=True,
                     viz=True,
                     debug=False
@@ -839,8 +826,9 @@ class StochasticSimulation:
         sim_heat = em.run_pipeline(plots=save_plots,friction=friction,integrator_step=integrator_step,temperature=temperature,ff_path=ff_path,init_struct=init_struct)
         corr_exp_heat(sim_heat,self.bedpe_file,self.region,self.chrom,self.N_beads,self.path)
     
-    def run_MD(self,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=100.0,ev_ff_power=3.0,tolerance=0.001,friction=0.1,integrator_step=100*mm.unit.femtosecond,temperature=310,init_struct='rw',sim_step=1000,save_plots=True,ff_path=default_xml_path,p_ev=0,continuous_topoisomerase=False):
-        md = MD_LE(self.Ms,self.Ns,self.N_beads,self.path,platform,angle_ff_strength,le_distance,le_ff_strength,ev_ff_strength,ev_ff_power,tolerance)
+    def run_MD(self,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=100.0,ev_ff_power=3.0,do_compartments=False,tolerance=0.001,friction=0.1,integrator_step=100*mm.unit.femtosecond,temperature=310,init_struct='rw',sim_step=1000,save_plots=True,ff_path=default_xml_path,p_ev=0,continuous_topoisomerase=False):
+        if not do_compartments: self.epi_states=None
+        md = MD_LE(self.Ms,self.Ns,self.epi_states,self.N_beads,self.path,platform,angle_ff_strength,le_distance,le_ff_strength,ev_ff_strength,ev_ff_power,tolerance)
         sim_heat = md.run_pipeline(plots=save_plots,sim_step=sim_step,friction=friction,integrator_step=integrator_step,temperature=temperature,ff_path=ff_path,p_ev=p_ev,init_struct=init_struct,continuous_topoisomerase=continuous_topoisomerase)
         corr_exp_heat(sim_heat,self.bedpe_file,self.region,self.chrom,self.N_beads,self.path)
 

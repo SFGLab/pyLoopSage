@@ -177,7 +177,7 @@ def plot_epi_trajectory(epi_states, path=None, cmap="bwr"):
     plt.tight_layout()
     plt.close()
 
-def coh_traj_plot(ms, ns, N_beads, path, jump_threshold=200, min_stable_time=10):
+def coh_traj_plot(ms, ns, N_beads, path, jump_threshold=400, min_stable_time=3):
     """
     Plots the trajectories of cohesins as filled regions between their two ends over time.
 

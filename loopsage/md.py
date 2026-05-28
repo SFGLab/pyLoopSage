@@ -16,7 +16,7 @@ from .utils import *
 from .initial_structures import *
 
 class MD_LE:
-    def __init__(self,M,N,N_beads,path=None,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=100.0,ev_ff_power=3.0,tolerance=0.001):
+    def __init__(self,M,N,S,N_beads,path=None,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=100.0,ev_ff_power=3.0,tolerance=0.001):
         '''
         M, N (np arrays): Position matrix of two legs of cohesin m,n. 
                           Rows represent  loops/cohesins and columns represent time
@@ -24,11 +24,12 @@ class MD_LE:
         step (int): sampling rate
         path (int): the path where the simulation will save structures etc.
         '''
-        self.M, self.N = M, N
+        self.M, self.N, self.S = M, N, S
         self.N_coh, self.N_steps = M.shape
         self.N_beads = N_beads
         self.path = path if path!=None else make_folder('../output')
         self.platform = platform
+        self.rw_l = np.sqrt(self.N_beads) * 0.1
         self.angle_ff_strength = angle_ff_strength
         self.le_distance = le_distance
         self.le_ff_strength = le_ff_strength
@@ -90,7 +91,8 @@ class MD_LE:
                 elif p_ev > 0:
                     self.ps_ev = np.random.rand(self.N_beads)
                 self.change_loop(i)
-                self.change_ev()
+                if getattr(self, "S", None) is not None: self.change_comps(i)
+                if self.p_ev>0: self.change_ev()
                 self.simulation.step(sim_step)
                 self.state = self.simulation.context.getState(getPositions=True)
                 PDBxFile.writeFile(pdb.topology, self.state.getPositions(), open(self.path+f'/ensemble/MDLE_{i+1}.cif', 'w'))
@@ -105,8 +107,8 @@ class MD_LE:
             if plots:
                 np.save(self.path+f'/other/avg_heatmap.npy', self.avg_heat)
                 np.save(self.path+f'/other/std_heatmap.npy', self.std_heat)
-                self.plot_heat(self.avg_heat, f'/plots/avg_heatmap.svg')
-                self.plot_heat(self.std_heat, f'/plots/std_heatmap.svg')
+                self.plot_heat(self.avg_heat, f'/plots/avg_heatmap.pdf')
+                self.plot_heat(self.std_heat, f'/plots/std_heatmap.pdf')
         return self.avg_heat
 
     def change_ev(self):
@@ -122,6 +124,11 @@ class MD_LE:
         self.simulation.context.reinitialize(preserveState=True)
         self.LE_force.updateParametersInContext(self.simulation.context)
 
+    def change_comps(self,i):
+        for n in range(self.N_beads):
+            self.comp_force.setParticleParameters(n,[self.S[n,i]])
+        self.comp_force.updateParametersInContext(self.simulation.context)
+
     def add_evforce(self):
         'Leonard-Jones potential for excluded volume'
         self.ev_force = mm.CustomNonbondedForce(f'(epsilon1*epsilon2*(sigma1*sigma2)/(r+r_small))^{self.ev_ff_power}')
@@ -131,6 +138,7 @@ class MD_LE:
         for i in range(self.N_beads):
             self.ev_force.addParticle([np.sqrt(self.ev_ff_strength),0.05])
         self.system.addForce(self.ev_force)
+        print("EV added!")
 
     def add_bonds(self):
         'Harmonic bond borce between succesive beads'
@@ -138,6 +146,7 @@ class MD_LE:
         for i in range(self.N_beads - 1):
             self.bond_force.addBond(i, i + 1, 0.1, 3e5)
         self.system.addForce(self.bond_force)
+        print("Backbone bonds added!")
     
     def add_stiffness(self):
         'Harmonic angle force between successive beads so as to make chromatin rigid'
@@ -145,6 +154,7 @@ class MD_LE:
         for i in range(self.N_beads - 2):
             self.angle_force.addAngle(i, i + 1, i + 2, np.pi, self.angle_ff_strength)
         self.system.addForce(self.angle_force)
+        print("Stiffness added!")
     
     def add_loops(self,i=0):
         'LE force that connects cohesin restraints'
@@ -152,6 +162,44 @@ class MD_LE:
         for nn in range(self.N_coh):
             self.LE_force.addBond(self.M[nn,i], self.N[nn,i], self.le_distance, self.le_ff_strength)
         self.system.addForce(self.LE_force)
+        print("Loops added!")
+
+
+    def add_blocks(self, i):
+        """
+        3-state Potts-like compartment force.
+
+        Spin convention:
+            s = 0  -> B compartment (strong attraction)
+            s = 1  -> neutral
+            s = 2  -> A compartment (weaker attraction)
+
+        Energy:
+            E(r, si, sj) = E(s_i, s_j) * exp(-(r-r0)^2 / (2*sigma^2))
+        """
+
+        self.comp_force = mm.CustomNonbondedForce(
+            'E(s1,s2)*exp(-(r-r0)^2/(2*sigma^2))'
+        )
+        self.comp_force.setForceGroup(1)
+        self.comp_force.addGlobalParameter('sigma', self.rw_l / 2)
+        self.comp_force.addGlobalParameter('r0', 0.0)
+        self.comp_force.addPerParticleParameter('s')
+        self.comp_force.addTabulatedFunction(
+            'E',
+            mm.Discrete2DFunction(
+                3, 3,
+                [
+                    -1.0, 0.0, 0.0,   # s1 = 0 (B)
+                    0.0, -0.8, 0.0,   # s1 = 1 (neutral)
+                    -0.0, -0.0, -0.2    # s1 = 2 (A)
+                ]
+            )
+        )
+        for n in range(self.N_beads):
+            self.comp_force.addParticle([int(self.S[n, i])])
+        self.system.addForce(self.comp_force)
+        print("Compartments added!")
 
     def add_forcefield(self):
         '''
@@ -166,12 +214,13 @@ class MD_LE:
         self.add_evforce()
         self.add_bonds()
         self.add_stiffness()
+        if getattr(self, "S", None) is not None: self.add_blocks(0)
         self.add_loops()
 
     def plot_heat(self,img,file_name):
         figure(figsize=(10, 10))
         plt.imshow(img,cmap="Reds",vmax=1)
-        plt.savefig(self.path+file_name,format='svg',dpi=500)
+        plt.savefig(self.path+file_name,format='pdf',dpi=600)
         plt.close()
 
 def main():

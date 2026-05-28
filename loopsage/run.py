@@ -156,6 +156,7 @@ def main():
             args.LE_FF_STRENGTH,
             args.EV_FF_STRENGTH,
             args.EV_FF_POWER,
+            args.DO_COMPARTMENTS,
             args.TOLERANCE,
             args.FRICTION,
             args.INTEGRATOR_STEP,
