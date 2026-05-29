@@ -138,7 +138,6 @@ class MD_LE:
         for i in range(self.N_beads):
             self.ev_force.addParticle([np.sqrt(self.ev_ff_strength),0.05])
         self.system.addForce(self.ev_force)
-        print("EV added!")
 
     def add_bonds(self):
         'Harmonic bond borce between succesive beads'
@@ -154,7 +153,6 @@ class MD_LE:
         for i in range(self.N_beads - 2):
             self.angle_force.addAngle(i, i + 1, i + 2, np.pi, self.angle_ff_strength)
         self.system.addForce(self.angle_force)
-        print("Stiffness added!")
     
     def add_loops(self,i=0):
         'LE force that connects cohesin restraints'
@@ -162,8 +160,6 @@ class MD_LE:
         for nn in range(self.N_coh):
             self.LE_force.addBond(self.M[nn,i], self.N[nn,i], self.le_distance, self.le_ff_strength)
         self.system.addForce(self.LE_force)
-        print("Loops added!")
-
 
     def add_blocks(self, i):
         """
@@ -199,7 +195,6 @@ class MD_LE:
         for n in range(self.N_beads):
             self.comp_force.addParticle([int(self.S[n, i])])
         self.system.addForce(self.comp_force)
-        print("Compartments added!")
 
     def add_forcefield(self):
         '''

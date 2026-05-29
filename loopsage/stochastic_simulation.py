@@ -697,7 +697,7 @@ class StochasticSimulation:
         """
 
         # 1. Chromatin structure from BEDPE
-        L, R, J, stats = binding_vectors_from_bedpe(
+        L, R, J, J_loss, stats = binding_vectors_from_bedpe(
             bedpe_file=self.bedpe_file,
             N_beads=self.N_beads,
             region=self.region,
@@ -706,16 +706,14 @@ class StochasticSimulation:
             normalization=False,
             viz=True,
             diagonal_interactions=True,
-            J_mode="binary",
-            J_norm=None,
             alpha=1.0,
             smooth=True,
             smooth_sigma=self.N_beads/200
         )
-
+        
         self.L = L
         self.R = R
-        self.J = J
+        self.J, self.J_loss = J, J_loss
         self.loop_stats = stats
 
         # 2. CTCF / loop count estimate

@@ -1,10 +1,12 @@
+import os
 import numpy as np
 import pyBigWig
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.interpolate import UnivariateSpline
+from scipy.ndimage import gaussian_filter, gaussian_filter1d
 from matplotlib.pyplot import figure
+from mpl_toolkits.mplot3d import Axes3D
 
 CHROM_LENGTHS = {
     "chr1": 248_956_422,
@@ -39,8 +41,6 @@ def binding_vectors_from_bedpe(
         normalization=False,
         viz=False,
         diagonal_interactions=True,
-        J_mode="binary",
-        J_norm=None,
         alpha=1.0,
         smooth=False,
         smooth_sigma=2.0
@@ -51,44 +51,25 @@ def binding_vectors_from_bedpe(
     Returns
     -------
     L : (N_beads,)
-        Left binding profile.
-
     R : (N_beads,)
-        Right binding profile.
-
-    J : (N_beads, N_beads)
-        Interaction (adjacency) matrix.
-    
-    J_mode
-    -------
-    binary   : strict graph adjacency (0/1 only, no weights)
-    strength : weighted by BEDPE score
-    distance : exponential decay with loop size
+    J : (N_beads, N_beads)        -> discrete adjacency
+    J_loss : (N_beads, N_beads)   -> smoothed continuous energy landscape
+    statistics : dict
     '''
+    try:
+        region = [int(region[0]), int(region[1])]
 
-    if region is None:
+        # sanity check
+        if region[1] <= region[0]:
+            raise ValueError("Invalid region bounds")
+
+    except Exception:
+        print("[WARNING] Invalid region provided → using full chromosome.")
+
         if chrom not in CHROM_LENGTHS:
             raise ValueError(f"Unknown chromosome: {chrom}")
 
         region = [0, CHROM_LENGTHS[chrom]]
-
-    # --------------------------------------------------
-    # Validate inputs
-    # --------------------------------------------------
-    if J_mode not in ["binary", "strength", "distance"]:
-        raise ValueError(f"Invalid J_mode: {J_mode}")
-
-    if J_norm not in [None, "global", "row"]:
-        raise ValueError(f"Invalid J_norm: {J_norm}")
-
-    if N_beads <= 10:
-        raise ValueError("N_beads too small")
-
-    if region[1] <= region[0]:
-        raise ValueError("Invalid region: end must be > start")
-
-    if alpha <= 0 and J_mode == "distance":
-        raise ValueError("alpha must be positive for distance mode")
 
     df = pd.read_csv(bedpe_file, sep='\t', header=None)
 
@@ -111,15 +92,30 @@ def binding_vectors_from_bedpe(
 
     has_col_7_8 = df.shape[1] > 8
 
+
+    if has_col_7_8:
+        # take a quick sample (faster than checking all rows)
+        p7 = df[7].values
+        p8 = df[8].values
+
+        valid_p7 = np.all(np.isfinite(p7)) and np.all((p7 >= 0) & (p7 <= 1))
+        valid_p8 = np.all(np.isfinite(p8)) and np.all((p8 >= 0) & (p8 <= 1))
+
+        has_valid_probs = valid_p7 and valid_p8
+
+        if not has_valid_probs:
+            print("[WARNING] Columns 7/8 detected but not valid probabilities → ignoring them.")
+            has_col_7_8 = False
+    else:
+        has_valid_probs = False
+
     J = np.zeros((N_beads, N_beads), dtype=np.float64)
     L = np.zeros(N_beads, dtype=np.float64)
     R = np.zeros(N_beads, dtype=np.float64)
 
     distances = []
 
-    # --------------------------------------------------
-    # Build L, R, J
-    # --------------------------------------------------
+    # Build discrete J, L, R
     for i in range(len(df)):
 
         x = (df[1][i] + df[2][i]) // 2
@@ -130,30 +126,11 @@ def binding_vectors_from_bedpe(
 
         distances.append(np.abs(y - x))
 
-        # ==================================================
-        # J construction
-        # ==================================================
-        if J_mode == "binary":
-            J[x, y] = 1.0
-            J[y, x] = 1.0
+        # binary adjacency ONLY
+        J[x, y] = 1.0
+        J[y, x] = 1.0
 
-        else:
-            if J_mode == "strength":
-                weight = float(df[6][i])
-
-            elif J_mode == "distance":
-                weight = np.exp(-alpha * np.abs(y - x))
-
-            else:
-                weight = 1.0
-
-            for a in range(x, y):
-                for b in range(x, y):
-                    J[a, b] += weight
-
-        # ==================================================
-        # L / R (unchanged logic)
-        # ==================================================
+        # L / R unchanged
         if has_col_7_8:
             if df[7][i] >= 0:
                 L[x] += df[6][i] * (1 - df[7][i])
@@ -168,69 +145,33 @@ def binding_vectors_from_bedpe(
             R[x] += df[6][i]
             R[y] += df[6][i]
 
-    # --------------------------------------------------
-    # Backbone (ONLY for non-binary or as structural prior)
-    # --------------------------------------------------
-    if diagonal_interactions:
-        if J_mode != "binary":
-            for i in range(N_beads - 1):
-                J[i, i + 1] += 1.0
-                J[i + 1, i] += 1.0
-        else:
-            for i in range(N_beads - 1):
-                J[i, i + 1] = 1.0
-                J[i + 1, i] = 1.0
-
-    # --------------------------------------------------
-    # Normalization (disabled for binary)
-    # --------------------------------------------------
-    if J_mode != "binary":
-
-        if J_norm == "global":
-            s = np.sum(J)
-            if s > 0:
-                J /= s
-
-        elif J_norm == "row":
-            for i in range(N_beads):
-                s = np.sum(J[i])
-                if s > 0:
-                    J[i] /= s
-
-    # --------------------------------------------------
-    # Optional smoothing
-    # --------------------------------------------------
-    if smooth:
-        from scipy.ndimage import gaussian_filter1d
-        L = gaussian_filter1d(L, sigma=smooth_sigma)
-        R = gaussian_filter1d(R, sigma=smooth_sigma)
-
-    # --------------------------------------------------
     # L / R normalization
-    # --------------------------------------------------
     if normalization:
         L = L / (np.sum(L) + 1e-12)
         R = R / (np.sum(R) + 1e-12)
 
-    # --------------------------------------------------
-    # STATISTICS (NEW ADDITION)
-    # --------------------------------------------------
+    J_loss = J.astype(np.float64)
 
+    # Backbone
+    if diagonal_interactions:
+        for i in range(N_beads - 1):
+            J[i, i + 1] = 1.0
+            J[i + 1, i] = 1.0
+
+    if smooth:
+        J_loss = 100*gaussian_filter(J_loss, sigma=2*smooth_sigma)
+        L = gaussian_filter1d(L, sigma=smooth_sigma, mode="nearest")
+        R = gaussian_filter1d(R, sigma=smooth_sigma, mode="nearest")
+
+    # STATISTICS
     distances_arr = np.array(distances)
 
-    # only real loop edges (exclude backbone)
     loop_edges = np.argwhere(J > 0)
-
-    # remove backbone neighbors
     loop_edges = np.array([
-        (i, j) for (i, j) in loop_edges
-        if np.abs(i - j) > 1
+        (i, j) for (i, j) in loop_edges if np.abs(i - j) > 1
     ])
 
-    if len(loop_edges) > 0:
-        loop_lengths = np.abs(loop_edges[:, 1] - loop_edges[:, 0])
-    else:
-        loop_lengths = np.array([])
+    loop_lengths = np.abs(loop_edges[:, 1] - loop_edges[:, 0]) if len(loop_edges) else np.array([])
 
     statistics = {
         "n_loops": int(len(loop_lengths)),
@@ -248,102 +189,99 @@ def binding_vectors_from_bedpe(
         }
     }
 
+    # VISUALIZATION
     if viz:
-        print("\n" + "=" * 60)
-        print("              LOOP STATISTICS (beads units)")
-        print("=" * 60)
+        if out_path is not None:
+            plot_dir = os.path.join(out_path, "plots")
+            os.makedirs(plot_dir, exist_ok=True)
 
-        print(f"\nNumber of loops (non-backbone): {statistics['n_loops']}\n")
+        # ---- L/R
+        fig, axs = plt.subplots(1, 2, figsize=(12, 4), dpi=200)
 
-        d = statistics["distance_between_loops"]
-        print("Distance between loop anchors:")
-        print(f"  mean   : {d['mean']:.3f}")
-        print(f"  median : {d['median']:.3f}")
-        print(f"  min    : {d['min']:.3f}")
-        print(f"  max    : {d['max']:.3f}")
+        # Left panel: L and R
+        axs[0].plot(L, label="L (left binding)", lw=2, color="darkgreen")
+        axs[0].plot(R, label="R (right binding)", lw=2, color="darkred")
 
-        l = statistics["loop_length"]
-        print("\nLoop length:")
-        print(f"  mean   : {l['mean']:.3f}")
-        print(f"  median : {l['median']:.3f}")
-        print(f"  min    : {l['min']:.3f}")
-        print(f"  max    : {l['max']:.3f}")
+        axs[0].set_title("Binding profiles along chromatin")
+        axs[0].set_xlabel("Bead index")
+        axs[0].set_ylabel("Signal strength")
 
-        print("\n" + "=" * 60 + "\n")
+        axs[0].legend(frameon=False)
+        axs[0].grid(alpha=0.3)
+        
+        # Right panel: loop stats
+        axs[1].hist(distances, bins=20, color="steelblue", edgecolor="black", alpha=0.8)
 
-    # --------------------------------------------------
-    # Visualization
-    # --------------------------------------------------
-    if viz:
+        axs[1].set_title("Loop length distribution")
+        axs[1].set_xlabel("Distance (beads)")
+        axs[1].set_ylabel("Frequency")
+        axs[1].grid(alpha=0.3)
 
-        fig, axs = plt.subplots(1, 2, figsize=(12, 4))
+        plt.suptitle("Chromatin loop organization summary", fontsize=14)
+        plt.tight_layout()
 
-        axs[0].plot(L, label="L", color="green")
-        axs[0].plot(R, label="R", color="red")
-        axs[0].set_title("Binding profiles")
-        axs[0].legend()
-        axs[0].grid()
+        # save
+        if out_path is not None:
+            plt.savefig(os.path.join(plot_dir, "LR_profiles.svg"), dpi=600, format="svg")
+            plt.savefig(os.path.join(plot_dir, "LR_profiles.png"), dpi=600, format="png")
+            plt.savefig(os.path.join(plot_dir, "LR_profiles.pdf"), dpi=600, format="pdf")
 
-        sns.histplot(distances, bins=10, ax=axs[1])
-        axs[1].set_title("Loop size distribution")
-        axs[1].grid()
+        plt.close()
+
+        # ---- J heatmap
+        plt.figure(figsize=(6, 5))
+        plt.imshow(J, cmap="viridis", origin="lower")
+        plt.title("Discrete J")
+        plt.colorbar()
 
         if out_path is not None:
-            save_path = out_path + "/plots/LR_data.svg"
-            plt.savefig(save_path, format="svg", dpi=600)
-            save_path = out_path + "/plots/LR_data.png"
-            plt.savefig(save_path, format="png", dpi=600)
-            save_path = out_path + "/plots/LR_data.pdf"
-            plt.savefig(save_path, format="pdf", dpi=600)
+            plt.savefig(os.path.join(plot_dir, "J_discrete.svg"), dpi=600, format="svg")
+            plt.savefig(os.path.join(plot_dir, "J_discrete.png"), dpi=600, format="png")
+            plt.savefig(os.path.join(plot_dir, "J_discrete.pdf"), dpi=600, format="pdf")
 
-        plt.tight_layout()
         plt.close()
 
-        # --------------------------------------------------
-        # Heatmap (separate figure)
-        # --------------------------------------------------
-        fig, ax = plt.subplots(1, 1, figsize=(6, 5))
+        # ---- J_loss heatmap
+        plt.figure(figsize=(6, 5))
+        plt.imshow(J_loss, cmap="magma", origin="lower")
+        plt.title("Smoothed J_loss")
+        plt.colorbar()
 
-        im = ax.imshow(J, cmap="viridis", origin="lower")
-        ax.set_title("Adjacency matrix J")
-        ax.set_xlabel("bead i")
-        ax.set_ylabel("bead j")
-
-        plt.colorbar(im, ax=ax, fraction=0.046)
-        plt.tight_layout()
         if out_path is not None:
-            save_path = out_path + "/plots/J_data.svg"
-            plt.savefig(save_path, format="svg", dpi=600)
-            save_path = out_path + "/plots/J_data.png"
-            plt.savefig(save_path, format="png", dpi=600)
-            save_path = out_path + "/plots/J_data.pdf"
-            plt.savefig(save_path, format="pdf", dpi=600)
+            plt.savefig(os.path.join(plot_dir, "J_loss.svg"), dpi=600, format="svg")
+            plt.savefig(os.path.join(plot_dir, "J_loss.png"), dpi=600, format="png")
+            plt.savefig(os.path.join(plot_dir, "J_loss.pdf"), dpi=600, format="pdf")
+
         plt.close()
 
+        # ---- 3D surface plot of loss landscape
+        fig = plt.figure(figsize=(7, 6))
+        ax = fig.add_subplot(111, projection='3d')
+
+        x = np.arange(N_beads)
+        X, Y = np.meshgrid(x, x)
+
+        ax.plot_surface(X, Y, -J_loss, cmap="magma", linewidth=0)
+
+        ax.set_title("Energy landscape (J_loss)")
+        ax.set_xlabel("i")
+        ax.set_ylabel("j")
 
         # --------------------------------------------------
-        # Graph diagnostics (strength + distribution)
+        # VIEW FROM TOP (2D-like projection of surface)
         # --------------------------------------------------
-        fig, axs = plt.subplots(1, 2, figsize=(12, 4))
-
-        strength = np.sum(J, axis=0)
-
-        axs[0].plot(strength, color="black")
-        axs[0].set_title("Node strength")
-        axs[0].set_xlabel("bead index")
-        axs[0].set_ylabel("strength")
-        axs[0].grid()
-
-        axs[1].hist(strength, bins=10, color="steelblue", edgecolor="black")
-        axs[1].set_title("Strength distribution")
-        axs[1].set_xlabel("strength")
-        axs[1].set_ylabel("count")
-        axs[1].grid()
+        ax.view_init(elev=-10, azim=60)
 
         plt.tight_layout()
+
+        if out_path is not None:
+            plt.savefig(os.path.join(plot_dir, "J_loss_surface.svg"), dpi=600, format="svg")
+            plt.savefig(os.path.join(plot_dir, "J_loss_surface.png"), dpi=600, format="png")
+            plt.savefig(os.path.join(plot_dir, "J_loss_surface.pdf"), dpi=600, format="pdf")
+
         plt.close()
-    
-    return L, R, J, statistics
+
+    return L, R, J, J_loss, statistics
 
 def get_rnap_energy(path,region,chrom,N_beads,normalization):
     '''
@@ -381,15 +319,22 @@ class BWExporter:
         self.chrom = chrom
         self.N_beads = N_beads
 
-        if region is None:
+        try:
+            region = [int(region[0]), int(region[1])]
+
+            # sanity check
+            if region[1] <= region[0]:
+                raise ValueError("Invalid region bounds")
+
+        except Exception:
+            print("[WARNING] Invalid region provided → using full chromosome.")
+
             if chrom not in CHROM_LENGTHS:
                 raise ValueError(f"Unknown chromosome: {chrom}")
 
             region = [0, CHROM_LENGTHS[chrom]]
 
-    # --------------------------------------------------
     # Core loader
-    # --------------------------------------------------
     def load_track(self,
                    viz=False,
                    roll=False,
@@ -424,15 +369,11 @@ class BWExporter:
 
         weights = np.array(weights[:self.N_beads], dtype=np.float64)
 
-        # --------------------------------------------------
         # normalization stage
-        # --------------------------------------------------
         if norm is not None:
             weights = self.normalize(weights, method=norm)
 
-        # --------------------------------------------------
         # optional [-1,1] scaling
-        # --------------------------------------------------
         if scale_minus1_1:
             xmin, xmax = np.min(weights), np.max(weights)
             if xmax > xmin:
@@ -440,35 +381,27 @@ class BWExporter:
             else:
                 weights = weights * 0.0
 
-        # --------------------------------------------------
         # VISUALIZATION (centralized here)
-        # --------------------------------------------------
         if viz:
 
             x = np.arange(len(weights))
 
             fig, axs = plt.subplots(3, 1, figsize=(14, 8), sharex=True)
 
-            # --------------------------
             # 1. main signal
-            # --------------------------
             axs[0].plot(x, weights, color="black", lw=1.5)
             axs[0].axhline(0, color="red", ls="--", lw=1)
             axs[0].set_title("BigWig signal (bead-resolved)")
             axs[0].set_ylabel("signal")
             axs[0].grid(alpha=0.3)
 
-            # --------------------------
             # 2. histogram (distribution)
-            # --------------------------
             axs[1].hist(weights, bins=40, color="steelblue", edgecolor="black")
             axs[1].set_title("Signal distribution")
             axs[1].set_ylabel("count")
             axs[1].grid(alpha=0.3)
 
-            # --------------------------
             # 3. running smooth view (structure intuition)
-            # --------------------------
             smooth = (np.roll(weights, 1) + weights + np.roll(weights, -1)) / 3
 
             axs[2].plot(x, smooth, color="darkgreen", lw=1.5)
@@ -567,9 +500,22 @@ def load_compartments_bed(
     Load compartment BED file and convert to bead-level signal.
     """
 
-    # --------------------------------------------------
+    try:
+        region = [int(region[0]), int(region[1])]
+
+        # sanity check
+        if region[1] <= region[0]:
+            raise ValueError("Invalid region bounds")
+
+    except Exception:
+        print("[WARNING] Invalid region provided → using full chromosome.")
+
+        if chrom not in CHROM_LENGTHS:
+            raise ValueError(f"Unknown chromosome: {chrom}")
+
+        region = [0, CHROM_LENGTHS[chrom]]
+
     # Load FULL genome once (IMPORTANT FIX)
-    # --------------------------------------------------
     df_full = pd.read_csv(bed_file, sep="\t", header=None)
 
     # region-specific view (used for signal only)
@@ -582,9 +528,7 @@ def load_compartments_bed(
     if len(df) == 0:
         raise ValueError("No compartments found in region")
 
-    # --------------------------------------------------
     # GLOBAL normalization reference (CRITICAL FIX)
-    # --------------------------------------------------
     def extract_val(row):
         if use_score:
             try:
@@ -611,9 +555,7 @@ def load_compartments_bed(
 
     gmin, gmax = np.min(global_vals), np.max(global_vals)
 
-    # --------------------------------------------------
     # build signal
-    # --------------------------------------------------
     signal = np.zeros(N_beads, dtype=np.float64)
     counts = np.zeros(N_beads, dtype=np.float64)
 
@@ -631,9 +573,7 @@ def load_compartments_bed(
         depth = len(label.split("."))
         return sign * (1.0 + 0.2 * (depth - 1))
 
-    # --------------------------------------------------
     # fill signal (UNCHANGED LOGIC)
-    # --------------------------------------------------
     for i in range(len(df)):
 
         start = max(df[1][i], region[0])
@@ -665,9 +605,7 @@ def load_compartments_bed(
     mask = counts > 0
     signal[mask] /= counts[mask]
 
-    # --------------------------------------------------
     # smoothing (UNCHANGED)
-    # --------------------------------------------------
     if spline_smooth:
         from scipy.interpolate import UnivariateSpline
 
@@ -683,18 +621,14 @@ def load_compartments_bed(
             spline = UnivariateSpline(x, signal_filled, s=spline_s)
             signal = spline(x)
 
-    # --------------------------------------------------
     # GLOBAL normalization FIX (THIS IS THE IMPORTANT CHANGE)
-    # --------------------------------------------------
     if scale_minus1_1:
         if gmax > gmin:
             signal = 2.0 * (signal - gmin) / (gmax - gmin) - 1.0
         else:
             signal[:] = 0.0
 
-    # --------------------------------------------------
     # visualization (UNCHANGED)
-    # --------------------------------------------------
     if viz:
 
         import matplotlib.pyplot as plt
@@ -739,19 +673,15 @@ def main():
     chr_start = 0
     chr_end   = 249_000_000  # human chr1 length approx
 
-    # ------------------------------------------------------------
     # STEP 1: load BEDPE and extract chr1 loops
-    # ------------------------------------------------------------
     df = pd.read_csv(bedpe_file, sep="\t", header=None)
     df = df[df[0] == chrom].reset_index(drop=True)
 
     starts = np.minimum(df[1].values, df[4].values)
     ends   = np.maximum(df[2].values, df[5].values)
 
-    # ------------------------------------------------------------
     # STEP 2: define "TAD-like" candidate regions
     # (simple heuristic: cluster loops by midpoints)
-    # ------------------------------------------------------------
     midpoints = (starts + ends) // 2
 
     # sort and pick dense region window
@@ -764,8 +694,8 @@ def main():
     i0 = np.random.randint(0, len(midpoints_sorted) - window_size)
     sel = midpoints_sorted[i0:i0 + window_size]
 
-    region_start = int(np.min(sel)) - 200_000
-    region_end   = int(np.max(sel)) + 200_000
+    region_start = int(np.min(sel)) - 100_000
+    region_end   = int(np.max(sel)) + 100_000
 
     # clip to chr bounds
     region_start = max(region_start, chr_start)
@@ -775,29 +705,22 @@ def main():
 
     print("Selected region:", region)
 
-    # ------------------------------------------------------------
     # STEP 3: call your function
-    # ------------------------------------------------------------
     N_beads = 200
 
-    L, R, J, _ = binding_vectors_from_bedpe(
+    L, R, J, J_loss, _ = binding_vectors_from_bedpe(
         bedpe_file=bedpe_file,
         N_beads=N_beads,
         region=region,
         chrom=chrom,
-        normalization=True,
-        viz=True,          # we will do custom viz below
-        J_mode="binary",
-        J_norm="global",
+        normalization=False,
+        viz=True,
         alpha=0.01,
         smooth=True,
         smooth_sigma=2.0
     )
 
-    # ------------------------------------------------------------
-    # STEP 5: Compartments (BW)
-    # ------------------------------------------------------------
-
+    # STEP 4: Compartments (BW)
     print("========= Load Compartments ============")
 
     bw_file = "/home/blackpianocat/Data/ENCODE/ENCSR968KAY_HiC/ENCFF412CDH_comps.bigWig"
