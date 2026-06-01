@@ -552,8 +552,9 @@ class StochasticSimulation:
                 Compartment track (BigWig or BED format).
             """
             # Basic geometry
-            self.region = region
             self.chrom = chrom
+            self.region = region
+            self.resolve_region()
 
             self.N_beads = (
                 N_beads
@@ -583,6 +584,42 @@ class StochasticSimulation:
             self.N_lef2 = N_lef2
 
             print(f"Number of LEFs: {self.N_lef + self.N_lef2}")
+
+    def resolve_region(self):
+
+        chrom_len = CHROM_LENGTHS.get(self.chrom, None)
+        if chrom_len is None:
+            raise ValueError(f"Unknown chromosome: {self.chrom}")
+
+        region = self.region
+        used_fallback = False
+
+        if (
+            region is None
+            or not isinstance(region, (list, tuple))
+            or len(region) != 2
+        ):
+            region = [0, chrom_len]
+            used_fallback = True
+        else:
+            start, end = region
+
+            try:
+                start = int(start)
+                end = int(end)
+                region = [start, end]
+            except Exception:
+                region = [0, chrom_len]
+                used_fallback = True
+
+            if region[1] <= region[0]:
+                region = [0, chrom_len]
+                used_fallback = True
+        
+        self.region = region
+
+        tag = "FALLBACK" if used_fallback else "OK"
+        print(f"[resolve_region:{tag}] chrom={self.chrom}, region={self.region}, length={self.region[1] - self.region[0]}")
     
     def run_energy_minimization(self, N_steps, MC_step, burnin, T=1, T_min=0, mode='Metropolis', viz=False, save=False, f=1.0, f2=0.0, b=1.0, kappa=1.0, epi_coeff=0.0, N_epi_states=3, p_spin=0.5, lef_rw=True, lef_drift=True, cross_loop=True, r=None, between_families_penalty=True):
         '''

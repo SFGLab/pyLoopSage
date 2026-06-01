@@ -69,7 +69,7 @@ def main():
     N_steps, MC_step, burnin, T, T_min = args.N_STEPS, args.MC_STEP, args.BURNIN, args.T_INIT, args.T_FINAL
     mode = args.METHOD
     bw_paths = args.BW_FILES
-
+    
     # Compartment inputs (NEW)
     comp_bw_file = getattr(args, "COMP_BW_FILE", "") or None
     comp_bed_file = getattr(args, "COMP_BED_FILE", "") or None
