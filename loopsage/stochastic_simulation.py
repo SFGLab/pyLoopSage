@@ -741,7 +741,7 @@ class StochasticSimulation:
     def run_energy_minimization(self, N_steps, MC_step, burnin, T=1, T_min=0, mode='Metropolis', viz=False, save=False, f=1.0, f2=0.0, b=1.0, kappa=1.0, epi_coeff=0.0, N_epi_states=3, p_spin=0.5, lef_rw=True, lef_drift=True, cross_loop=True, r=None, between_families_penalty=True):
         '''
         Implementation of the stochastic Monte Carlo simulation.
-
+        
         Input parameters:
         N_steps (int): number of Monte Carlo steps.
         MC_step (int): sampling frequency.
