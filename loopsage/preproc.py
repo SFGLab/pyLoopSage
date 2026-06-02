@@ -94,63 +94,109 @@ def binding_vectors_from_bedpe(
 
 
     if has_col_7_8:
-        # take a quick sample (faster than checking all rows)
         p7 = df[7].values
         p8 = df[8].values
 
-        valid_p7 = np.all(np.isfinite(p7)) and np.all((p7 >= 0) & (p7 <= 1))
-        valid_p8 = np.all(np.isfinite(p8)) and np.all((p8 >= 0) & (p8 <= 1))
+        def valid_prob_vector(p):
+            p = np.asarray(p)
+
+            finite = np.isfinite(p)
+
+            # allowed values: -1 OR [0,1]
+            allowed = (p == -1) | ((p >= 0) & (p <= 1))
+
+            return np.all(finite & allowed)
+
+        valid_p7 = valid_prob_vector(p7)
+        valid_p8 = valid_prob_vector(p8)
 
         has_valid_probs = valid_p7 and valid_p8
 
         if not has_valid_probs:
-            print("[WARNING] Columns 7/8 detected but not valid probabilities → ignoring them.")
+            print("[WARNING] Columns 7/8 detected but invalid probabilities → ignoring them.")
             has_col_7_8 = False
+
     else:
         has_valid_probs = False
 
-    J = np.zeros((N_beads, N_beads), dtype=np.float64)
+    # --------------------------------------------------
+    # Initialize
+    # --------------------------------------------------
+    J = np.zeros((N_beads, N_beads), dtype=np.float64)        # binary adjacency
+    J_loss = np.zeros((N_beads, N_beads), dtype=np.float64)   # weighted signal
+
     L = np.zeros(N_beads, dtype=np.float64)
     R = np.zeros(N_beads, dtype=np.float64)
 
     distances = []
 
-    # Build discrete J, L, R
+    # small numerical safety
+    eps = 1e-12
+
+    # --------------------------------------------------
+    # Build adjacency + weighted contact map
+    # --------------------------------------------------
     for i in range(len(df)):
 
+        # loop anchors
         x = (df[1][i] + df[2][i]) // 2
         y = (df[4][i] + df[5][i]) // 2
 
         x = min(max(x, 0), N_beads - 1)
         y = min(max(y, 0), N_beads - 1)
 
-        distances.append(np.abs(y - x))
+        if x == y:
+            continue
 
-        # binary adjacency ONLY
+        dist = abs(y - x)
+        distances.append(dist)
+
+        # --------------------------------------------------
+        # 1. binary adjacency (structure only)
+        # --------------------------------------------------
         J[x, y] = 1.0
         J[y, x] = 1.0
 
-        # L / R unchanged
+        # --------------------------------------------------
+        # 2. weighted interaction strength (data field)
+        # --------------------------------------------------
+        w = df[6][i]  # loop strength
+
+        # optional probabilistic split (if available)
         if has_col_7_8:
-            if df[7][i] >= 0:
-                L[x] += df[6][i] * (1 - df[7][i])
-                R[x] += df[6][i] * df[7][i]
+            p7 = df[7][i]
+            p8 = df[8][i]
 
-            if df[8][i] >= 0:
-                L[y] += df[6][i] * (1 - df[8][i])
-                R[y] += df[6][i] * df[8][i]
+            if p7 >= 0:
+                wx = w * (1 - p7)
+                wy = w * p7
+            else:
+                wx = wy = w * 0.5
+
+            if p8 >= 0:
+                wx2 = w * (1 - p8)
+                wy2 = w * p8
+            else:
+                wx2 = wy2 = w * 0.5
+
+            # accumulate symmetric mean contribution
+            J_loss[x, y] += 0.5 * (wx + wy2)
+            J_loss[y, x] += 0.5 * (wy + wx2)
+
+            # keep marginal signals consistent
+            L[x] += wx
+            R[x] += wy
+            L[y] += wx2
+            R[y] += wy2
+
         else:
-            L[x] += df[6][i]
-            L[y] += df[6][i]
-            R[x] += df[6][i]
-            R[y] += df[6][i]
+            J_loss[x, y] += w
+            J_loss[y, x] += w
 
-    # L / R normalization
-    if normalization:
-        L = L / (np.sum(L) + 1e-12)
-        R = R / (np.sum(R) + 1e-12)
-
-    J_loss = J.astype(np.float64)
+            L[x] += w
+            L[y] += w
+            R[x] += w
+            R[y] += w
 
     # Backbone
     if diagonal_interactions:
@@ -158,10 +204,27 @@ def binding_vectors_from_bedpe(
             J[i, i + 1] = 1.0
             J[i + 1, i] = 1.0
 
+    J_loss = (J_loss.T+J_loss)/2
+
     if smooth:
-        J_loss = 100*gaussian_filter(J_loss, sigma=2*smooth_sigma)
         L = gaussian_filter1d(L, sigma=smooth_sigma, mode="nearest")
         R = gaussian_filter1d(R, sigma=smooth_sigma, mode="nearest")
+        J_loss = gaussian_filter(J_loss.astype(np.float64), sigma=2*smooth_sigma)
+    else:
+        J_loss = J_loss.astype(np.float64)
+
+    L, R = L/np.mean(L), R/np.mean(R)
+
+    # normalize to probability-like field
+    eps = 1e-2
+    J_loss = J_loss / (np.max(J_loss) + eps)
+
+    # center around expected background density
+    bg = np.mean(J_loss)
+    J_loss = (J_loss - bg) / (np.std(J_loss) + eps)
+
+    # squash extremes but keep sign structure
+    J_loss = np.tanh(J_loss)
 
     # STATISTICS
     distances_arr = np.array(distances)
@@ -228,10 +291,15 @@ def binding_vectors_from_bedpe(
 
         plt.close()
 
-        # ---- J heatmap
+        J_plot = (J - np.mean(J)) / (np.std(J) + 1e-8)
         plt.figure(figsize=(6, 5))
-        plt.imshow(J, cmap="viridis", origin="lower")
-        plt.title("Discrete J")
+        plt.imshow(
+            J_plot,
+            cmap="RdBu_r",
+            origin="lower",
+            vmin=-2, vmax=2
+        )
+        plt.title("Discrete J (z-score normalized)")
         plt.colorbar()
 
         if out_path is not None:
@@ -270,7 +338,7 @@ def binding_vectors_from_bedpe(
         # --------------------------------------------------
         # VIEW FROM TOP (2D-like projection of surface)
         # --------------------------------------------------
-        ax.view_init(elev=-10, azim=60)
+        ax.view_init(elev=-30, azim=60)
 
         plt.tight_layout()
 
@@ -281,7 +349,7 @@ def binding_vectors_from_bedpe(
 
         plt.close()
 
-    return L, R, J, J_loss, statistics
+    return L, R, J, np.sqrt(N_beads)*J_loss, statistics
 
 def get_rnap_energy(path,region,chrom,N_beads,normalization):
     '''
@@ -694,8 +762,8 @@ def main():
     i0 = np.random.randint(0, len(midpoints_sorted) - window_size)
     sel = midpoints_sorted[i0:i0 + window_size]
 
-    region_start = int(np.min(sel)) - 100_000
-    region_end   = int(np.max(sel)) + 100_000
+    region_start = int(np.min(sel)) - 50_000
+    region_end   = int(np.max(sel)) + 50_000
 
     # clip to chr bounds
     region_start = max(region_start, chr_start)
@@ -717,7 +785,7 @@ def main():
         viz=True,
         alpha=0.01,
         smooth=True,
-        smooth_sigma=2.0
+        smooth_sigma=N_beads/50
     )
 
     # STEP 4: Compartments (BW)

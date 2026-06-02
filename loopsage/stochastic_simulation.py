@@ -38,13 +38,61 @@ def Kappa(mi,ni,mj,nj,cross_loop=True):
     return k
 
 @njit
-def E_bind(L, R, ms, ns, bind_norm):
-    '''
-    The binding energy.
-    '''
-    binding = np.sum(L[ms] + R[ns])
-    E_b = bind_norm * binding
-    return E_b
+def E_bind(L, R, ms, ns):
+    """
+    1D binding energy.
+    Loop anchors contribute independently.
+    """
+    E = 0.0
+
+    for k in range(ms.shape[0]):
+        i = ms[k]
+        j = ns[k]
+
+        # symmetric node contribution
+        E += L[i] + R[j]
+
+    return E
+
+
+@njit
+def E_2d(J_loss, ms, ns):
+    """
+    2D loop/contact energy.
+
+    Evaluates J_loss only at observed loop pairs.
+    """
+    E = 0.0
+
+    for k in range(ms.shape[0]):
+        i = ms[k]
+        j = ns[k]
+
+        # enforce symmetry explicitly
+        E += 0.5 * (J_loss[i, j] + J_loss[j, i])
+
+    return E
+
+
+@njit
+def E_data(mode, L, R, J_loss, ms, ns, bind_norm):
+    """
+    Unified data energy.
+
+    mode:
+        0 -> 1D binding energy
+        1 -> 2D contact energy
+    """
+
+    if mode == 0:
+        E = E_bind(L, R, ms, ns)
+        return bind_norm * E
+
+    elif mode == 1:
+        E = E_2d(J_loss, ms, ns)
+        return bind_norm * E
+
+    return 0.0
 
 @njit
 def E_cross(ms, ns, k_norm, N_lef, cross_loop=True, between_families_penalty=True):
@@ -109,13 +157,14 @@ def get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm,
           cross_loop,
           r=None, N_bws=0, BWs=None,
           between_families_penalty=True,
-          S=None, J=None, h=None, epi_norm=0.0):
+          S=None, J=None, h=None, epi_norm=0.0,
+          mode=0, J_loss=None):
     '''
     Total energy including optional Potts epigenetic term.
     '''
 
     energy = (
-        E_bind(L, R, ms, ns, bind_norm)
+        E_data(mode, L, R, J_loss, ms, ns, bind_norm)
         + E_cross(ms, ns, k_norm, cross_loop, between_families_penalty)
         + E_fold(ms, ns, fold_norm)
     )
@@ -142,6 +191,46 @@ def get_dE_bind(L,R,bind_norm,ms,ns,m_new,n_new,idx):
     Energy difference for binding energy.
     '''
     return bind_norm*(L[m_new]+R[n_new]-L[ms[idx]]-R[ns[idx]])
+
+@njit
+def get_dE_2d(J_loss, ms, ns, m_new, n_new, idx, bind_norm):
+    '''
+    2D contact energy difference.
+    '''
+
+    i_old = ms[idx]
+    j_old = ns[idx]
+
+    # old contribution
+    E_old = 0.5 * (J_loss[i_old, j_old] + J_loss[j_old, i_old])
+
+    # new contribution
+    E_new = 0.5 * (J_loss[m_new, n_new] + J_loss[n_new, m_new])
+
+    return bind_norm * (E_new - E_old)
+
+@njit
+def get_dE_data(mode,
+            L, R, J_loss,
+            bind_norm,
+            ms, ns,
+            m_new, n_new,
+            idx):
+    '''
+    Unified energy difference.
+
+    mode:
+        0 -> 1D binding
+        1 -> 2D contact
+    '''
+
+    if mode == 0:
+        return get_dE_bind(L, R, bind_norm, ms, ns, m_new, n_new, idx)
+
+    elif mode == 1:
+        return get_dE_2d(J_loss, ms, ns, m_new, n_new, idx, bind_norm)
+
+    return 0.0
     
 @njit
 def get_dE_fold(fold_norm,ms,ns,m_new,n_new,idx):
@@ -212,30 +301,37 @@ def get_dE_cross(ms, ns, m_new, n_new, idx, k_norm, cross_loop, N_lef, between_f
     return k_norm * (K2 - K1)
 
 @njit
-def get_dE_edges(L, R, bind_norm, fold_norm, fold_norm2, k_norm,
+def get_dE_edges(L, R,
+                 bind_norm, fold_norm, fold_norm2, k_norm,
                  ms, ns, m_new, n_new, idx,
                  N_lef, N_lef2, cross_loop,
                  r=None, N_bws=0, BWs=None,
-                 between_families_penalty=True):
+                 between_families_penalty=True,
+                 loss_mode=0, J_loss=None):
     '''
     Energy difference for LEF (edge) updates only.
     '''
-
+    
     dE = 0.0
 
     # Folding
     if idx < N_lef:
         dE += get_dE_fold(fold_norm,
-                         ms[:N_lef], ns[:N_lef],
-                         m_new, n_new, idx)
+                          ms[:N_lef], ns[:N_lef],
+                          m_new, n_new, idx)
     else:
         dE += get_dE_fold(fold_norm2,
-                         ms[N_lef:N_lef+N_lef2],
-                         ns[N_lef:N_lef+N_lef2],
-                         m_new, n_new, idx - N_lef)
+                          ms[N_lef:N_lef+N_lef2],
+                          ns[N_lef:N_lef+N_lef2],
+                          m_new, n_new, idx - N_lef)
 
-    # Binding
-    dE += get_dE_bind(L, R, bind_norm, ms, ns, m_new, n_new, idx)
+    # Binding (REPLACED ONLY THIS LINE)
+    dE += get_dE_data(loss_mode,
+                      L, R, J_loss,
+                      bind_norm,
+                      ms, ns,
+                      m_new, n_new,
+                      idx)
 
     # Crossing
     dE += get_dE_cross(ms, ns, m_new, n_new, idx,
@@ -244,7 +340,8 @@ def get_dE_edges(L, R, bind_norm, fold_norm, fold_norm2, k_norm,
 
     # Optional BW term
     if r is not None and BWs is not None:
-        dE += get_dE_bw(N_bws, r, BWs, ms, ns, m_new, n_new, idx)
+        dE += get_dE_bw(N_bws, r, BWs, ms, ns,
+                        m_new, n_new, idx)
 
     return dE
 
@@ -280,13 +377,13 @@ def has_cross(m, n, ms, ns, N_lef):
 @njit
 def unbind_bind(N_beads, track, ms, ns, N_lef, enforce_no_cross=False):
     '''
-    Rebinding Monte-Carlo step with optional crossing constraint.
+    Rebinding Monte-Carlo step with optional crossing + uniqueness constraint.
     '''
 
-    max_tries = 20  # small fixed budget for speed safety
+    max_tries = 20
 
     for _ in range(max_tries):
-        # propose m_new
+
         if track is not None:
             weights = track / np.sum(track)
             m_new = np.searchsorted(np.cumsum(weights), np.random.rand())
@@ -295,14 +392,22 @@ def unbind_bind(N_beads, track, ms, ns, N_lef, enforce_no_cross=False):
 
         n_new = m_new + 2
 
-        # enforce non-crossing
         if enforce_no_cross:
-            if not has_cross(m_new, n_new, ms, ns, N_lef):
-                return int(m_new), int(n_new)
-        else:
-            return int(m_new), int(n_new)
 
-    # fallback (if stuck, return old-style safe move)
+            # 1) crossing constraint
+            if has_cross(m_new, n_new, ms, ns, N_lef):
+                continue
+
+            # 2) NEW: enforce uniqueness of endpoints
+            # reject if m_new or n_new already used anywhere
+            if np.any(ms[:N_lef] == m_new) or np.any(ns[:N_lef] == m_new):
+                continue
+
+            if np.any(ms[:N_lef] == n_new) or np.any(ns[:N_lef] == n_new):
+                continue
+
+        return int(m_new), int(n_new)
+
     return int(m_new), int(n_new)
 
 @njit
@@ -324,9 +429,16 @@ def slide(m_old, n_old, ms, ns, N_beads, rw=True, drift=True, enforce_no_cross=F
     if np.any(ms == n_new) and drift and n_old - r2 > m_old + 1:
         n_new = min(n_old - r2, N_beads - 1)
 
-    # crossing constraint check
     if enforce_no_cross:
+
         if has_cross(m_new, n_new, ms, ns, N_lef):
+            return int(m_old), int(n_old)
+
+        # NEW: avoid endpoint reuse
+        if np.any(ms[:N_lef] == m_new) or np.any(ns[:N_lef] == m_new):
+            return int(m_old), int(n_old)
+
+        if np.any(ms[:N_lef] == n_new) or np.any(ns[:N_lef] == n_new):
             return int(m_old), int(n_old)
 
     return int(m_new), int(n_new)
@@ -386,9 +498,9 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
                    r=None, N_bws=0, BWs=None,
                    track=None,
                    between_families_penalty=True,
-                   J=None, h=None, epi_norm=0.0,
+                   J=None, J_loss=None, h=None, epi_norm=0.0,
                    N_epi_states=3,
-                   p_spin=0.5):
+                   p_spin=0.5, loss_mode=0):
 
     '''
     Runs the Monte Carlo simulation with LEF + Potts dynamics.
@@ -404,9 +516,10 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
     ms, ns, S = initialize(N_beads, N_lef + N_lef2, track, N_epi_states, True)
 
     E = get_E(L, R, bind_norm, fold_norm, fold_norm2, k_norm,
-              ms, ns, N_lef, N_lef2, cross_loop,
-              r, N_bws, BWs, between_families_penalty,
-              S, J, h, epi_norm)
+          ms, ns, N_lef, N_lef2, cross_loop,
+          r, N_bws, BWs, between_families_penalty,
+          S, J, h, epi_norm,
+          loss_mode, J_loss)
 
     # Storage
     n_save = N_steps // MC_step
@@ -469,13 +582,15 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
                     m_new, n_new = slide(ms[j], ns[j], ms, ns,
                                          N_beads, lef_rw, lef_drift)
 
-                dE = get_dE_edges(L, R, bind_norm,
-                                  fold_norm, fold_norm2, k_norm,
-                                  ms, ns, m_new, n_new, j,
-                                  N_lef, N_lef2,
-                                  cross_loop,
-                                  r, N_bws, BWs,
-                                  between_families_penalty)
+                dE = get_dE_edges(L, R,
+                                    bind_norm,
+                                    fold_norm, fold_norm2, k_norm,
+                                    ms, ns, m_new, n_new, j,
+                                    N_lef, N_lef2,
+                                    cross_loop,
+                                    r, N_bws, BWs,
+                                    between_families_penalty,
+                                    loss_mode, J_loss)
 
                 if dE <= 0 or np.exp(-dE / Ti) > np.random.rand():
                     ms[j], ns[j] = m_new, n_new
@@ -491,7 +606,7 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
             Ks[idx_save] = E_cross(ms, ns, k_norm, cross_loop,
                                    N_lef, between_families_penalty)
             Fs[idx_save] = E_fold(ms, ns, fold_norm)
-            Bs[idx_save] = E_bind(L, R, ms, ns, bind_norm)
+            Bs[idx_save] = E_data(loss_mode, L, R, J_loss, ms, ns, bind_norm)
 
             for b in range(N_beads):
                 epi_states[b, idx_save] = S[b]
@@ -514,7 +629,8 @@ class StochasticSimulation:
             out_dir=None,
             bw_files=None,
             lef_density_file=None,
-            comp_file=None
+            comp_file=None,
+            data_loss_mode=0
         ):
             """
             Chromatin stochastic simulation initializer.
@@ -555,6 +671,7 @@ class StochasticSimulation:
             self.chrom = chrom
             self.region = region
             self.resolve_region()
+            self.data_loss_mode = data_loss_mode
 
             self.N_beads = (
                 N_beads
@@ -637,15 +754,7 @@ class StochasticSimulation:
         BWs (np.ndarray): binding weight matrices.
         between_families_penalty (bool): whether to apply penalty for interactions between families.
         '''
-        # Define normalization constants
-        N_lef_tot = self.N_lef + self.N_lef2
-        fold_norm = -2*(2-np.log(self.avg_length)/np.log(self.max_length))*f#-self.N_beads * f  / (N_lef_tot * log_term )
-        print("Folding coefficient after normalization:",fold_norm)
-        fold_norm2 = -2*(2-np.log(self.avg_length)/np.log(self.max_length))*f2
-        bind_norm = -self.N_beads * b / (np.sum(self.L) + np.sum(self.R))
-        print("Binding coefficient after normalization:",bind_norm)
-        k_norm = kappa * 1e6
-        # epi_scale = self.N_beads + 0.5 * self.N_CTCF
+        fold_norm, fold_norm2, bind_norm, k_norm = -self.N_beads*f/((self.N_lef+self.N_lef2)*np.log(self.N_beads/(self.N_lef+self.N_lef2))), -self.N_beads*f2/((self.N_lef+self.N_lef2)*np.log(self.N_beads/(self.N_lef+self.N_lef2))), -self.N_beads*b/(2*self.N_CTCF), kappa*1e4
         epi_norm = epi_coeff
         self.N_steps, self.MC_step = N_steps, MC_step
         r = np.full(self.N_bws, -self.N_beads / 10) if not r and self.N_bws > 0 else (None if not r else r)
@@ -679,10 +788,12 @@ class StochasticSimulation:
             self.lef_track,
             between_families_penalty,
             J=self.J,                 # NEW
+            J_loss=self.J_loss,
             h=self.h,                 # NEW
             epi_norm=epi_norm,   # NEW
             N_epi_states=N_epi_states,   # NEW
-            p_spin=p_spin        # NEW
+            p_spin=p_spin,        # NEW
+            loss_mode = self.data_loss_mode
         )        
         end = time.time()
         elapsed = end - start
@@ -745,7 +856,7 @@ class StochasticSimulation:
             diagonal_interactions=True,
             alpha=1.0,
             smooth=True,
-            smooth_sigma=self.N_beads/200
+            smooth_sigma=self.N_beads/100
         )
         
         self.L = L
