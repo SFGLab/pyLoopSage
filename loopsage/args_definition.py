@@ -216,7 +216,7 @@ args = ListOfArgs([
     Arg('CONTINUOUS_TOP', help="True if topoisomerase disables EV in a continuous region rather than a discrete set of points.", type=bool, default='False', val='False'),
     Arg('EV_P', help="Probability that randomly excluded volume may be disabled.", type=float, default='0.0', val='0.0'),
     Arg('EV_FF_STRENGTH', help="Excluded-volume strength.", type=float, default='100.0', val='100.0'),
-    Arg('EV_FF_POWER', help="Excluded-volume power.", type=float, default='6.0', val='6.0'),
+    Arg('EV_FF_POWER', help="Excluded-volume power.", type=float, default='3.0', val='3.0'),
     Arg('FRICTION',help='Friction coefficient of the Langevin integrator.',type=float, default='0.1', val='0.1'),
     Arg('TOLERANCE', help="Tolerance that works as stopping condition for energy minimization.", type=float, default='0.001', val='0.001'),
     Arg('VIZ_HEATS', help="Visualize the output average heatmap.", type=bool, default='True', val='True'),
