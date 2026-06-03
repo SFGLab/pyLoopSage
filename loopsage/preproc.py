@@ -43,7 +43,8 @@ def binding_vectors_from_bedpe(
         diagonal_interactions=True,
         alpha=1.0,
         smooth=False,
-        smooth_sigma=2.0
+        smooth_sigma=2.0,
+        contrastive=True
     ):
     '''
     Construct chromatin interaction structures from BEDPE loop data.
@@ -58,17 +59,13 @@ def binding_vectors_from_bedpe(
     '''
     try:
         region = [int(region[0]), int(region[1])]
-
-        # sanity check
         if region[1] <= region[0]:
             raise ValueError("Invalid region bounds")
 
     except Exception:
         print("[WARNING] Invalid region provided → using full chromosome.")
-
         if chrom not in CHROM_LENGTHS:
             raise ValueError(f"Unknown chromosome: {chrom}")
-
         region = [0, CHROM_LENGTHS[chrom]]
 
     df = pd.read_csv(bedpe_file, sep='\t', header=None)
@@ -92,45 +89,35 @@ def binding_vectors_from_bedpe(
 
     has_col_7_8 = df.shape[1] > 8
 
-
     if has_col_7_8:
         p7 = df[7].values
         p8 = df[8].values
 
         def valid_prob_vector(p):
             p = np.asarray(p)
-
             finite = np.isfinite(p)
-
-            # allowed values: -1 OR [0,1]
             allowed = (p == -1) | ((p >= 0) & (p <= 1))
-
             return np.all(finite & allowed)
 
         valid_p7 = valid_prob_vector(p7)
         valid_p8 = valid_prob_vector(p8)
 
-        has_valid_probs = valid_p7 and valid_p8
-
-        if not has_valid_probs:
+        if not (valid_p7 and valid_p8):
             print("[WARNING] Columns 7/8 detected but invalid probabilities → ignoring them.")
             has_col_7_8 = False
-
-    else:
-        has_valid_probs = False
 
     # --------------------------------------------------
     # Initialize
     # --------------------------------------------------
-    J = np.zeros((N_beads, N_beads), dtype=np.float64)        # binary adjacency
-    J_loss = np.zeros((N_beads, N_beads), dtype=np.float64)   # weighted signal
+    J = np.zeros((N_beads, N_beads), dtype=np.float64)
+    J_loss = np.zeros((N_beads, N_beads), dtype=np.float64)
 
     L = np.zeros(N_beads, dtype=np.float64)
     R = np.zeros(N_beads, dtype=np.float64)
 
     distances = []
+    centers = []   # ✅ NEW
 
-    # small numerical safety
     eps = 1e-12
 
     # --------------------------------------------------
@@ -138,7 +125,6 @@ def binding_vectors_from_bedpe(
     # --------------------------------------------------
     for i in range(len(df)):
 
-        # loop anchors
         x = (df[1][i] + df[2][i]) // 2
         y = (df[4][i] + df[5][i]) // 2
 
@@ -151,18 +137,15 @@ def binding_vectors_from_bedpe(
         dist = abs(y - x)
         distances.append(dist)
 
-        # --------------------------------------------------
-        # 1. binary adjacency (structure only)
-        # --------------------------------------------------
+        # ✅ NEW: store center
+        centers.append((x + y) // 2)
+
+        # binary adjacency
         J[x, y] = 1.0
         J[y, x] = 1.0
 
-        # --------------------------------------------------
-        # 2. weighted interaction strength (data field)
-        # --------------------------------------------------
-        w = df[6][i]  # loop strength
+        w = df[6][i]
 
-        # optional probabilistic split (if available)
         if has_col_7_8:
             p7 = df[7][i]
             p8 = df[8][i]
@@ -179,11 +162,9 @@ def binding_vectors_from_bedpe(
             else:
                 wx2 = wy2 = w * 0.5
 
-            # accumulate symmetric mean contribution
             J_loss[x, y] += 0.5 * (wx + wy2)
             J_loss[y, x] += 0.5 * (wy + wx2)
 
-            # keep marginal signals consistent
             L[x] += wx
             R[x] += wy
             L[y] += wx2
@@ -204,29 +185,30 @@ def binding_vectors_from_bedpe(
             J[i, i + 1] = 1.0
             J[i + 1, i] = 1.0
 
-    J_loss = (J_loss.T+J_loss)/2
+    J_loss = (J_loss.T + J_loss) / 2
 
     if smooth:
         L = gaussian_filter1d(L, sigma=smooth_sigma, mode="nearest")
         R = gaussian_filter1d(R, sigma=smooth_sigma, mode="nearest")
-        J_loss = gaussian_filter(J_loss.astype(np.float64), sigma=2*smooth_sigma)
+        J_loss = gaussian_filter(J_loss.astype(np.float64), sigma=smooth_sigma)
     else:
         J_loss = J_loss.astype(np.float64)
 
-    L, R = L/np.mean(L), R/np.mean(R)
+    L, R = L / np.mean(L), R / np.mean(R)
 
-    # normalize to probability-like field
-    eps = 1e-2
-    J_loss = J_loss / (np.max(J_loss) + eps)
+    if contrastive:
+        eps = 1e-6
 
-    # center around expected background density
-    bg = np.mean(J_loss)
-    J_loss = (J_loss - bg) / (np.std(J_loss) + eps)
+        J_loss = J_loss / (np.max(J_loss) + eps)
+        J_loss = (J_loss - np.mean(J_loss)) / (np.std(J_loss) + eps)
+        J_loss = np.tanh(J_loss)
 
-    # squash extremes but keep sign structure
-    J_loss = np.tanh(J_loss)
+        L = np.tanh((L - np.mean(L)) / (np.std(L) + eps))
+        R = np.tanh((R - np.mean(R)) / (np.std(R) + eps))
 
-    # STATISTICS
+    # --------------------------------------------------
+    # STATISTICS (FIXED PART)
+    # --------------------------------------------------
     distances_arr = np.array(distances)
 
     loop_edges = np.argwhere(J > 0)
@@ -236,13 +218,20 @@ def binding_vectors_from_bedpe(
 
     loop_lengths = np.abs(loop_edges[:, 1] - loop_edges[:, 0]) if len(loop_edges) else np.array([])
 
+    # ✅ NEW: inter-loop distances
+    centers = np.array(centers)
+    if len(centers) > 1:
+        inter_loop_distances = np.abs(np.diff(np.sort(centers)))
+    else:
+        inter_loop_distances = np.array([])
+
     statistics = {
         "n_loops": int(len(loop_lengths)),
         "distance_between_loops": {
-            "mean": float(np.mean(distances_arr)) if len(distances_arr) else 0.0,
-            "median": float(np.median(distances_arr)) if len(distances_arr) else 0.0,
-            "min": float(np.min(distances_arr)) if len(distances_arr) else 0.0,
-            "max": float(np.max(distances_arr)) if len(distances_arr) else 0.0,
+            "mean": float(np.mean(inter_loop_distances)) if len(inter_loop_distances) else 0.0,
+            "median": float(np.median(inter_loop_distances)) if len(inter_loop_distances) else 0.0,
+            "min": float(np.min(inter_loop_distances)) if len(inter_loop_distances) else 0.0,
+            "max": float(np.max(inter_loop_distances)) if len(inter_loop_distances) else 0.0,
         },
         "loop_length": {
             "mean": float(np.mean(loop_lengths)) if len(loop_lengths) else 0.0,
@@ -251,6 +240,33 @@ def binding_vectors_from_bedpe(
             "max": float(np.max(loop_lengths)) if len(loop_lengths) else 0.0,
         }
     }
+
+    # units
+    unit_beads = "beads"
+    unit_bp = f"{resolution} bp"
+
+    print("\n🧬 Chromatin Loop Stats")
+    print("="*40)
+
+    print(f"Total loops: {statistics['n_loops']}")
+
+    # distance between loop anchors
+    d = statistics["distance_between_loops"]
+    print("\n📏 Distance between loop anchors:")
+    print(f"  mean   : {d['mean']:.2f} {unit_beads}  (~{d['mean']*resolution:.0f} bp)")
+    print(f"  median : {d['median']:.2f} {unit_beads}  (~{d['median']*resolution:.0f} bp)")
+    print(f"  min    : {d['min']:.2f} {unit_beads}  (~{d['min']*resolution:.0f} bp)")
+    print(f"  max    : {d['max']:.2f} {unit_beads}  (~{d['max']*resolution:.0f} bp)")
+
+    # loop lengths
+    l = statistics["loop_length"]
+    print("\n🔗 Loop lengths:")
+    print(f"  mean   : {l['mean']:.2f} {unit_beads}  (~{l['mean']*resolution:.0f} bp)")
+    print(f"  median : {l['median']:.2f} {unit_beads}  (~{l['median']*resolution:.0f} bp)")
+    print(f"  min    : {l['min']:.2f} {unit_beads}  (~{l['min']*resolution:.0f} bp)")
+    print(f"  max    : {l['max']:.2f} {unit_beads}  (~{l['max']*resolution:.0f} bp)")
+
+    print("="*40)
 
     # VISUALIZATION
     if viz:
@@ -349,7 +365,7 @@ def binding_vectors_from_bedpe(
 
         plt.close()
 
-    return L, R, J, np.sqrt(N_beads)*J_loss, statistics
+    return 2*L, 2*R, J, np.sqrt(len(loop_lengths))*J_loss, statistics
 
 def get_rnap_energy(path,region,chrom,N_beads,normalization):
     '''

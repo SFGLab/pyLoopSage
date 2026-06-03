@@ -508,7 +508,7 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
 
     Ti = T
     bi = burnin // MC_step
-
+    
     # NEW: decide if spin moves are allowed
     spin_allowed = (J is not None) and (epi_norm != 0.0)
 
@@ -630,7 +630,8 @@ class StochasticSimulation:
             bw_files=None,
             lef_density_file=None,
             comp_file=None,
-            data_loss_mode=0
+            data_loss_mode=0,
+            contrastive_binding=True
         ):
             """
             Chromatin stochastic simulation initializer.
@@ -690,7 +691,7 @@ class StochasticSimulation:
 
             # Print basic setup
             print(f"Number of beads: {self.N_beads}")
-            self.preprocessing()
+            self.preprocessing(contrastive_binding)
 
             # LEF initialization
             self.N_lef = (
@@ -833,7 +834,7 @@ class StochasticSimulation:
         
         return self.Es, self.Ms, self.Ns, self.Bs, self.Ks, self.Fs, self.ufs, self.epi_states
 
-    def preprocessing(self):
+    def preprocessing(self,contrastive_binding):
         """
         Preprocessing pipeline using updated BEDPE + BigWig exporters.
 
@@ -856,7 +857,8 @@ class StochasticSimulation:
             diagonal_interactions=True,
             alpha=1.0,
             smooth=True,
-            smooth_sigma=self.N_beads/100
+            smooth_sigma=self.N_beads/100,
+            contrastive=contrastive_binding
         )
         
         self.L = L
