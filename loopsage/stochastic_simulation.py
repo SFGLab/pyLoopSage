@@ -411,30 +411,54 @@ def unbind_bind(N_beads, track, ms, ns, N_lef, enforce_no_cross=False):
     return int(m_new), int(n_new)
 
 @njit
-def slide(m_old, n_old, ms, ns, N_beads, rw=True, drift=True, enforce_no_cross=False, idx=0, N_lef=0):
+def slide(m_old, n_old, ms, ns, N_beads,
+          rw=True, drift=True,
+          enforce_no_cross=False,
+          max_step=1):
     '''
-    Sliding Monte-Carlo step with optional crossing constraint.
+    Sliding Monte-Carlo step with variable step size.
     '''
+    N_lef = len(ms)
 
-    choices = np.array([-1, 1], dtype=np.int64)
+    # random step size (1 ... max_step)
+    if max_step <= 1:
+        dm = 1
+        dn = 1
+    else:
+        dm = 1 + np.random.randint(0, max_step)
+        dn = 1 + np.random.randint(0, max_step)
 
-    r1 = np.random.choice(choices) if rw else -1
-    r2 = np.random.choice(choices) if rw else 1
+    # random directions
+    s1 = -1 if np.random.rand() < 0.5 else 1
+    s2 = -1 if np.random.rand() < 0.5 else 1
 
-    m_new = max(m_old + r1, 0)
-    if np.any(ns == m_new) and drift and m_old - r1 < n_old - 1:
-        m_new = max(m_old - r1, 0)
+    r1 = s1 * dm
+    r2 = s2 * dn
 
-    n_new = min(n_old + r2, N_beads - 1)
-    if np.any(ms == n_new) and drift and n_old - r2 > m_old + 1:
-        n_new = min(n_old - r2, N_beads - 1)
+    # propose move
+    m_new = m_old + r1
+    n_new = n_old + r2
 
+    # boundary constraints
+    m_new = max(0, m_new)
+    n_new = min(N_beads - 1, n_new)
+
+    # maintain ordering
+    if n_new <= m_new + 1:
+        return int(m_old), int(n_old)
+
+    # optional drift avoidance (kept minimal)
+    if np.any(ns == m_new):
+        m_new = m_old
+    if np.any(ms == n_new):
+        n_new = n_old
+
+    # constraints
     if enforce_no_cross:
 
         if has_cross(m_new, n_new, ms, ns, N_lef):
             return int(m_old), int(n_old)
 
-        # NEW: avoid endpoint reuse
         if np.any(ms[:N_lef] == m_new) or np.any(ns[:N_lef] == m_new):
             return int(m_old), int(n_old)
 
@@ -500,7 +524,7 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
                    between_families_penalty=True,
                    J=None, J_loss=None, h=None, epi_norm=0.0,
                    N_epi_states=3,
-                   p_spin=0.5, loss_mode=0):
+                   p_spin=0.5, loss_mode=0, step_length=1):
 
     '''
     Runs the Monte Carlo simulation with LEF + Potts dynamics.
@@ -580,7 +604,7 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
                     m_new, n_new = unbind_bind(N_beads, track, ms, ns, N_lef)
                 else:
                     m_new, n_new = slide(ms[j], ns[j], ms, ns,
-                                         N_beads, lef_rw, lef_drift)
+                                         N_beads, lef_rw, lef_drift, max_step=step_length)
 
                 dE = get_dE_edges(L, R,
                                     bind_norm,
@@ -739,7 +763,7 @@ class StochasticSimulation:
         tag = "FALLBACK" if used_fallback else "OK"
         print(f"[resolve_region:{tag}] chrom={self.chrom}, region={self.region}, length={self.region[1] - self.region[0]}")
     
-    def run_energy_minimization(self, N_steps, MC_step, burnin, T=1, T_min=0, mode='Metropolis', viz=False, save=False, f=1.0, f2=0.0, b=1.0, kappa=1.0, epi_coeff=0.0, N_epi_states=3, p_spin=0.5, lef_rw=True, lef_drift=True, cross_loop=True, r=None, between_families_penalty=True):
+    def run_energy_minimization(self, N_steps, MC_step, burnin, T=1, T_min=0, mode='Metropolis', viz=False, save=False, f=1.0, f2=0.0, b=1.0, kappa=1.0, epi_coeff=0.0, N_epi_states=3, p_spin=0.5, lef_rw=True, lef_drift=True, cross_loop=True, r=None, between_families_penalty=True,is_variable_step=False):
         '''
         Implementation of the stochastic Monte Carlo simulation.
         
@@ -794,7 +818,8 @@ class StochasticSimulation:
             epi_norm=epi_norm,   # NEW
             N_epi_states=N_epi_states,   # NEW
             p_spin=p_spin,        # NEW
-            loss_mode = self.data_loss_mode
+            loss_mode = self.data_loss_mode,
+            step_length=int(self.min_length) if is_variable_step else 1
         )        
         end = time.time()
         elapsed = end - start
@@ -870,6 +895,7 @@ class StochasticSimulation:
         self.N_CTCF = int(stats["n_loops"])
         self.avg_length = int(stats["loop_length"]["mean"])
         self.max_length = int(stats["loop_length"]["max"])
+        self.min_length = int(stats["loop_length"]["min"])
         print("Number of CTCF:", self.N_CTCF)
 
         # 3. BigWig tracks (compartments, ChIP, etc.)

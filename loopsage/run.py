@@ -127,7 +127,8 @@ def main():
         f2=f2,
         b=b,
         kappa=kappa,
-        between_families_penalty=between_families_penalty
+        between_families_penalty=between_families_penalty,
+        is_variable_step=args.VARIABLE_SLIDING_STEP
     )
 
     # Optional 3D structure reconstruction

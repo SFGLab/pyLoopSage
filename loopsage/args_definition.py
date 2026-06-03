@@ -181,6 +181,7 @@ args = ListOfArgs([
     # Stochastic Simulation parameters
     Arg('LEF_RW', help="True in case that you would like to make cohesins slide as random walk, instead of sliding only in one direction.", type=bool, default='True', val='True'),
     Arg('LEF_DRIFT', help="True in case that LEFs are pushed back when they encounter other LEFs.", type=bool, default='False', val='False'),
+    Arg('VARIABLE_SLIDING_STEP', help="If True, the sliding step is uniformly sampled from [1, L_min] based on experimental loop lengths; if False, a fixed unit step is used.", type=bool, default="False", val='False'),
     Arg('N_STEPS', help="Number of Monte Carlo steps.", type=int, default='40000', val='40000'),
     Arg('N_LEF', help="Number of loop extrusion factors (condensins and cohesins). If you leave it empty it would add for LEFs twice the number of CTCFs.", type=int, default='', val=''),
     Arg('N_LEF2', help="Number of second family loop extrusion factors, in case that you would like to simulate a second group with different speed.", type=int, default='0', val='0'),
