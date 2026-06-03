@@ -200,7 +200,7 @@ args = ListOfArgs([
     Arg('CROSS_LOOP', help="It true if the penalty is applied for situations mi<mj<ni<nj and mi=nj, and false if it is applied only for mi=nj.", type=bool, default='True', val='True'),
     Arg('BETWEEN_FAMILIES_PENALTY', help="Penalty for LEF2s that are crossing LEFs.", type=bool, default='True', val='True'),
     Arg('DATA_LOSS_MODE', help="If it is 0 means 1D, and thus we use L and R potentuals. If it is equal to 1, then it uses a 2D loss function interpolated from the input loops.", type=int, default='0', val='0'),
-    Arg('CONTRASTIVE_BINDING', help="If it will be True, loop free regions in the heatmap would be penalized, and loop extrusion can occur only within TADs. Otherwise, if False loop extrusion is homogeneous.", type=bool, default='True', val='True'),
+    Arg('CONTRASTIVE_BINDING', help="If it will be True, loop free regions in the heatmap would be penalized, and loop extrusion can occur only within TADs. Otherwise, if False loop extrusion is homogeneous.", type=bool, default='False', val='False'),
     Arg('BIND_COEFF', help="CTCF binding coefficient.", type=float, default='1.0', val='1.0'),
     Arg('SAVE_PLOTS', help="It should be true in case that you would like to save diagnostic plots. In case that you use small MC_STEP or large N_STEPS is better to mark it as False.", type=bool, default='True', val='True'),
     Arg('SAVE_MDT', help="In case that you would liketo save metadata of the stochastic simulation.", type=bool, default='True', val='True'),
