@@ -68,7 +68,8 @@ class MD_LE:
         platform = mm.Platform.getPlatformByName(self.platform)
         self.simulation = Simulation(pdb.topology, self.system, integrator, platform)
         self.simulation.reporters.append(StateDataReporter(stdout, (self.N_steps*sim_step)//100, step=True, totalEnergy=True, potentialEnergy=True, temperature=True))
-        self.simulation.reporters.append(DCDReporter(self.path+'/other/stochastic_LE.dcd', sim_step))
+        self.simulation.reporters.append(HDF5Reporter(self.path + "/other/stochastic_LE.h5", sim_step))
+        self.simulation.reporters.append(DCDReporter(self.path + "/other/stochastic_LE.dcd", sim_step))
         self.simulation.context.setPositions(pdb.positions)
         current_platform = self.simulation.context.getPlatform()
         print(f"Simulation will run on platform: {current_platform.getName()}")
@@ -79,36 +80,65 @@ class MD_LE:
         if run_MD:
             print('Running molecular dynamics (wait for 100 steps)...')
             start = time.time()
-            heats = list()
+
+            heat_sum = None # more memory friendly use of the heatmap creation without insane RAM consumption
+            heat_sq_sum = None
+
             for i in range(self.N_steps):
+
                 # Define probabilities or regions that EV would be disabled
-                if self.continuous_topoisomerase:
-                    region_length = max(1, int(self.p_ev * self.N_beads))  # Determine region length from p_ev
-                    start_idx = np.random.randint(0, self.N_beads - region_length -1)
-                    end_idx = start_idx + region_length
-                    self.ps_ev = np.zeros(self.N_beads)
-                    self.ps_ev[start_idx:end_idx] = 1
-                elif p_ev > 0:
-                    self.ps_ev = np.random.rand(self.N_beads)
+                if self.p_ev > 0:
+                    if self.continuous_topoisomerase: # in case that the topoisomerase is represented by a continuous interval
+                        region_length = max(1, int(self.p_ev * self.N_beads))
+                        start_idx = np.random.randint(0, self.N_beads - region_length - 1)
+                        end_idx = start_idx + region_length
+                        self.ps_ev = np.zeros(self.N_beads)
+                        self.ps_ev[start_idx:end_idx] = 1
+                    else: # in case we allow many discrete intervals
+                        self.ps_ev = np.random.rand(self.N_beads)
+
                 self.change_loop(i)
-                if getattr(self, "S", None) is not None: self.change_comps(i)
-                if self.p_ev>0: self.change_ev()
+
+                if getattr(self, "S", None) is not None:
+                    self.change_comps(i)
+
+                if self.p_ev > 0:
+                    self.change_ev()
+
                 self.simulation.step(sim_step)
-                self.state = self.simulation.context.getState(getPositions=True)
-                PDBxFile.writeFile(pdb.topology, self.state.getPositions(), open(self.path+f'/ensemble/MDLE_{i+1}.cif', 'w'))
-                heats.append(get_heatmap(self.state.getPositions(), save=False))
+
+                state = self.simulation.context.getState(getPositions=True)
+
+                with open(self.path + f'/ensemble/MDLE_{i+1}.cif', 'w') as f:
+                    PDBxFile.writeFile(pdb.topology, state.getPositions(), f)
+
+                heat = get_heatmap(state.getPositions(), save=False)
+
+                if heat_sum is None:
+                    heat_sum = np.zeros_like(heat, dtype=np.float64)
+                    heat_sq_sum = np.zeros_like(heat, dtype=np.float64)
+
+                heat_sum += heat
+                heat_sq_sum += heat * heat
+
             end = time.time()
             elapsed = end - start
-            print(f'Everything is done! Simulation finished successfully!\nMD finished in {elapsed/60:.2f} minutes.\n')
 
-            self.avg_heat = np.average(heats, axis=0)
-            self.std_heat = np.std(heats, axis=0)
-            
+            print(
+                f'Everything is done! Simulation finished successfully!\n'
+                f'MD finished in {elapsed/60:.2f} minutes.\n'
+            )
+
+            self.avg_heat = heat_sum / self.N_steps
+            variance = heat_sq_sum / self.N_steps - self.avg_heat**2
+            variance = np.maximum(variance, 0.0)   # numerical stability
+            self.std_heat = np.sqrt(variance)
+
             if plots:
-                np.save(self.path+f'/other/avg_heatmap.npy', self.avg_heat)
-                np.save(self.path+f'/other/std_heatmap.npy', self.std_heat)
-                self.plot_heat(self.avg_heat, f'/plots/avg_heatmap.pdf')
-                self.plot_heat(self.std_heat, f'/plots/std_heatmap.pdf')
+                np.save(self.path + '/other/avg_heatmap.npy', self.avg_heat)
+                np.save(self.path + '/other/std_heatmap.npy', self.std_heat)
+                self.plot_heat(self.avg_heat, '/plots/avg_heatmap.pdf')
+                self.plot_heat(self.std_heat, '/plots/std_heatmap.pdf')
         return self.avg_heat
 
     def change_ev(self):

@@ -131,55 +131,25 @@ def main():
         is_variable_step=args.VARIABLE_SLIDING_STEP
     )
 
-    # Optional 3D structure reconstruction
-    simulation_type = args.SIMULATION_TYPE
-
-    if simulation_type == "EM":
-        sim.run_EM(
-            args.PLATFORM,
-            args.ANGLE_FF_STRENGTH,
-            args.LE_FF_LENGTH,
-            args.LE_FF_STRENGTH,
-            args.EV_FF_STRENGTH,
-            args.EV_FF_POWER,
-            args.TOLERANCE,
-            args.FRICTION,
-            args.INTEGRATOR_STEP,
-            args.SIM_TEMP,
-            args.INITIAL_STRUCTURE_TYPE,
-            args.VIZ_HEATS,
-            args.FORCEFIELD_PATH
-        )
-
-    elif simulation_type == "MD":
-        sim.run_MD(
-            args.PLATFORM,
-            args.ANGLE_FF_STRENGTH,
-            args.LE_FF_LENGTH,
-            args.LE_FF_STRENGTH,
-            args.EV_FF_STRENGTH,
-            args.EV_FF_POWER,
-            args.DO_COMPARTMENTS,
-            args.TOLERANCE,
-            args.FRICTION,
-            args.INTEGRATOR_STEP,
-            args.SIM_TEMP,
-            args.INITIAL_STRUCTURE_TYPE,
-            args.SIM_STEP,
-            args.VIZ_HEATS,
-            args.FORCEFIELD_PATH,
-            args.EV_P,
-            args.CONTINUOUS_TOP
-        )
-
-    elif simulation_type is None:
-        print(
-            "\n3D simulation skipped: SIMULATION_TYPE not specified "
-            "(expected 'EM' or 'MD')."
-        )
-
-    else:
-        raise ValueError(f"Unknown SIMULATION_TYPE: {simulation_type}")
+    sim.run_MD(
+        args.PLATFORM,
+        args.ANGLE_FF_STRENGTH,
+        args.LE_FF_LENGTH,
+        args.LE_FF_STRENGTH,
+        args.EV_FF_STRENGTH,
+        args.EV_FF_POWER,
+        args.DO_COMPARTMENTS,
+        args.TOLERANCE,
+        args.FRICTION,
+        args.INTEGRATOR_STEP,
+        args.SIM_TEMP,
+        args.INITIAL_STRUCTURE_TYPE,
+        args.SIM_STEP,
+        args.VIZ_HEATS,
+        args.FORCEFIELD_PATH,
+        args.EV_P,
+        args.CONTINUOUS_TOP
+    )
 
     # Knoting
     if args.DETECT_KNOTS:
