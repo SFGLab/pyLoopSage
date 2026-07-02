@@ -1,9 +1,9 @@
 # pyLoopSage
 Updated version of the stochastic loop extrusion model: LoopSage with capability to run incredibly fast, parallelized across CPU cores. This package is even more user-friendly and it can be installed via PyPI.
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/916385cf-4d77-432e-823e-d1dbac7892f7" width="500">
-</p>
+<img width="1774" height="887" alt="image" src="https://github.com/user-attachments/assets/7c338772-9fd5-4b57-8965-65d346b7f11c" />
+
+(yes this logo is made my ChatGPT, I am REALLY sorry)
 
 ## New features
 
