@@ -1,5 +1,8 @@
 import numpy as np
 from tqdm import tqdm
+from .logger import get_logger
+
+log = get_logger(__name__)
 
 def dist(p1: np.ndarray, p2: np.ndarray) -> float:
     """Mierzy dystans w przestrzeni R^3"""
@@ -117,21 +120,38 @@ def random_walk_structure(N_beads, step_size=1):
     
     return V
 
-def compute_init_struct(N_beads,mode='rw'):
+def compute_init_struct(N_beads, mode='rw'):
+    log.info(f"Initializing polymer structure: mode='{mode}', N_beads={N_beads}")
+
     match mode:
         case 'rw':
+            log.debug("Using random walk initialization")
             return random_walk_structure(N_beads)
+
         case 'confined_rw':
+            log.debug("Using confined random walk initialization")
             return confined_random_walk(N_beads)
+
         case 'self_avoiding_rw':
+            log.debug("Using self-avoiding random walk initialization")
             return self_avoiding_random_walk(N_beads)
+
         case 'circle':
+            log.debug("Using circular polymer initialization")
             return polymer_circle(N_beads)
+
         case 'helix':
+            log.debug("Using helical polymer initialization")
             return helix_structure(N_beads)
+
         case 'spiral':
+            log.debug("Using spiral polymer initialization")
             return spiral_structure(N_beads)
+
         case 'sphere':
+            log.debug("Using spherical surface initialization")
             return sphere_surface_structure(N_beads)
+
         case _:
-            return IndentationError('Invalid option for initial structure.')
+            log.error(f"Invalid initialization mode: '{mode}'")
+            raise ValueError(f"Invalid option for initial structure: {mode}")

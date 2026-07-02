@@ -14,6 +14,9 @@ from scipy import ndimage
 from openmm.app import PDBFile, PDBxFile, ForceField, Simulation, PDBReporter, PDBxReporter, DCDReporter, StateDataReporter, CharmmPsfFile
 from .utils import *
 from .initial_structures import *
+from .logger import get_logger
+
+log = get_logger(__name__)
 
 class MD_LE:
     def __init__(self,M,N,S,N_beads,path=None,platform='CPU',angle_ff_strength=200,le_distance=0.1,le_ff_strength=50000.0,ev_ff_strength=100.0,ev_ff_power=3.0,tolerance=0.001):
@@ -46,11 +49,11 @@ class MD_LE:
         self.continuous_topoisomerase = continuous_topoisomerase
 
         # Define initial structure
-        print('Building initial structure...')
+        log.info('Building initial structure...')
         points = compute_init_struct(self.N_beads, mode='rw')
         write_mmcif(points, self.path+'/LE_init_struct.cif')
         generate_psf(self.N_beads, self.path+'/other/LE_init_struct.psf')
-        print('Done brother ;D\n')
+        log.info('Done brother ;D\n')
 
         # Define System
         pdb = PDBxFile(self.path+'/LE_init_struct.cif')
@@ -59,12 +62,12 @@ class MD_LE:
         integrator = mm.LangevinIntegrator(temperature, friction, integrator_step)
 
         # Add forces
-        print('Adding forces...')
+        log.info('Adding forces...')
         self.add_forcefield()
-        print('Forces added ;)\n')
+        log.info('Forces added ;)\n')
 
         # Minimize energy
-        print('Minimizing energy...')
+        log.info('Minimizing energy...')
         platform = mm.Platform.getPlatformByName(self.platform)
         self.simulation = Simulation(pdb.topology, self.system, integrator, platform)
         self.simulation.reporters.append(StateDataReporter(stdout, (self.N_steps*sim_step)//100, step=True, totalEnergy=True, potentialEnergy=True, temperature=True))
@@ -72,13 +75,13 @@ class MD_LE:
         self.simulation.reporters.append(DCDReporter(self.path + "/other/stochastic_LE.dcd", sim_step))
         self.simulation.context.setPositions(pdb.positions)
         current_platform = self.simulation.context.getPlatform()
-        print(f"Simulation will run on platform: {current_platform.getName()}")
+        log.info(f"Simulation will run on platform: {current_platform.getName()}")
         self.simulation.minimizeEnergy(tolerance=self.tolerance)
-        print('Energy minimization done :D\n')
+        log.info('Energy minimization done :D\n')
 
         # Run molecular dynamics simulation
         if run_MD:
-            print('Running molecular dynamics (wait for 100 steps)...')
+            log.info('Running molecular dynamics (wait for 100 steps)...')
             start = time.time()
 
             heat_sum = None # more memory friendly use of the heatmap creation without insane RAM consumption
@@ -124,7 +127,7 @@ class MD_LE:
             end = time.time()
             elapsed = end - start
 
-            print(
+            log.info(
                 f'Everything is done! Simulation finished successfully!\n'
                 f'MD finished in {elapsed/60:.2f} minutes.\n'
             )
@@ -175,7 +178,6 @@ class MD_LE:
         for i in range(self.N_beads - 1):
             self.bond_force.addBond(i, i + 1, 0.1, 3e5)
         self.system.addForce(self.bond_force)
-        print("Backbone bonds added!")
     
     def add_stiffness(self):
         'Harmonic angle force between successive beads so as to make chromatin rigid'

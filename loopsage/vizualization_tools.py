@@ -4,6 +4,9 @@ import imageio_ffmpeg  # Ensures ffmpeg is used
 import imageio
 import numpy as np
 from .utils import *
+from .logger import get_logger
+
+log = get_logger(__name__)
 
 def polyline_from_points(points):
     poly = pv.PolyData()

@@ -324,7 +324,7 @@ An example, illustrated with Chimera software, simulated trajectory of structure
 | Argument Name          | Description                                                                                                     | Type        | Default Value       |
 |------------------------|-----------------------------------------------------------------------------------------------------------------|------------|---------------------|
 | INITIAL_STRUCTURE_TYPE | Choose from: rw, confined_rw, self_avoiding_rw, helix, circle, spiral, sphere.                                | str        | rw                |
-| INTEGRATOR_STEP       | Step of the integrator.                                                                                        | Quantity   | 10 femtosecond   |
+| INTEGRATOR_STEP       | Step of the integrator.                                                                                        | Quantity   | 100 femtosecond   |
 | FORCEFIELD_PATH       | Path to XML file with forcefield.                                                                             | str        | default_xml_path    |
 | ANGLE_FF_STRENGTH     | Angle force strength.                                                                                          | float      | 200.0               |
 | LE_FF_LENGTH         | Equilibrium distance of loop forces.                                                                          | float      | 0.1                 |
@@ -336,7 +336,7 @@ An example, illustrated with Chimera software, simulated trajectory of structure
 | FRICTION             | Friction coefficient of the Langevin integrator.                                                              | float      | 0.1              |
 | TOLERANCE            | Stopping condition for energy minimization.     | float      | 0.001              |
 | SIM_TEMP             | Temperature of the 3D simulation (EM or MD).                                                                  | Quantity   | 310 kelvin        |
-| SIM_STEP             | Amount of simulation steps for loop force adjustments.                                                        | int        | 5000                |
+| SIM_STEP             | Amount of simulation steps for loop force adjustments.                                                        | int        | 2000                |
 
 #### Visualization
 | Argument Name          | Description                                                                                                     | Type        | Default Value       |

@@ -1,10 +1,14 @@
 from .stochastic_simulation import *
 from .args_definition import *
 from .knots import *
+from .utils import human_chromosome_lengths
 import argparse
 import configparser
 from typing import List
 from sys import stdout
+from .logger import get_logger
+
+log = get_logger(__name__)
 
 def my_config_parser(config_parser: configparser.ConfigParser) -> List[tuple[str, str]]:
     """Helper function that makes flat list arg name, and it's value from ConfigParser object."""
@@ -17,47 +21,77 @@ def my_config_parser(config_parser: configparser.ConfigParser) -> List[tuple[str
     return args_cp
 
 def get_config():
-    """Prepare list of arguments.
-    First, defaults are set.
-    Then, optionally config file values.
-    Finally, CLI arguments overwrite everything."""
-    
-    print("Reading config...")
+    """
+    Prepare configuration.
 
-    # Step 1: Setup argparse
+    Priority:
+        1. Default values
+        2. Configuration file (optional)
+        3. Command-line arguments
+    """
+
+    log.info("Reading configuration...")
+
+    # Step 1: Parse command-line arguments
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument('-c', '--config_file', help="Specify config file (ini format)", metavar="FILE")
+    arg_parser.add_argument(
+        "-c",
+        "--config_file",
+        help="Specify configuration file (.ini)",
+        metavar="FILE",
+    )
 
     for arg in args:
-        arg_parser.add_argument(f"--{arg.name.lower()}", help=arg.help)
-    
-    args_ap = arg_parser.parse_args()  # parse command-line arguments
+        arg_parser.add_argument(
+            f"--{arg.name.lower()}",
+            help=arg.help,
+        )
+
+    args_ap = arg_parser.parse_args()
     args_dict = vars(args_ap)
 
-    # Step 2: If config file provided, parse it
+    # Step 2: Read configuration file
     if args_ap.config_file:
+
+        log.info(f"Loading configuration file: {args_ap.config_file}")
+
         config_parser = configparser.ConfigParser()
-        config_parser.read(args_ap.config_file)
+
+        if not config_parser.read(args_ap.config_file):
+            log.error(f"Configuration file not found: {args_ap.config_file}")
+            raise FileNotFoundError(args_ap.config_file)
+
         args_cp = my_config_parser(config_parser)
 
-        # Override default args with values from config file
-        for cp_arg in args_cp:
-            name, value = cp_arg
-            arg = args.get_arg(name)
-            arg.val = value
+        for name, value in args_cp:
+            args.get_arg(name).val = value
 
-    # Step 3: Override again with CLI arguments (if present)
+        log.info(f"Loaded {len(args_cp)} parameters from configuration file.")
+
+    else:
+        log.info("No configuration file specified. Using default parameters.")
+
+    # Step 3: Override with CLI arguments
+    n_overwritten = 0
+
     for name, value in args_dict.items():
+
         if name == "config_file":
             continue
+
         if value is not None:
-            arg = args.get_arg(name.upper())
-            arg.val = value
+            args.get_arg(name.upper()).val = value
+            n_overwritten += 1
+
+    if n_overwritten:
+        log.info(f"Overrode {n_overwritten} parameter(s) from the command line.")
 
     # Step 4: Finalize
     args.to_python()
     args.write_config_file()
-    
+
+    log.info("Configuration successfully initialized.")
+
     return args
 
 def main():
@@ -85,8 +119,46 @@ def main():
     r = args.BW_STRENGTHS
     between_families_penalty = args.BETWEEN_FAMILIES_PENALTY  # Added argument
     
-    # Definition of region
-    region, chrom = [args.REGION_START,args.REGION_END], args.CHROM
+    # Definition of genomic region
+    try:
+        region_start = int(args.Region_start)
+        region_end = int(args.Region_end)
+
+        if region_start < 0 or region_end <= region_start:
+            raise ValueError
+
+        log.info(
+            f"Using genomic region: {args.CHROM}:{region_start:,}-{region_end:,}"
+        )
+
+    except (TypeError, ValueError):
+
+        genome = args.GENOME
+
+        try:
+            region_start = 0
+            region_end = human_chromosome_lengths[genome][args.CHROM]
+
+            log.warning(
+                f"Invalid or missing region coordinates. "
+                f"Falling back to the entire chromosome "
+                f"({args.CHROM}: {region_start:,}-{region_end:,})."
+            )
+
+        except KeyError:
+
+            log.error(
+                f"Unknown genome/chromosome combination: "
+                f"{genome} / {args.CHROM}"
+            )
+
+            raise ValueError(
+                f"Cannot determine chromosome length for "
+                f"genome='{genome}', chromosome='{args.CHROM}'. "
+                "Please specify valid --Region_start and --Region_end."
+            )
+
+    chrom, region = args.CHROM, [region_start, region_end]
     
     # Definition of data
     output_name = args.OUT_PATH

@@ -14,6 +14,9 @@ from statsmodels.graphics.tsaplots import plot_acf
 import scipy.stats
 from tqdm import tqdm
 from scipy import stats
+from .logger import get_logger
+
+log = get_logger(__name__)
 
 METHODS = ("binary", "loop_fill", "gaussian", "tanh")
  
@@ -195,7 +198,11 @@ def coh_traj_plot(ms, ns, N_beads, path, jump_threshold=400, min_stable_time=3):
 
     The function highlights only stable, non-jumping regions of cohesin trajectories.
     """
-    print('\nPlotting trajectories of cohesins...')
+    
+    log.info("Plotting cohesin trajectories...")
+    log.debug(f"N_coh={len(ms)}, N_beads={N_beads}")
+    log.debug(f"jump_threshold={jump_threshold}, min_stable_time={min_stable_time}")
+
     N_coh = len(ms)
     figure(figsize=(10, 10), dpi=200)
     cmap = plt.get_cmap('prism')
@@ -242,6 +249,7 @@ def coh_traj_plot(ms, ns, N_beads, path, jump_threshold=400, min_stable_time=3):
     save_path = path + '/plots/LEFs.png'
     plt.savefig(save_path, format='png',dpi=200)
     plt.close()
+    log.info(f"Cohesin trajectory plot saved → {save_path}")
 
 def coh_probdist_plot(ms,ns,N_beads,path):
     Ntime = len(ms[0,:])
@@ -433,38 +441,55 @@ def _plot_and_save(results, path):
  
     plt.close(fig)
 
+def combine_matrices(path_upper, path_lower, label_upper, label_lower,
+                     th1=0, th2=50, color="Reds"):
 
+    log.info("Combining matrices for comparison")
+    log.debug(f"Upper: {path_upper}")
+    log.debug(f"Lower: {path_lower}")
+    log.debug(f"Labels: '{label_upper}' vs '{label_lower}'")
 
-def combine_matrices(path_upper,path_lower,label_upper,label_lower,th1=0,th2=50,color="Reds"):
     mat1 = np.load(path_upper)
     mat2 = np.load(path_lower)
-    mat1 = mat1/np.average(mat1)*10
-    mat2 = mat2/np.average(mat2)*10
+
+    mat1 = mat1 / np.average(mat1) * 10
+    mat2 = mat2 / np.average(mat2) * 10
+
     L1 = len(mat1)
     L2 = len(mat2)
 
     ratio = 1
-    if L1!=L2:
-        if L1>L2:
-            mat1 = average_pooling(mat1,dim_new=L2)
-            ratio = L1//L2
+
+    if L1 != L2:
+        log.warning(f"Matrix size mismatch: L1={L1}, L2={L2}")
+
+        if L1 > L2:
+            mat1 = average_pooling(mat1, dim_new=L2)
+            ratio = L1 // L2
+            log.info(f"Downsampled upper matrix to {L2} (ratio={ratio})")
+
         else:
-            mat2 = average_pooling(mat2,dim_new=L1)
-            
-    print('1 pixel of heatmap corresponds to {} bp'.format(ratio*5000))
+            mat2 = average_pooling(mat2, dim_new=L1)
+            log.info(f"Downsampled lower matrix to {L1}")
+
+    bp_resolution = ratio * 5000
+    log.info(f"1 pixel corresponds to {bp_resolution} bp")
+
     exp_tr = np.triu(mat1)
     sim_tr = np.tril(mat2)
-    full_m = exp_tr+sim_tr
-
-    arialfont = {'fontname':'Arial'}
+    full_m = exp_tr + sim_tr
 
     figure(figsize=(10, 10))
-    plt.imshow(full_m ,cmap=color,vmin=th1,vmax=th2)
-    plt.text(750,250,label_upper,ha='right',va='top',fontsize=30)
-    plt.text(250,750,label_lower,ha='left',va='bottom',fontsize=30)
-    # plt.xlabel('Genomic Distance (x5kb)',fontsize=16)
-    # plt.ylabel('Genomic Distance (x5kb)',fontsize=16)
-    plt.xlabel('Genomic Distance (x5kb)',fontsize=20)
-    plt.ylabel('Genomic Distance (x5kb)',fontsize=20)
-    plt.savefig('comparison_reg3.png',format='png',dpi=200)
+    plt.imshow(full_m, cmap=color, vmin=th1, vmax=th2)
+
+    plt.text(750, 250, label_upper, ha='right', va='top', fontsize=30)
+    plt.text(250, 750, label_lower, ha='left', va='bottom', fontsize=30)
+
+    plt.xlabel('Genomic Distance (x5kb)', fontsize=20)
+    plt.ylabel('Genomic Distance (x5kb)', fontsize=20)
+
+    save_path = "comparison_reg3.png"
+    plt.savefig(save_path, format='png', dpi=200)
     plt.close()
+
+    log.info(f"Saved comparison heatmap → {save_path}")

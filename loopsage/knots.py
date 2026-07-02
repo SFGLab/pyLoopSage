@@ -6,6 +6,9 @@ import numpy as np
 from tqdm import tqdm
 from .utils import *
 import os
+from .logger import get_logger
+
+log = get_logger(__name__)
 
 ################ Initial Knotted Structure Creation ######################
 

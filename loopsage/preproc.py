@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter, gaussian_filter1d
 from matplotlib.pyplot import figure
 from mpl_toolkits.mplot3d import Axes3D
+from .logger import get_logger
+
+log = get_logger(__name__)
 
 CHROM_LENGTHS = {
     "chr1": 248_956_422,
@@ -63,7 +66,7 @@ def binding_vectors_from_bedpe(
             raise ValueError("Invalid region bounds")
 
     except Exception:
-        print("[WARNING] Invalid region provided → using full chromosome.")
+        log.warning("Invalid region provided → using full chromosome.")
         if chrom not in CHROM_LENGTHS:
             raise ValueError(f"Unknown chromosome: {chrom}")
         region = [0, CHROM_LENGTHS[chrom]]
@@ -103,7 +106,7 @@ def binding_vectors_from_bedpe(
         valid_p8 = valid_prob_vector(p8)
 
         if not (valid_p7 and valid_p8):
-            print("[WARNING] Columns 7/8 detected but invalid probabilities → ignoring them.")
+            log.warning("Columns 7/8 detected but invalid probabilities → ignoring them.")
             has_col_7_8 = False
 
     # --------------------------------------------------
@@ -245,28 +248,58 @@ def binding_vectors_from_bedpe(
     unit_beads = "beads"
     unit_bp = f"{resolution} bp"
 
-    print("\n🧬 Chromatin Loop Stats")
-    print("="*40)
+    log.info("🧬 Chromatin Loop Stats")
+    log.info("=" * 40)
 
-    print(f"Total loops: {statistics['n_loops']}")
+    log.info(f"Total loops: {statistics['n_loops']}")
 
-    # distance between loop anchors
+    # -------------------------------------------------
+    # Distance between loop anchors
+    # -------------------------------------------------
     d = statistics["distance_between_loops"]
-    print("\n📏 Distance between loop anchors:")
-    print(f"  mean   : {d['mean']:.2f} {unit_beads}  (~{d['mean']*resolution:.0f} bp)")
-    print(f"  median : {d['median']:.2f} {unit_beads}  (~{d['median']*resolution:.0f} bp)")
-    print(f"  min    : {d['min']:.2f} {unit_beads}  (~{d['min']*resolution:.0f} bp)")
-    print(f"  max    : {d['max']:.2f} {unit_beads}  (~{d['max']*resolution:.0f} bp)")
 
-    # loop lengths
+    log.info("📏 Distance between loop anchors:")
+    log.info(
+        f"mean   : {d['mean']:.2f} {unit_beads}  "
+        f"(~{d['mean'] * resolution:.0f} bp)"
+    )
+    log.info(
+        f"median : {d['median']:.2f} {unit_beads}  "
+        f"(~{d['median'] * resolution:.0f} bp)"
+    )
+    log.info(
+        f"min    : {d['min']:.2f} {unit_beads}  "
+        f"(~{d['min'] * resolution:.0f} bp)"
+    )
+    log.info(
+        f"max    : {d['max']:.2f} {unit_beads}  "
+        f"(~{d['max'] * resolution:.0f} bp)"
+    )
+
+    # -------------------------------------------------
+    # Loop lengths
+    # -------------------------------------------------
     l = statistics["loop_length"]
-    print("\n🔗 Loop lengths:")
-    print(f"  mean   : {l['mean']:.2f} {unit_beads}  (~{l['mean']*resolution:.0f} bp)")
-    print(f"  median : {l['median']:.2f} {unit_beads}  (~{l['median']*resolution:.0f} bp)")
-    print(f"  min    : {l['min']:.2f} {unit_beads}  (~{l['min']*resolution:.0f} bp)")
-    print(f"  max    : {l['max']:.2f} {unit_beads}  (~{l['max']*resolution:.0f} bp)")
 
-    print("="*40)
+    log.info("🔗 Loop lengths:")
+    log.info(
+        f"mean   : {l['mean']:.2f} {unit_beads}  "
+        f"(~{l['mean'] * resolution:.0f} bp)"
+    )
+    log.info(
+        f"median : {l['median']:.2f} {unit_beads}  "
+        f"(~{l['median'] * resolution:.0f} bp)"
+    )
+    log.info(
+        f"min    : {l['min']:.2f} {unit_beads}  "
+        f"(~{l['min'] * resolution:.0f} bp)"
+    )
+    log.info(
+        f"max    : {l['max']:.2f} {unit_beads}  "
+        f"(~{l['max'] * resolution:.0f} bp)"
+    )
+
+    log.info("=" * 40)
 
     # VISUALIZATION
     if viz:
@@ -411,7 +444,7 @@ class BWExporter:
                 raise ValueError("Invalid region bounds")
 
         except Exception:
-            print("[WARNING] Invalid region provided → using full chromosome.")
+            log.warning("Invalid region provided → using full chromosome.")
 
             if chrom not in CHROM_LENGTHS:
                 raise ValueError(f"Unknown chromosome: {chrom}")
@@ -592,7 +625,7 @@ def load_compartments_bed(
             raise ValueError("Invalid region bounds")
 
     except Exception:
-        print("[WARNING] Invalid region provided → using full chromosome.")
+        log.warning("Invalid region provided → using full chromosome.")
 
         if chrom not in CHROM_LENGTHS:
             raise ValueError(f"Unknown chromosome: {chrom}")
@@ -680,7 +713,7 @@ def load_compartments_bed(
         if val is None:
             val = parse_label(df[3][i])
             if debug:
-                print(f"[DEBUG] label fallback: {df[3][i]} -> {val:.3f}")
+                log.warning(f"label fallback: {df[3][i]} -> {val:.3f}")
 
         signal[b0:b1 + 1] += val
         counts[b0:b1 + 1] += 1.0
@@ -805,7 +838,7 @@ def main():
     )
 
     # STEP 4: Compartments (BW)
-    print("========= Load Compartments ============")
+    log.info("========= Load Compartments ============")
 
     bw_file = "/home/blackpianocat/Data/ENCODE/ENCSR968KAY_HiC/ENCFF412CDH_comps.bigWig"
     chrom = "chr1"
@@ -831,7 +864,7 @@ def main():
     # ------------------------------------------------------------
     # STEP 5: Compartments (BED)
     # ------------------------------------------------------------
-    print("========= Load Compartments (BED) ==========")
+    log.info("========= Load Compartments (BED) ==========")
 
     bed_comp_file = "/home/blackpianocat/Data/Trios/HiChIP/HiChIP_Subcompartments/calder_subc_50k/bed/dsGM19238_30.bed"
 

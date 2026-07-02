@@ -7,6 +7,9 @@ import argparse
 import openmm as mm
 import importlib.resources
 from openmm.unit import Quantity
+from .logger import get_logger
+
+log = get_logger(__name__)
 
 # Dynamically set the default path to the XML file in the package
 try:
@@ -174,6 +177,7 @@ args = ListOfArgs([
     Arg('OUT_PATH', help="Output folder name.", type=str, default='../results', val='../results'),
     Arg('REGION_START', help="Starting region coordinate.", type=int, default='', val=''),
     Arg('REGION_END', help="Ending region coordinate.", type=int, default='', val=''),
+    Arg('GENOME',help='Reference genome assembly (e.g. "hg38" or "hg19"). Used to determine chromosome lengths and genomic coordinates.',type=str,default='hg38',val='hg38'),
     Arg('CHROM', help="Chromosome that corresponds the the modelling region of interest (in case that you do not want to model the whole genome).", type=str, default='', val=''),
     Arg('FLOAT_LIST', help="List of floating-point numbers.", type=list, nargs='+', default=[], val=[]),
     Arg('STRING_LIST', help="List of strings.", type=list, nargs='+', default=[], val=[]),
@@ -208,7 +212,7 @@ args = ListOfArgs([
     
     # Molecular Dynamic Properties
     Arg('INITIAL_STRUCTURE_TYPE', help="you can choose between: rw, confined_rw, self_avoiding_rw, helix, circle, spiral, sphere.", type=str, default='rw', val='rw'),
-    Arg('INTEGRATOR_STEP', help="The step of the integrator.", type=Quantity, default='10 femtosecond', val='10 femtosecond'),
+    Arg('INTEGRATOR_STEP', help="The step of the integrator.", type=Quantity, default='`100 femtosecond', val='100 femtosecond'),
     Arg('FORCEFIELD_PATH', help="Path to XML file with forcefield.", type=str, default=default_xml_path, val=default_xml_path),
     Arg('ANGLE_FF_STRENGTH', help="Angle force strength.", type=float, default='100.0', val='100.0'),
     Arg('LE_FF_LENGTH', help="Equillibrium distance of loop forces.", type=float, default='0.1', val='0.1'),
@@ -222,5 +226,5 @@ args = ListOfArgs([
     Arg('TOLERANCE', help="Tolerance that works as stopping condition for energy minimization.", type=float, default='0.001', val='0.001'),
     Arg('VIZ_HEATS', help="Visualize the output average heatmap.", type=bool, default='True', val='True'),
     Arg('SIM_TEMP', help="The temperature of the 3D simulation (EM or MD).", type=Quantity, default='310 kelvin', val='310 kelvin'),
-    Arg('SIM_STEP', help="This is the amount of simulation steps that are perform each time that we change the loop forces. If this number is too high, the simulation is slow, if is too low it may not have enough time to adapt the structure to the new constraints.", type=int, default='5000', val='5000'),
+    Arg('SIM_STEP', help="This is the amount of simulation steps that are perform each time that we change the loop forces. If this number is too high, the simulation is slow, if is too low it may not have enough time to adapt the structure to the new constraints.", type=int, default='2000', val='2000'),
 ])

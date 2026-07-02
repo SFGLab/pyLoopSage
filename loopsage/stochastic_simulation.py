@@ -15,6 +15,9 @@ from scipy.stats import poisson
 from .preproc import *
 from .plots import *
 from .md import *
+from .logger import get_logger
+
+log = get_logger(__name__)
 
 # Dynamically set the default path to the XML file in the package
 try:
@@ -713,7 +716,7 @@ class StochasticSimulation:
             self.path = make_folder(out_dir)
 
             # Print basic setup
-            print(f"Number of beads: {self.N_beads}")
+            log.info(f"Number of beads: {self.N_beads}")
             self.preprocessing(contrastive_binding)
 
             # LEF initialization
@@ -724,7 +727,7 @@ class StochasticSimulation:
             )
             self.N_lef2 = N_lef2
 
-            print(f"Number of LEFs: {self.N_lef + self.N_lef2}")
+            log.info(f"Number of LEFs: {self.N_lef + self.N_lef2}")
 
     def resolve_region(self):
 
@@ -760,7 +763,7 @@ class StochasticSimulation:
         self.region = region
 
         tag = "FALLBACK" if used_fallback else "OK"
-        print(f"[resolve_region:{tag}] chrom={self.chrom}, region={self.region}, length={self.region[1] - self.region[0]}")
+        log.info(f"[resolve_region:{tag}] chrom={self.chrom}, region={self.region}, length={self.region[1] - self.region[0]}")
     
     def run_energy_minimization(self, N_steps, MC_step, burnin, T=1, T_min=0, mode='Metropolis', viz=False, save=False, f=1.0, f2=0.0, b=1.0, kappa=1.0, epi_coeff=0.0, N_epi_states=3, p_spin=0.5, lef_rw=True, lef_drift=True, cross_loop=True, r=None, between_families_penalty=True,is_variable_step=False):
         '''
@@ -784,7 +787,7 @@ class StochasticSimulation:
         r = np.full(self.N_bws, -self.N_beads / 10) if not r and self.N_bws > 0 else (None if not r else r)
 
         # Run simulation
-        print('\nRunning simulation (with numba acceleration)...')
+        log.info('Running simulation (with numba acceleration)...')
         start = time.time()
         self.burnin = burnin
         self.Ms, self.Ns, self.Es, self.Ks, self.Fs, self.Bs, self.ufs, self.epi_states = run_simulation(
@@ -822,7 +825,7 @@ class StochasticSimulation:
         )        
         end = time.time()
         elapsed = end - start
-        print(f'Computation finished successfully in {elapsed//3600:.0f} hours, {elapsed%3600//60:.0f} minutes and {elapsed%60:.0f} seconds.')
+        log.info(f'Computation finished successfully in {elapsed//3600:.0f} hours, {elapsed%3600//60:.0f} minutes and {elapsed%60:.0f} seconds.')
         
         # Save simulation info
         if save:
@@ -895,7 +898,7 @@ class StochasticSimulation:
         self.avg_length = int(stats["loop_length"]["mean"])
         self.max_length = int(stats["loop_length"]["max"])
         self.min_length = int(stats["loop_length"]["min"])
-        print("Number of CTCF:", self.N_CTCF)
+        log.info("Number of CTCF: %s", self.N_CTCF)
 
         # 3. BigWig tracks (compartments, ChIP, etc.)
         if not self.bw_files:
