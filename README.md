@@ -293,6 +293,7 @@ An example, illustrated with Chimera software, simulated trajectory of structure
 | REGION_START          | Starting region coordinate.                                                                                     | int        | None                  |
 | REGION_END            | Ending region coordinate.                                                                                       | int        | None                  |
 | CHROM                 | Chromosome that corresponds to the modeling region of interest.                                                 | str        | None                  |
+| GENOME                | Reference genome assembly used to define chromosome sizes and genomic coordinates (e.g., hg19 or hg38).         | str        | hg38                  |
 
 #### Stochastic Simulation Parameters
 | Argument Name          | Description                                                                                                     | Type        | Default Value       |

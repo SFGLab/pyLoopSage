@@ -568,7 +568,7 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
 
     # MAIN LOOP
     for i in range(N_steps):
-
+        
         percent = int(100 * i / N_steps)
         if percent % 5 == 0 and percent != last_percent:
             print(f"Progress: {percent} % completed.")
@@ -787,7 +787,7 @@ class StochasticSimulation:
         r = np.full(self.N_bws, -self.N_beads / 10) if not r and self.N_bws > 0 else (None if not r else r)
 
         # Run simulation
-        log.info('Running simulation (with numba acceleration)...')
+        log.info('Running stochastic simulation (with numba acceleration)...')
         start = time.time()
         self.burnin = burnin
         self.Ms, self.Ns, self.Es, self.Ks, self.Fs, self.Bs, self.ufs, self.epi_states = run_simulation(

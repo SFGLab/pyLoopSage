@@ -140,10 +140,10 @@ def create_structure_animation(V_list, filename='animation.gif', nframes=10, rad
             
             # Write each frame to the GIF
             p.write_frame()
-    print('Video is done! Give me some time to save the file now....')
+    log.info('Video is done! Give me some time to save the file now....')
     # Close and save the GIF
     p.close()
-    print(f"Animation saved as {filename}")
+    log.info(f"Animation saved as {filename}")
     
 def interactive_plot(ensemble_path):
     cifs = list_files_in_directory(ensemble_path)

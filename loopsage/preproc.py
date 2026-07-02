@@ -209,9 +209,7 @@ def binding_vectors_from_bedpe(
         L = np.tanh((L - np.mean(L)) / (np.std(L) + eps))
         R = np.tanh((R - np.mean(R)) / (np.std(R) + eps))
 
-    # --------------------------------------------------
     # STATISTICS (FIXED PART)
-    # --------------------------------------------------
     distances_arr = np.array(distances)
 
     loop_edges = np.argwhere(J > 0)
@@ -253,34 +251,9 @@ def binding_vectors_from_bedpe(
 
     log.info(f"Total loops: {statistics['n_loops']}")
 
-    # -------------------------------------------------
-    # Distance between loop anchors
-    # -------------------------------------------------
-    d = statistics["distance_between_loops"]
-
-    log.info("📏 Distance between loop anchors:")
-    log.info(
-        f"mean   : {d['mean']:.2f} {unit_beads}  "
-        f"(~{d['mean'] * resolution:.0f} bp)"
-    )
-    log.info(
-        f"median : {d['median']:.2f} {unit_beads}  "
-        f"(~{d['median'] * resolution:.0f} bp)"
-    )
-    log.info(
-        f"min    : {d['min']:.2f} {unit_beads}  "
-        f"(~{d['min'] * resolution:.0f} bp)"
-    )
-    log.info(
-        f"max    : {d['max']:.2f} {unit_beads}  "
-        f"(~{d['max'] * resolution:.0f} bp)"
-    )
-
-    # -------------------------------------------------
     # Loop lengths
-    # -------------------------------------------------
     l = statistics["loop_length"]
-
+    
     log.info("🔗 Loop lengths:")
     log.info(
         f"mean   : {l['mean']:.2f} {unit_beads}  "
@@ -384,9 +357,7 @@ def binding_vectors_from_bedpe(
         ax.set_xlabel("i")
         ax.set_ylabel("j")
 
-        # --------------------------------------------------
         # VIEW FROM TOP (2D-like projection of surface)
-        # --------------------------------------------------
         ax.view_init(elev=-30, azim=60)
 
         plt.tight_layout()
@@ -540,9 +511,7 @@ class BWExporter:
 
         return weights
 
-    # --------------------------------------------------
     # BigWig -> bead array
-    # --------------------------------------------------
     def bw_to_array(self, bw, region, chrom, N_beads,
                     viz=False, roll=False):
 
@@ -577,9 +546,7 @@ class BWExporter:
 
         self.global_minmax = (np.min(values), np.max(values))
 
-    # --------------------------------------------------
     # Normalization utilities
-    # --------------------------------------------------
     def normalize(self, x, method="log"):
 
         if method == "log":
