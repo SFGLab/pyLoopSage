@@ -3,8 +3,6 @@ Updated version of the stochastic loop extrusion model: LoopSage with capability
 
 <img width="1774" height="887" alt="image" src="https://github.com/user-attachments/assets/7c338772-9fd5-4b57-8965-65d346b7f11c" />
 
-(yes this logo is made by ChatGPT, I am REALLY sorry)
-
 ## New features
 
 - More user-friendly environment.
