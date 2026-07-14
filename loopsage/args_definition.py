@@ -169,7 +169,7 @@ args = ListOfArgs([
     
     # Input data
     Arg('N_BEADS', help="Number of Simulation Beads.", type=int, default='', val=''),
-    Arg('BEDPE_PATH', help="A .bedpe file path with loops. It is required.", type=str, default='', val=''),
+    Arg('INTERACTION_FILE', help="A .bedpe, .bed, or .narrowPeak file path with loops. It is required.", type=str, default='', val=''),
     Arg('LEF_TRACK_FILE', help="An optional track file for cohesin or condensin in bw format. If this file is specified LEF preferentially binds were the signal is enriched.", type=str, default='', val=''),
     Arg('BW_FILES', help="List of bigWig file paths for feature extraction.", type=list, nargs='+', default=[], val=[]),
     Arg('COMP_BW_FILE', help="A bw file for compartmentalization. ", type=str,  default='', val=''),

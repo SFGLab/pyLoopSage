@@ -162,13 +162,13 @@ def main():
     
     # Definition of data
     output_name = args.OUT_PATH
-    bedpe_file = args.BEDPE_PATH
+    interaction_file = args.INTERACTION_FILE
     
     # Run stochastic simulation
     sim = StochasticSimulation(
         region=region,
         chrom=chrom,
-        bedpe_file=bedpe_file,
+        interaction_file=interaction_file,
         out_dir=output_name,
         N_beads=N_beads,
         N_lef=N_lef,

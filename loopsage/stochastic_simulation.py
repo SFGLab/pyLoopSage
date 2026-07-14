@@ -646,7 +646,7 @@ def run_simulation(N_beads, N_steps, MC_step, burnin,
 class StochasticSimulation:
     def __init__(
             self,
-            bedpe_file,
+            interaction_file,
             chrom,
             region=None,
             N_beads=None,
@@ -661,36 +661,43 @@ class StochasticSimulation:
         ):
             """
             Chromatin stochastic simulation initializer.
-
+ 
             Parameters
             ----------
             region : list[int, int]
                 Genomic region [start, end] in base pairs.
-
+ 
             chrom : str
                 Chromosome name (e.g. "chr1").
-
-            bedpe_file : str
-                BEDPE file containing CTCF/loop interactions.
-
+ 
+            interaction_file : str
+                CTCF/loop interaction file. Format is auto-detected from the
+                file extension:
+                  - .bedpe                  -> paired loop anchors (binding_vectors_from_bedpe)
+                  - .bed                    -> single CTCF sites (binding_vectors_from_bed)
+                  - .narrowPeak/.narrowpeak -> single CTCF peaks (binding_vectors_from_narrowpeak)
+                For .bed/.narrowPeak inputs there is no anchor-pairing
+                information, so J/J_loss carry no loop data (see those
+                functions' docstrings) - only L/R are orientation-aware.
+ 
             N_beads : int or None
                 Number of polymer beads. If None, inferred from region at ~2kb resolution.
-
+ 
             N_lef : int or None
                 Number of loop extrusion factors (LEFs). If None, inferred from CTCF count.
-
+ 
             N_lef2 : int
                 Second LEF population size (optional heterogeneous population).
-
+ 
             out_dir : str or None
                 Output directory for simulation results.
-
+ 
             bw_files : list[str] or None
                 BigWig signal tracks (e.g. ChIP-seq, compartments).
-
+ 
             lef_density_file : str or None
                 Optional track defining spatial LEF loading probability.
-
+ 
             comp_file : str or None
                 Compartment track (BigWig or BED format).
             """
@@ -699,26 +706,26 @@ class StochasticSimulation:
             self.region = region
             self.resolve_region()
             self.data_loss_mode = data_loss_mode
-
+ 
             self.N_beads = (
                 N_beads
                 if N_beads is not None
                 else int(np.round((region[1] - region[0]) / 2000))
             )
-
+ 
             # Input data
-            self.bedpe_file = bedpe_file
+            self.interaction_file = interaction_file
             self.bw_files = bw_files
             self.lef_density_file = lef_density_file
             self.comp_file = comp_file
-
+ 
             self.N_bws = len(bw_files) if bw_files is not None else 0
             self.path = make_folder(out_dir)
-
+ 
             # Print basic setup
             log.info(f"Number of beads: {self.N_beads}")
             self.preprocessing(contrastive_binding)
-
+ 
             # LEF initialization
             self.N_lef = (
                 self.N_CTCF//2
@@ -726,8 +733,9 @@ class StochasticSimulation:
                 else N_lef
             )
             self.N_lef2 = N_lef2
-
+ 
             log.info(f"Number of LEFs: {self.N_lef + self.N_lef2}")
+ 
 
     def resolve_region(self):
 
@@ -833,7 +841,7 @@ class StochasticSimulation:
             with open(save_dir + 'info.txt', "w") as file:
                 file.write(f'Number of beads {self.N_beads}.\n')
                 file.write(f'Number of cohesins {self.N_lef}. Number of cohesins in second family {self.N_lef2}. Number of CTCFs {self.N_CTCF}. \n')
-                file.write(f'Bedpe file for CTCF binding is {self.bedpe_file}.\n')
+                file.write(f'Bedpe file for CTCF binding is {self.interaction_file}.\n')
                 file.write(f'Initial temperature {T}. Minimum temperature {T_min}.\n')
                 file.write(f'Monte Carlo optimization method: {mode}.\n')
                 file.write(f'Monte Carlo steps {N_steps}. Sampling frequency {self.MC_step}. Burnin period {burnin}.\n')
@@ -861,20 +869,21 @@ class StochasticSimulation:
         
         return self.Es, self.Ms, self.Ns, self.Bs, self.Ks, self.Fs, self.ufs, self.epi_states
 
-    def preprocessing(self,contrastive_binding):
+    def preprocessing(self, contrastive_binding):
         """
-        Preprocessing pipeline using updated BEDPE + BigWig exporters.
-
+        Preprocessing pipeline using updated BEDPE/BED/narrowPeak + BigWig exporters.
+ 
         Produces:
         - L, R, J interaction structures
         - BW tracks (compartments, ChIP, etc.)
         - LEF track
         - basic dataset statistics
         """
-
-        # 1. Chromatin structure from BEDPE
-        L, R, J, J_loss, stats = binding_vectors_from_bedpe(
-            bedpe_file=self.bedpe_file,
+ 
+        # 1. Chromatin structure - dispatch on interaction_file extension
+        ext = os.path.splitext(self.interaction_file)[-1].lower()
+ 
+        common_kwargs = dict(
             N_beads=self.N_beads,
             region=self.region,
             chrom=self.chrom,
@@ -884,34 +893,62 @@ class StochasticSimulation:
             diagonal_interactions=True,
             alpha=1.0,
             smooth=True,
-            smooth_sigma=self.N_beads/100,
+            smooth_sigma=self.N_beads / 100,
             contrastive=contrastive_binding
         )
-        
+ 
+        if ext == ".bedpe":
+            L, R, J, J_loss, stats = binding_vectors_from_bedpe(
+                bedpe_file=self.interaction_file, **common_kwargs
+            )
+        elif ext == ".bed":
+            L, R, J, J_loss, stats = binding_vectors_from_bed(
+                bed_file=self.interaction_file, **common_kwargs
+            )
+        elif ext in (".narrowpeak",):
+            L, R, J, J_loss, stats = binding_vectors_from_narrowpeak(
+                narrowpeak_file=self.interaction_file, **common_kwargs
+            )
+        else:
+            raise ValueError(
+                f"Unsupported interaction file format '{ext}' for "
+                f"{self.interaction_file}. Expected .bedpe, .bed, or .narrowPeak."
+            )
+ 
         self.L = L
         self.R = R
         self.J, self.J_loss = J, J_loss
         self.loop_stats = stats
-
+ 
         # 2. CTCF / loop count estimate
-        self.N_CTCF = int(stats["n_loops"])
-        self.avg_length = int(stats["loop_length"]["mean"])
-        self.max_length = int(stats["loop_length"]["max"])
-        self.min_length = int(stats["loop_length"]["min"])
+        # BEDPE gives real loop stats (n_loops, loop_length); BED/narrowPeak
+        # give single-site stats (n_peaks) with no loop-length concept, since
+        # there's no anchor pairing to measure a length from.
+        self.N_CTCF = int(stats.get("n_loops", stats.get("n_peaks", 0)))
+ 
+        if "loop_length" in stats:
+            self.avg_length = int(stats["loop_length"]["mean"])
+            self.max_length = int(stats["loop_length"]["max"])
+            self.min_length = int(stats["loop_length"]["min"])
+        else:
+            self.avg_length = None
+            self.max_length = None
+            self.min_length = None
+ 
         log.info("Number of CTCF: %s", self.N_CTCF)
-
+ 
         # 3. BigWig tracks (compartments, ChIP, etc.)
         if not self.bw_files:
             self.BWs = None
             self.N_bws = 0
-
+ 
         else:
             if isinstance(self.bw_files, str):
                 self.bw_files = [self.bw_files]
-
+ 
             self.N_bws = len(self.bw_files)
             self.BWs = np.zeros((self.N_bws, self.N_beads), dtype=np.float64)
-
+ 
             for i, f in enumerate(self.bw_files):
                 exporter = BWExporter(
                     path=f,
@@ -919,7 +956,7 @@ class StochasticSimulation:
                     chrom=self.chrom,
                     N_beads=self.N_beads
                 )
-
+ 
                 self.BWs[i, :] = exporter.load_track(
                     viz=True,
                     roll=False,
@@ -927,7 +964,7 @@ class StochasticSimulation:
                     out_path=self.path,
                     scale_minus1_1=False
                 )
-
+ 
         # 4. LEF / epigenetic track
         if self.lef_density_file:
             exporter = BWExporter(
@@ -936,7 +973,7 @@ class StochasticSimulation:
                 chrom=self.chrom,
                 N_beads=self.N_beads
             )
-
+ 
             self.lef_track = exporter.load_track(
                 viz=True,
                 roll=True,
@@ -946,32 +983,32 @@ class StochasticSimulation:
             )
         else:
             self.lef_track = None
-        
+ 
         # 5. Compartments -> continuous external field h
         if self.comp_file:
-
+ 
             f = self.comp_file.lower()
-
+ 
             # CASE 1: BigWig
             if f.endswith((".bw", ".bigwig")):
-
+ 
                 exporter = BWExporter(
                     path=self.comp_file,
                     region=self.region,
                     chrom=self.chrom,
                     N_beads=self.N_beads
                 )
-
+ 
                 self.h = exporter.load_track(
                     viz=True,
                     roll=False,
                     norm=None,
                     scale_minus1_1=True
                 )
-
+ 
             # CASE 2: BED-like compartments
             elif f.endswith((".bed", ".bed.gz")):
-
+ 
                 self.h = load_compartments_bed(
                     bed_file=self.comp_file,
                     region=self.region,
@@ -985,15 +1022,15 @@ class StochasticSimulation:
                     viz=True,
                     debug=False
                 )
-
+ 
             # fallback
             else:
                 raise ValueError(
                     f"Unsupported compartment format: {self.comp_file}"
                 )
-
+ 
             self.h = np.asarray(self.h, dtype=np.float64)
-
+ 
         else:
             self.h = None
 
@@ -1001,7 +1038,8 @@ class StochasticSimulation:
         if not do_compartments: self.epi_states=None
         md = MD_LE(self.Ms,self.Ns,self.epi_states,self.N_beads,self.path,platform,angle_ff_strength,le_distance,le_ff_strength,ev_ff_strength,ev_ff_power,tolerance)
         sim_heat = md.run_pipeline(plots=save_plots,sim_step=sim_step,friction=friction,integrator_step=integrator_step,temperature=temperature,ff_path=ff_path,p_ev=p_ev,init_struct=init_struct,continuous_topoisomerase=continuous_topoisomerase)
-        corr_exp_heat(sim_heat,self.bedpe_file,self.region,self.chrom,self.N_beads,self.path)
+        if self.interaction_file.endswith((".bedpe")):
+            corr_exp_heat(sim_heat,self.interaction_file,self.region,self.chrom,self.N_beads,self.path)
 
 def main():
     # Definition of Monte Carlo parameters
@@ -1018,12 +1056,12 @@ def main():
     
     # Definition of data
     output_name = 'tmp'
-    bedpe_file = '/home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe'
+    interaction_file = '/home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe'
     
     # Between family penalty
     between_families_penalty = True
     
-    sim = StochasticSimulation(region, chrom, bedpe_file, out_dir=output_name, N_beads=1000, N_lef=N_lef, N_lef2=N_lef2)
+    sim = StochasticSimulation(region, chrom, interaction_file, out_dir=output_name, N_beads=1000, N_lef=N_lef, N_lef2=N_lef2)
     Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(
         N_steps, MC_step, burnin, T, T_min, mode=mode, viz=True, save=True, f=f, f2=f2, b=b, kappa=kappa, lef_rw=lew_rw, between_families_penalty=between_families_penalty
     )

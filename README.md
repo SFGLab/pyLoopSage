@@ -156,9 +156,14 @@ Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin
 sim.run_EM('CUDA')
 ```
 
-Firstly, we need to define the input files from which LoopSage would take the information to construct the potential. We define also the specific region that we would like to model. Therefore, in the code script above we define a `bedpe_file` from which information about the CTCF loops it is imported.
+Behind the scenes, the class still walks through the same steps as before: it sets the main simulation parameters (`N_beads, N_coh, kappa, f, b`, or sensible defaults if you'd rather not specify them, though it's worth double-checking they suit your system), along with the Monte Carlo parameters (`N_steps, MC_step, burnin, T`), before initializing `LoopSage()`. Calling `sim.run_energy_minimization()` then launches the stochastic Monte Carlo simulation, which yields a set of cohesin constraints (`Ms, Ns`) — generated in one of two modes, `Annealing` or `Metropolis`. These constraints are passed on to the molecular simulation stage, where either `EM_LE()` or `MD_LE()` turns them into a trajectory of 3D structures and an average contact heatmap. `MD_LE()` goes a step further and produces an actual trajectory together with a `.dcd` video of the simulation evolving over time, though it's memory-hungry — a bond has to be defined at every timestep, which can make it impractical for larger systems. For those cases, `EM_LE()` is the better choice, since it achieves the same goal without the heavy memory footprint.
 
-Note that the `.bedpe_file` must be in the following format,
+#### Input data
+Firstly, we need to define the input files from which LoopSage would take the information to construct the potential. We define also the specific region that we would like to model. Therefore, in the code script above we define an `interaction_file` from which information about the CTCF loops or CTCF binding sites is imported. The format is auto-detected from the file extension, and three alternatives are supported: `.bedpe`, `.bed`, and `.narrowPeak`.
+
+##### 1. `.bedpe` (paired loop anchors)
+
+This is the richest format, since each line already describes a candidate loop between two anchors. The `.bedpe` file must be in the following format:
 
 ```
 chr1	903917	906857	chr1	937535	939471	16	3.2197903072213415e-05	0.9431392038374097
@@ -173,25 +178,39 @@ chr1	990949	994698	chr1	1001076	1003483	34	0.5386388489931403	0.9942742844900859
 chr1	991375	993240	chr1	1062647	1064919	15	1.0	0.9997541297643132
 ```
 
-where the last two columns represent the probabilites for left and right anchor respectively to be tandem right. If the probability is negative it means that no CTCF motif was detected in this anchor. You can extract these probabilities from the repo: https://github.com/SFGLab/3d-analysis-toolkit, with `find_motifs.py` file. Please set `probabilistic=True` `statistics=False`.
+where the last two columns represent the probabilities for the left and right anchor respectively to be tandem right. If the probability is negative it means that no CTCF motif was detected in this anchor.
 
+*Alternativelly, it is possible to import a `.bedpe` file without the last two columns (CTCF orientation). In this case, CTCF would act as an orientation independent barrier. This might affect slightly the results, but it is an easier option, if you do not want to run a CTCF motif finding script.*
 
-To use this script you need to have a python 3.8 environment, and install the following dependencies from this file: [mateusz_script_env.txt](https://github.com/user-attachments/files/17568248/mateusz_script_env.txt).
+##### 2. `.bed` (single CTCF sites, e.g. ChIP-seq intervals)
+
+If you only have unpaired CTCF binding intervals rather than loop calls, you can pass a `.bed` file instead. LoopSage will still build orientation-aware `L`/`R` binding vectors from it, but since there is no anchor-pairing information in a `.bed` file, no loop-adjacency matrix (`J`) can be constructed - CTCF sites contribute individually rather than as loop anchors. Expected columns: `chrom, start, end, name, score, strand`, optionally followed by a probability column (probability the site's best motif hit is reverse-oriented) and an orientation call (`>`, `<`, or `.`).
+
+##### 3. `.narrowPeak` (single CTCF peaks, e.g. MACS2/HiChIP peaks)
+
+Similarly, a `.narrowPeak` file of individual peaks can be used in place of a `.bedpe`/`.bed` file, with the same caveat: no `J` loop matrix is built, only `L`/`R`. Expected columns: `chrom, start, end, name, score`, optionally followed by a forward-orientation probability column and an orientation call.
+
+#### Extracting CTCF motif orientation
+
+To generate the orientation/probability columns for any of the three formats above (`.bedpe`, `.bed`, or `.narrowPeak`), use the motif-finding scripts from [BlackPianoCat/motif_finder](https://github.com/BlackPianoCat/motif_finder):
+
+- `motif_finder_bedpe.py` for `.bedpe` loop files
+- `bed_motif_finder.py` for `.bed` interval files
+- `motif_finder_peaks.py` for `.narrowPeak` peak files
+
+Run the appropriate script with `--prob` to get the probability columns shown above (e.g. `python motif_finder_bedpe.py -i loops.bedpe -g genome.fa -m CTCF.pfm -o loops_with_motif.bedpe --prob`). See that repo's README for full usage details on each script.
 
 You also need to download the reference genome from: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/GRCh38_reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa
 
-*Alternativelly, it is possible to import a .bedpe file without the last two columns (CTCF orientation). In this case, CTCF would act as an orientation independent barrier. This might affect slightly the results, but it is an easier option, if you do not want to run a CTCF motif finding script.*
-
-Then, we define the main parameters of the simulation `N_beads,N_coh,kappa,f,b` or we can choose the default ones (take care because it might be the case that they are not the appropriate ones and they need to be changed), the parameters of Monte Carlo `N_steps, MC_step, burnin, T`, and we initialize the class `LoopSage()`. The command `sim.run_energy_minimization()` corresponds to the stochastic Monte Carlo simulation, and it produces a set of cohesin constraints as a result (`Ms, Ns`). Note that the stochastic simulation has two modes: `Annealing` and `Metropolis`. We feed cohesin constraints to the molecular simulation part of and we run `EM_LE()` or `EM_LE()` simulation which produces a trajectory of 3d-structures, and the average heatmap. `MD_LE()` function can produce an actual trajectory and a `.dcd` video of how simulation changes over time. However, the implementation needs a high amount of memory since we need to define a bond for each time step, and it may not work for large systems. `EM_LE()` is suggested for large simulations, because it does not require so big amount of memory.
-
 ### Running LoopSage from command-line
-To run LoopSage from command-line, you only need to type a command
+
+Running LoopSage from the command line comes down to a single command. 
 
 ```bash
 loopsage -c config.ini
 ```
 
-With this command the model will run with parameters specified in `config.ini` file. An example of a `config.ini` file would be the following,
+This command runs the model using the parameters specified in a `config.ini` file. Here's an example of what that file might look like:
 
 ```txt
 [Main]
@@ -217,7 +236,7 @@ PLATFORM = CUDA
 INITIAL_STRUCTURE_TYPE = rw
 SIMULATION_TYPE = EM 
 TOLERANCE = 1.0
-``` 
+```
 
 ### Visualization with PyVista
 

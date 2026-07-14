@@ -371,6 +371,293 @@ def binding_vectors_from_bedpe(
 
     return 2*L, 2*R, J, np.sqrt(len(loop_lengths))*J_loss, statistics
 
+def _prepare_region(chrom, region):
+    """Shared region-resolution logic (identical to binding_vectors_from_bedpe)."""
+    try:
+        region = [int(region[0]), int(region[1])]
+        if region[1] <= region[0]:
+            raise ValueError("Invalid region bounds")
+    except Exception:
+        log.warning("Invalid region provided → using full chromosome.")
+        if chrom not in CHROM_LENGTHS:
+            raise ValueError(f"Unknown chromosome: {chrom}")
+        region = [0, CHROM_LENGTHS[chrom]]
+    return region
+ 
+def _valid_prob_vector(p):
+    """Same sanity check binding_vectors_from_bedpe() uses for columns 7/8:
+    every value must be -1 (unknown) or in [0, 1] (a real probability)."""
+    p = np.asarray(p, dtype=float)
+    finite = np.isfinite(p)
+    allowed = (p == -1) | ((p >= 0) & (p <= 1))
+    return np.all(finite & allowed)
+ 
+def _binding_vectors_from_single_region(
+        beads, weights, probs,
+        N_beads, out_path=None,
+        normalization=False,
+        viz=False,
+        diagonal_interactions=True,
+        alpha=1.0,
+        smooth=False,
+        smooth_sigma=2.0,
+        contrastive=True,
+        source_label="peaks"
+    ):
+    '''
+    Shared core for single-region (BED / narrowPeak) inputs.
+ 
+    `probs` must already be on the side_strength convention used by
+    binding_vectors_from_bedpe(): probability that a site's best-scoring hit
+    is REVERSE-oriented ("<"), in [0, 1], or -1 if unknown/no motif found.
+    The two public wrapper functions below take care of that conversion.
+ 
+    Returns
+    -------
+    L, R          : (N_beads,) binding-orientation vectors, same convention
+                    as binding_vectors_from_bedpe() (wx = w*(1-p) -> L,
+                    wy = w*p -> R).
+    J             : (N_beads, N_beads) backbone-only adjacency (no loop info -
+                    BED/narrowPeak sites aren't paired, so this is NOT a
+                    loop-contact matrix, just the diagonal_interactions
+                    backbone, included for return-shape compatibility).
+    J_loss        : (N_beads, N_beads) all zeros, for the same reason.
+    statistics    : dict
+    '''
+    L = np.zeros(N_beads, dtype=np.float64)
+    R = np.zeros(N_beads, dtype=np.float64)
+    J = np.zeros((N_beads, N_beads), dtype=np.float64)
+    J_loss = np.zeros((N_beads, N_beads), dtype=np.float64)
+ 
+    orientations_used = []
+ 
+    for bead, w, p in zip(beads, weights, probs):
+        bead = int(min(max(bead, 0), N_beads - 1))
+ 
+        if p is not None and p >= 0:
+            wx = w * (1 - p)  # -> L (reverse-biased)
+            wy = w * p        # -> R (forward-biased)
+            orientations_used.append(p)
+        else:
+            wx = wy = w * 0.5  # unknown orientation -> split evenly
+ 
+        L[bead] += wx
+        R[bead] += wy
+ 
+    # Backbone (same convention as binding_vectors_from_bedpe; NOT loop info)
+    if diagonal_interactions:
+        for i in range(N_beads - 1):
+            J[i, i + 1] = 1.0
+            J[i + 1, i] = 1.0
+ 
+    if smooth:
+        L = gaussian_filter1d(L, sigma=smooth_sigma, mode="nearest")
+        R = gaussian_filter1d(R, sigma=smooth_sigma, mode="nearest")
+ 
+    mean_L = np.mean(L) if np.mean(L) != 0 else 1.0
+    mean_R = np.mean(R) if np.mean(R) != 0 else 1.0
+    L, R = L / mean_L, R / mean_R
+ 
+    if contrastive:
+        eps = 1e-6
+        L = np.tanh((L - np.mean(L)) / (np.std(L) + eps))
+        R = np.tanh((R - np.mean(R)) / (np.std(R) + eps))
+ 
+    orientations_used = np.array(orientations_used)
+    weights_arr = np.asarray(weights, dtype=np.float64)
+ 
+    statistics = {
+        "n_peaks": int(len(beads)),
+        "n_with_orientation": int(len(orientations_used)),
+        "orientation_bias": {  # probability of reverse ("<"); side_strength convention
+            "mean": float(np.mean(orientations_used)) if len(orientations_used) else 0.0,
+            "median": float(np.median(orientations_used)) if len(orientations_used) else 0.0,
+        },
+        "weight": {
+            "mean": float(np.mean(weights_arr)) if len(weights_arr) else 0.0,
+            "median": float(np.median(weights_arr)) if len(weights_arr) else 0.0,
+            "min": float(np.min(weights_arr)) if len(weights_arr) else 0.0,
+            "max": float(np.max(weights_arr)) if len(weights_arr) else 0.0,
+        }
+    }
+ 
+    log.info(f"🧬 {source_label} Binding Vector Stats")
+    log.info("=" * 40)
+    log.info(f"Total sites: {statistics['n_peaks']} "
+              f"({statistics['n_with_orientation']} with known orientation)")
+    log.info("=" * 40)
+ 
+    if viz:
+        if out_path is not None:
+            plot_dir = os.path.join(out_path, "plots")
+            os.makedirs(plot_dir, exist_ok=True)
+ 
+        fig, ax = plt.subplots(figsize=(8, 4), dpi=200)
+        ax.plot(L, label="L (reverse-biased)", lw=2, color="darkgreen")
+        ax.plot(R, label="R (forward-biased)", lw=2, color="darkred")
+        ax.set_title(f"Binding profiles along chromatin ({source_label})")
+        ax.set_xlabel("Bead index")
+        ax.set_ylabel("Signal strength")
+        ax.legend(frameon=False)
+        ax.grid(alpha=0.3)
+        plt.tight_layout()
+ 
+        if out_path is not None:
+            plt.savefig(os.path.join(plot_dir, f"LR_profiles_{source_label}.svg"), dpi=600, format="svg")
+            plt.savefig(os.path.join(plot_dir, f"LR_profiles_{source_label}.png"), dpi=600, format="png")
+            plt.savefig(os.path.join(plot_dir, f"LR_profiles_{source_label}.pdf"), dpi=600, format="pdf")
+        plt.close()
+ 
+    return 2 * L, 2 * R, J, J_loss, statistics
+ 
+def binding_vectors_from_bed(
+        bed_file, N_beads, chrom, region=None, out_path=None,
+        normalization=False,
+        viz=False,
+        diagonal_interactions=True,
+        alpha=1.0,
+        smooth=False,
+        smooth_sigma=2.0,
+        contrastive=True
+    ):
+    '''
+    Construct L/R binding vectors from a BED file produced by
+    bed_motif_finder.py.
+ 
+    Expects either:
+    - Plain/default BED columns: chrom, start, end, name, score, strand
+    - --prob mode output: the above + prob (col 6) + orientation call (col 7),
+      where prob is the side_strength-convention probability that the site's
+      best hit is reverse-oriented ("<"), or -1 if no motif was found.
+ 
+    If the probability column is missing or doesn't look like valid
+    probabilities (not -1 or 0..1), every site is treated as
+    orientation-neutral (50/50 L/R split) and a warning is logged - re-run
+    bed_motif_finder.py with --prob for orientation-aware vectors.
+ 
+    See binding_vectors_from_bedpe() for the shared return contract;
+    unlike that function, J here is backbone-only (BED sites aren't paired,
+    so there's no loop-adjacency information to build).
+ 
+    Returns
+    -------
+    L, R, J, J_loss, statistics  (see binding_vectors_from_bedpe docstring
+    for shape/meaning; J/J_loss carry no loop information here)
+    '''
+    region = _prepare_region(chrom, region)
+    df = pd.read_csv(bed_file, sep='\t', header=None, comment='#')
+ 
+    df = df[
+        (df[1] >= region[0]) & (df[2] >= region[0]) &
+        (df[1] < region[1]) & (df[2] < region[1]) &
+        (df[0] == chrom)
+    ].reset_index(drop=True)
+ 
+    resolution = max((region[1] - region[0]) // N_beads, 1)
+    beads = ((df[1] + df[2]) // 2 - region[0]) // resolution
+ 
+    weights = (pd.to_numeric(df[4], errors='coerce').fillna(1.0).values
+               if df.shape[1] > 4 else np.ones(len(df)))
+ 
+    has_prob = df.shape[1] > 6
+    if has_prob:
+        prob = pd.to_numeric(df[6], errors='coerce').fillna(-1).values
+        if not _valid_prob_vector(prob):
+            log.warning("Column 6 detected but doesn't look like valid probabilities "
+                        "(expected -1 or 0..1) → ignoring it. Make sure this file was "
+                        "generated with `bed_motif_finder.py --prob`.")
+            has_prob = False
+    if not has_prob:
+        log.warning("No probability column detected → treating all sites as "
+                    "orientation-neutral (50/50 L/R split). Re-run "
+                    "bed_motif_finder.py with --prob for orientation-aware vectors.")
+        prob = np.full(len(df), -1.0)
+ 
+    return _binding_vectors_from_single_region(
+        beads.values, weights, prob,
+        N_beads=N_beads, out_path=out_path, normalization=normalization, viz=viz,
+        diagonal_interactions=diagonal_interactions, alpha=alpha,
+        smooth=smooth, smooth_sigma=smooth_sigma, contrastive=contrastive,
+        source_label="BED"
+    )
+ 
+def binding_vectors_from_narrowpeak(
+        narrowpeak_file, N_beads, chrom, region=None, out_path=None,
+        normalization=False,
+        viz=False,
+        diagonal_interactions=True,
+        alpha=1.0,
+        smooth=False,
+        smooth_sigma=2.0,
+        contrastive=True
+    ):
+    '''
+    Construct L/R binding vectors from a narrowPeak file produced by
+    narrowpeak_motif_finder.py.
+ 
+    Expects either:
+    - Default output columns: chrom, start, end, name, score
+    - --prob mode output: the above + prob_forward (col 5) + orientation call
+      (col 6), where prob_forward is the probability the site's best hit is
+      FORWARD-oriented (">"), or -1 if no motif was found.
+ 
+    IMPORTANT: prob_forward uses the OPPOSITE convention from
+    binding_vectors_from_bedpe()'s side_strength probabilities (which are
+    reverse-biased). This function converts internally
+    (p_reverse = 1 - p_forward) before applying the same L/R split formula,
+    so results stay consistent with binding_vectors_from_bedpe() and
+    binding_vectors_from_bed().
+ 
+    If the probability column is missing or doesn't look like valid
+    probabilities, every site is treated as orientation-neutral (50/50 L/R
+    split) and a warning is logged - re-run narrowpeak_motif_finder.py with
+    --prob for orientation-aware vectors.
+ 
+    Returns
+    -------
+    L, R, J, J_loss, statistics  (see binding_vectors_from_bedpe docstring
+    for shape/meaning; J/J_loss carry no loop information here)
+    '''
+    region = _prepare_region(chrom, region)
+    df = pd.read_csv(narrowpeak_file, sep='\t', header=None, comment='#')
+ 
+    df = df[
+        (df[1] >= region[0]) & (df[2] >= region[0]) &
+        (df[1] < region[1]) & (df[2] < region[1]) &
+        (df[0] == chrom)
+    ].reset_index(drop=True)
+ 
+    resolution = max((region[1] - region[0]) // N_beads, 1)
+    beads = ((df[1] + df[2]) // 2 - region[0]) // resolution
+ 
+    weights = (pd.to_numeric(df[4], errors='coerce').fillna(1.0).values
+               if df.shape[1] > 4 else np.ones(len(df)))
+ 
+    has_prob = df.shape[1] > 5
+    if has_prob:
+        prob_forward = pd.to_numeric(df[5], errors='coerce').fillna(-1).values
+        if not _valid_prob_vector(prob_forward):
+            log.warning("Column 5 detected but doesn't look like valid probabilities "
+                        "(expected -1 or 0..1) → ignoring it. Make sure this file was "
+                        "generated with `narrowpeak_motif_finder.py --prob`.")
+            has_prob = False
+    if has_prob:
+        # convert forward-bias convention -> reverse-bias (side_strength) convention
+        prob = np.where(prob_forward >= 0, 1 - prob_forward, -1.0)
+    else:
+        log.warning("No probability column detected → treating all sites as "
+                    "orientation-neutral (50/50 L/R split). Re-run "
+                    "narrowpeak_motif_finder.py with --prob for orientation-aware vectors.")
+        prob = np.full(len(df), -1.0)
+ 
+    return _binding_vectors_from_single_region(
+        beads.values, weights, prob,
+        N_beads=N_beads, out_path=out_path, normalization=normalization, viz=viz,
+        diagonal_interactions=diagonal_interactions, alpha=alpha,
+        smooth=smooth, smooth_sigma=smooth_sigma, contrastive=contrastive,
+        source_label="narrowPeak"
+    )
+
 def get_rnap_energy(path,region,chrom,N_beads,normalization):
     '''
     For the RNApII potential.
