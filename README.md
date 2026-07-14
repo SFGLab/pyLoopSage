@@ -149,9 +149,9 @@ region, chrom = [15550000,16850000], 'chr6'
 
 # Definition of data
 output_name='../HiChIP_Annealing_T1_MD_region'
-bedpe_file = '/home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe'
+interaction_file = '/home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe'
 
-sim = lps.StochasticSimulation(region,chrom,bedpe_file,out_dir=output_name,N_beads=1000)
+sim = lps.StochasticSimulation(region,chrom,interaction_file,out_dir=output_name,N_beads=1000)
 Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True)
 sim.run_EM('CUDA')
 ```
@@ -161,7 +161,7 @@ Behind the scenes, the class still walks through the same steps as before: it se
 #### Input data
 Firstly, we need to define the input files from which LoopSage would take the information to construct the potential. We define also the specific region that we would like to model. Therefore, in the code script above we define an `interaction_file` from which information about the CTCF loops or CTCF binding sites is imported. The format is auto-detected from the file extension, and three alternatives are supported: `.bedpe`, `.bed`, and `.narrowPeak`.
 
-##### 1. `.bedpe` (paired loop anchors)
+1. `.bedpe` (paired loop anchors)
 
 This is the richest format, since each line already describes a candidate loop between two anchors. The `.bedpe` file must be in the following format:
 
@@ -182,11 +182,11 @@ where the last two columns represent the probabilities for the left and right an
 
 *Alternativelly, it is possible to import a `.bedpe` file without the last two columns (CTCF orientation). In this case, CTCF would act as an orientation independent barrier. This might affect slightly the results, but it is an easier option, if you do not want to run a CTCF motif finding script.*
 
-##### 2. `.bed` (single CTCF sites, e.g. ChIP-seq intervals)
+2. `.bed` (single CTCF sites, e.g. ChIP-seq intervals)
 
 If you only have unpaired CTCF binding intervals rather than loop calls, you can pass a `.bed` file instead. LoopSage will still build orientation-aware `L`/`R` binding vectors from it, but since there is no anchor-pairing information in a `.bed` file, no loop-adjacency matrix (`J`) can be constructed - CTCF sites contribute individually rather than as loop anchors. Expected columns: `chrom, start, end, name, score, strand`, optionally followed by a probability column (probability the site's best motif hit is reverse-oriented) and an orientation call (`>`, `<`, or `.`).
 
-##### 3. `.narrowPeak` (single CTCF peaks, e.g. MACS2/HiChIP peaks)
+3. `.narrowPeak` (single CTCF peaks, e.g. MACS2/HiChIP peaks)
 
 Similarly, a `.narrowPeak` file of individual peaks can be used in place of a `.bedpe`/`.bed` file, with the same caveat: no `J` loop matrix is built, only `L`/`R`. Expected columns: `chrom, start, end, name, score`, optionally followed by a forward-orientation probability column and an orientation call.
 
@@ -216,7 +216,7 @@ This command runs the model using the parameters specified in a `config.ini` fil
 [Main]
 
 ; Input Data and Information
-BEDPE_PATH = /home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe
+INTERACTION_FILE = /home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe
 REGION_START = 15550000
 REGION_END = 16850000
 CHROM = chr6
@@ -304,7 +304,7 @@ An example, illustrated with Chimera software, simulated trajectory of structure
 #### Input Data
 | Argument Name          | Description                                                                                                     | Type        | Default Value       |
 |------------------------|-----------------------------------------------------------------------------------------------------------------|------------|---------------------|
-| BEDPE_PATH            | A .bedpe file path with loops. It is required.                                                                  | str        | None                  |
+| INTERACTION_FILE      | A .bedpe, .bed or .narrowPeaks input file. It is required.                                                                  | str        | None                  |
 | LEF_TRACK_FILE        | Path to a bw file of cohesin or condensin density. If it is provided, then simulation LEFs preferentially bind in enriched regions. | str | None |
 | BW_FILES              | List of paths to .bw files containing additional data for simulation. Enriched regions would act as barriers for cohesin.                | list       | None                  |
 | REGION_START          | Starting region coordinate.                                                                                     | int        | None                  |
