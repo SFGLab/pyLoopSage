@@ -156,67 +156,441 @@ _struct_conn.ptnr2_label_seq_id
 _struct_conn.ptnr2_label_atom_id
 """
 
-def corr_exp_heat(mat_sim,bedpe_file,region,chrom,N_beads,path):
-    # Read file and select the region of interest
-    df = pd.read_csv(bedpe_file,sep='\t',header=None)
-    df = df[(df[1]>=region[0])&(df[2]>=region[0])&(df[4]>=region[0])&(df[5]>=region[0])&(df[5]<region[1])&(df[4]<region[1])&(df[1]<region[1])&(df[2]<region[1])&(df[0]==chrom)].reset_index(drop=True)
 
-    # Convert hic coords into simulation beads
-    resolution = (region[1]-region[0])//N_beads
-    df[1], df[2], df[4], df[5] = (df[1]-region[0])//resolution, (df[2]-region[0])//resolution, (df[4]-region[0])//resolution, (df[5]-region[0])//resolution
-    
-    # Compute the matrix
-    exp_vec, th_vec = np.zeros(N_beads), np.zeros(N_beads)
-    for i in range(len(df)):
-        x, y = (df[1][i]+df[2][i])//2, (df[4][i]+df[5][i])//2
-        exp_vec[x]+=df[6][i]
-        exp_vec[y]+=df[6][i]
-        th_vec[x]+=mat_sim[x,y]
-        th_vec[y]+=mat_sim[x,y]        
-
-    # pearson correlation calculation
-    pears, pval1 = pearsonr(th_vec,exp_vec)
-    spear, pval2 = spearmanr(th_vec,exp_vec)
-    kendal, pval3 = kendalltau(th_vec,exp_vec)
-    log.info('-------------- Optimistic Correlation -----------')
-    log.info(f'Pearson Correlation with loops strengths: {pears:.3f} with pvalue {pval1}.')
-    log.info(f'Spearman Correlation with loops strengths: {spear:.3f} with pvalue {pval2}.')
-    log.info(f'Kendall Correlation with loops strengths: {kendal:.3f} with pvalue {pval3}.\n')
-
-    f = open(path+'/other/correlations.txt', "w")
-    f.write('---- Optimistic Estimations ----\n')
-    f.write(f'Pearson Correlation with experimental heatmap: {pears:.3f} with pvalue {pval1}.\n')
-    f.write(f'Spearman Correlation with experimental heatmap: {spear:.3f} with pvalue {pval2}.\n')
-    f.write(f'Kendall Correlation with experimental heatmap: {kendal:.3f} with pvalue {pval3}.\n\n')    
-
-    mask1, mask2 = exp_vec==0, th_vec==0
-    exp_vec, th_vec = exp_vec[~mask1], th_vec[~mask2]
-    pears, pval1 = pearsonr(th_vec,exp_vec)
-    spear, pval2 = spearmanr(th_vec,exp_vec)
-    kendal, pval3 = kendalltau(th_vec,exp_vec)
-
-    log.info('-------------- Pessimistic Correlation -----------')
-    log.info(f'Pearson Correlation with loops strengths: {pears:.3f} with pvalue {pval1}.')
-    log.info(f'Spearman Correlation with loops strengths: {spear:.3f} with pvalue {pval2}.')
-    log.info(f'Kendall Correlation with loops strengths: {kendal:.3f} with pvalue {pval3}.\n')
-
-    f.write('---- Pessimistic Estimations ----\n')
-    f.write(f'Pearson Correlation with experimental heatmap: {pears:.3f} with pvalue {pval1}.\n')
-    f.write(f'Spearman Correlation with experimental heatmap: {spear:.3f} with pvalue {pval2}.\n')
-    f.write(f'Kendall Correlation with experimental heatmap: {kendal:.3f} with pvalue {pval3}.\n\n')
-    f.close()
-
-    fig, axs = plt.subplots(2, figsize=(15, 10))
-    fig.suptitle(f'Estimated Pearson Correlation {pears:.3f}',fontsize=18)
-    axs[0].plot(exp_vec)
-    axs[0].set_ylabel('Experimental Signal',fontsize=16)
-    axs[1].plot(th_vec)
-    axs[1].set_ylabel('Simulation Signal',fontsize=16)
-    axs[1].set_xlabel('Genomic Distance (with simumation beads as a unit)',fontsize=16)
-    fig.savefig(path+'/plots/pearson.png',dpi=600)
-    fig.savefig(path+'/plots/pearson.pdf',dpi=600)
-    plt.close()
-
+# ============================================================================
+# Shared plot styling
+# ============================================================================
+ 
+SIM_COLOR = "#2563eb"   # blue  - simulated
+EXP_COLOR = "#dc2626"   # red   - experimental
+NEUTRAL_COLOR = "#374151"
+ 
+def _apply_plot_style():
+    plt.rcParams.update({
+        "figure.facecolor": "white",
+        "axes.facecolor": "white",
+        "axes.edgecolor": "#333333",
+        "axes.labelcolor": "#222222",
+        "axes.titleweight": "bold",
+        "axes.grid": True,
+        "grid.color": "#e5e7eb",
+        "grid.linewidth": 0.6,
+        "xtick.color": "#333333",
+        "ytick.color": "#333333",
+        "font.size": 12,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "savefig.facecolor": "white",
+    })
+ 
+def _save_fig(fig, path, plot_name):
+    fig.savefig(os.path.join(path, 'plots', f'{plot_name}.png'), dpi=300, bbox_inches="tight")
+    fig.savefig(os.path.join(path, 'plots', f'{plot_name}.pdf'), bbox_inches="tight")
+    plt.close(fig)
+ 
+# ============================================================================
+# Format detection & loading
+# ============================================================================
+ 
+def detect_interaction_format(interaction_file):
+    """Auto-detect .bedpe / .bed / .narrowPeak from the file extension."""
+    ext = os.path.splitext(interaction_file)[-1].lower()
+    if ext == '.bedpe':
+        return 'bedpe'
+    elif ext == '.bed':
+        return 'bed'
+    elif ext == '.narrowpeak':
+        return 'narrowpeak'
+    else:
+        raise ValueError(
+            f"Unsupported interaction file format '{ext}' for {interaction_file}. "
+            f"Expected .bedpe, .bed, or .narrowPeak."
+        )
+ 
+def _load_interaction_df(interaction_file, region, chrom, paired):
+    """Read and region/chrom-filter the interaction file. `paired=True` also
+    filters on the second anchor's coordinates (columns 4/5), used for .bedpe."""
+    df = pd.read_csv(interaction_file, sep='\t', header=None, comment='#')
+ 
+    mask = (df[0] == chrom) & (df[1] >= region[0]) & (df[2] >= region[0]) & \
+           (df[1] < region[1]) & (df[2] < region[1])
+ 
+    if paired:
+        mask &= (df[4] >= region[0]) & (df[5] >= region[0]) & \
+                (df[4] < region[1]) & (df[5] < region[1])
+ 
+    return df[mask].reset_index(drop=True)
+ 
+def _get_weight_column(df, col_idx, default=1.0):
+    """Numeric weight column, falling back to `default` for missing/non-numeric
+    values (e.g. a '.' score field) or a missing column altogether."""
+    if col_idx < df.shape[1]:
+        return pd.to_numeric(df[col_idx], errors='coerce').fillna(default).values
+    return np.full(len(df), default)
+ 
+def _compute_bead_positions(starts, ends, region, resolution, N_beads):
+    mid = (starts.values + ends.values) // 2
+    beads = ((mid - region[0]) // resolution).astype(int)
+    return np.clip(beads, 0, N_beads - 1)
+ 
+def build_bedpe_pairs(df, region, resolution, N_beads, weight_col=6):
+    """(x, y, weight) triplets - one per loop, x/y are the anchor bead indices."""
+    x = _compute_bead_positions(df[1], df[2], region, resolution, N_beads)
+    y = _compute_bead_positions(df[4], df[5], region, resolution, N_beads)
+    w = _get_weight_column(df, weight_col)
+    return list(zip(x, y, w))
+ 
+def build_single_region_sites(df, region, resolution, N_beads, weight_col=4):
+    """(x, weight) pairs - one per CTCF site, for .bed / .narrowPeak input."""
+    x = _compute_bead_positions(df[1], df[2], region, resolution, N_beads)
+    w = _get_weight_column(df, weight_col)
+    return list(zip(x, w))
+ 
+# ============================================================================
+# Signal construction (loop/site strength projected onto beads)
+# ============================================================================
+ 
+def build_strength_signal(mat_sim, interaction_file, fmt, region, chrom, N_beads):
+    """
+    Build the experimental vs. simulated "strength" vectors used for the
+    original loop/site-strength correlation.
+ 
+    - .bedpe: each loop's PET count is added to both anchor beads (exp_vec),
+      and mat_sim[x, y] is added to both anchor beads (th_vec) - same logic
+      as the original bedpe-only function.
+    - .bed / .narrowPeak: each CTCF site only has one bead, so its score is
+      added there (exp_vec), and the simulated signal (th_vec) is that bead's
+      total row contact strength in mat_sim, since there's no second anchor
+      to look up a specific mat_sim[x, y] entry.
+    """
+    resolution = max((region[1] - region[0]) // N_beads, 1)
+    exp_vec = np.zeros(N_beads)
+    th_vec = np.zeros(N_beads)
+ 
+    if fmt == 'bedpe':
+        df = _load_interaction_df(interaction_file, region, chrom, paired=True)
+        for x, y, w in build_bedpe_pairs(df, region, resolution, N_beads):
+            exp_vec[x] += w
+            exp_vec[y] += w
+            th_vec[x] += mat_sim[x, y]
+            th_vec[y] += mat_sim[x, y]
+    else:
+        df = _load_interaction_df(interaction_file, region, chrom, paired=False)
+        for x, w in build_single_region_sites(df, region, resolution, N_beads):
+            exp_vec[x] += w
+            th_vec[x] += mat_sim[x, :].sum() - mat_sim[x, x]
+ 
+    return exp_vec, th_vec
+ 
+# ============================================================================
+# Matrix-derived signals (P(s) decay, insulation score, compartment eigenvector)
+# ============================================================================
+ 
+def compute_ps_curve(mat):
+    """Average contact strength vs. genomic distance (diagonal decay)."""
+    N = mat.shape[0]
+    ps = np.array([np.mean(np.diagonal(mat, offset=k)) for k in range(N)])
+    return ps
+ 
+def compute_ps_curve_from_bedpe(interaction_file, region, chrom, N_beads):
+    """
+    Approximate an experimental P(s) decay curve directly from loop PET
+    counts binned by anchor distance - no full contact matrix needed, but
+    only possible for .bedpe (paired-anchor) input.
+    """
+    resolution = max((region[1] - region[0]) // N_beads, 1)
+    df = _load_interaction_df(interaction_file, region, chrom, paired=True)
+ 
+    ps_sum = np.zeros(N_beads)
+    ps_count = np.zeros(N_beads)
+    for x, y, w in build_bedpe_pairs(df, region, resolution, N_beads):
+        d = abs(y - x)
+        ps_sum[d] += w
+        ps_count[d] += 1
+ 
+    return np.divide(ps_sum, ps_count, out=np.zeros_like(ps_sum), where=ps_count > 0)
+ 
+def compute_insulation_score(mat, window=5):
+    """Diamond insulation score: mean contact strength in a window x window
+    square straddling each bead's diagonal position."""
+    N = mat.shape[0]
+    ins = np.zeros(N)
+    for i in range(window, N - window):
+        ins[i] = np.mean(mat[i - window:i, i + 1:i + window + 1])
+    return ins
+ 
+def compute_compartment_eigenvector(mat):
+    """First eigenvector (PC1) of the bead-bead correlation matrix - the
+    standard A/B compartment signal."""
+    mat = np.nan_to_num(mat)
+    with np.errstate(invalid='ignore', divide='ignore'):
+        corr = np.corrcoef(mat)
+    corr = np.nan_to_num(corr)
+    eigvals, eigvecs = np.linalg.eigh(corr)
+    return eigvecs[:, -1]  # eigh returns ascending eigenvalues; last = largest
+ 
+# ============================================================================
+# Correlation reporting (logging + file + plot), shared by every metric
+# ============================================================================
+ 
+def _plot_signal_comparison(exp_vec, th_vec, pears, spear, signal_name, path, plot_name, xlabel):
+    """Three-panel figure: experimental trace, simulated trace, and a
+    regression scatter of the two - more informative than two bare line
+    plots, and the scatter makes the correlation strength visually obvious."""
+    fig = plt.figure(figsize=(14, 7))
+    gs = fig.add_gridspec(2, 2, width_ratios=[2, 1.1], hspace=0.35, wspace=0.28)
+ 
+    ax_exp = fig.add_subplot(gs[0, 0])
+    ax_sim = fig.add_subplot(gs[1, 0], sharex=ax_exp)
+    ax_scatter = fig.add_subplot(gs[:, 1])
+ 
+    x_idx = np.arange(len(exp_vec))
+    ax_exp.plot(x_idx, exp_vec, color=EXP_COLOR, lw=1.6)
+    ax_exp.fill_between(x_idx, exp_vec, color=EXP_COLOR, alpha=0.12)
+    ax_exp.set_ylabel("Experimental signal")
+    ax_exp.set_title(f"{signal_name}: experimental vs. simulated", fontsize=15, loc="left")
+    plt.setp(ax_exp.get_xticklabels(), visible=False)
+ 
+    ax_sim.plot(x_idx, th_vec, color=SIM_COLOR, lw=1.6)
+    ax_sim.fill_between(x_idx, th_vec, color=SIM_COLOR, alpha=0.12)
+    ax_sim.set_ylabel("Simulated signal")
+    ax_sim.set_xlabel(xlabel)
+ 
+    ax_scatter.scatter(exp_vec, th_vec, s=20, color=NEUTRAL_COLOR, alpha=0.55,
+                        edgecolor="white", linewidth=0.3)
+    if len(exp_vec) > 1 and np.std(exp_vec) > 0:
+        coeffs = np.polyfit(exp_vec, th_vec, 1)
+        xs = np.linspace(np.min(exp_vec), np.max(exp_vec), 100)
+        ax_scatter.plot(xs, np.polyval(coeffs, xs), color="#111111", lw=2, linestyle="--")
+    ax_scatter.set_xlabel("Experimental")
+    ax_scatter.set_ylabel("Simulated")
+    ax_scatter.set_title("Correlation", fontsize=13)
+    ax_scatter.text(
+        0.05, 0.95, f"Pearson r = {pears:.3f}\nSpearman ρ = {spear:.3f}",
+        transform=ax_scatter.transAxes, va="top", ha="left", fontsize=11,
+        bbox=dict(boxstyle="round", facecolor="white", edgecolor="#d1d5db")
+    )
+ 
+    _save_fig(fig, path, plot_name)
+ 
+def report_correlation(exp_vec, th_vec, label, signal_name, f, path=None,
+                        plot_name=None, xlabel="Genomic distance (simulation beads)"):
+    """Compute Pearson/Spearman/Kendall correlation between two 1D signals,
+    log + write it, and optionally save a comparison plot (see
+    _plot_signal_comparison). Returns the Pearson coefficient (or None if
+    there wasn't enough data)."""
+    exp_vec, th_vec = np.asarray(exp_vec), np.asarray(th_vec)
+ 
+    if len(exp_vec) < 2 or len(th_vec) < 2 or len(exp_vec) != len(th_vec):
+        log.warning(f"Not enough/mismatched data to compute {label} correlation "
+                    f"for {signal_name} - skipping.")
+        return None
+ 
+    pears, pval1 = pearsonr(th_vec, exp_vec)
+    spear, pval2 = spearmanr(th_vec, exp_vec)
+    kendal, pval3 = kendalltau(th_vec, exp_vec)
+ 
+    log.info(f'-------------- {label} Correlation ({signal_name}) -----------')
+    log.info(f'Pearson Correlation: {pears:.3f} with pvalue {pval1}.')
+    log.info(f'Spearman Correlation: {spear:.3f} with pvalue {pval2}.')
+    log.info(f'Kendall Correlation: {kendal:.3f} with pvalue {pval3}.\n')
+ 
+    f.write(f'---- {label} Estimations ({signal_name}) ----\n')
+    f.write(f'Pearson Correlation: {pears:.3f} with pvalue {pval1}.\n')
+    f.write(f'Spearman Correlation: {spear:.3f} with pvalue {pval2}.\n')
+    f.write(f'Kendall Correlation: {kendal:.3f} with pvalue {pval3}.\n\n')
+ 
+    if plot_name and path is not None:
+        _plot_signal_comparison(exp_vec, th_vec, pears, spear, signal_name, path, plot_name, xlabel)
+ 
+    return pears
+ 
+# ============================================================================
+# Heatmap-vs-heatmap comparison plots (need a full experimental matrix)
+# ============================================================================
+ 
+def plot_heatmaps_side_by_side(mat_sim, mat_exp, path, plot_name="heatmaps_side_by_side",
+                                cmap="Reds", log_scale=True):
+    """Experimental and simulated contact maps side by side on a shared color scale."""
+    sim = np.log1p(mat_sim) if log_scale else mat_sim
+    exp = np.log1p(mat_exp) if log_scale else mat_exp
+    vmax = np.nanpercentile(np.concatenate([sim.ravel(), exp.ravel()]), 99)
+ 
+    fig, axs = plt.subplots(1, 2, figsize=(13, 6))
+    axs[0].imshow(exp, cmap=cmap, vmin=0, vmax=vmax, origin="lower")
+    axs[0].set_title("Experimental", fontsize=14, fontweight="bold")
+    im1 = axs[1].imshow(sim, cmap=cmap, vmin=0, vmax=vmax, origin="lower")
+    axs[1].set_title("Simulated", fontsize=14, fontweight="bold")
+ 
+    for ax in axs:
+        ax.set_xlabel("Bead index")
+        ax.grid(False)
+    axs[0].set_ylabel("Bead index")
+ 
+    fig.colorbar(im1, ax=axs, shrink=0.8, label="log(1 + contacts)" if log_scale else "Contacts")
+    fig.suptitle("Simulated vs. Experimental Contact Maps", fontsize=16, fontweight="bold")
+ 
+    _save_fig(fig, path, plot_name)
+ 
+def plot_matrix_triangle_comparison(mat_sim, mat_exp, path, plot_name="matrix_triangle_comparison",
+                                     cmap="Reds", log_scale=True, pears=None):
+    """Classic Hi-C-style split heatmap: experimental in the upper triangle,
+    simulated in the lower triangle of a single square - the most direct way
+    to eyeball agreement between the two."""
+    N = mat_sim.shape[0]
+    sim = np.log1p(mat_sim) if log_scale else mat_sim.copy()
+    exp = np.log1p(mat_exp) if log_scale else mat_exp.copy()
+ 
+    combined = np.zeros_like(sim, dtype=np.float64)
+    iu = np.triu_indices(N, k=1)
+    il = np.tril_indices(N, k=-1)
+    combined[iu] = exp[iu]
+    combined[il] = sim[il]
+    np.fill_diagonal(combined, np.nan)
+ 
+    vmax = np.nanpercentile(combined, 99)
+ 
+    fig, ax = plt.subplots(figsize=(7.5, 7))
+    im = ax.imshow(combined, cmap=cmap, vmin=0, vmax=vmax, origin="lower")
+    ax.plot([0, N - 1], [0, N - 1], color="black", lw=1, alpha=0.6)
+    ax.grid(False)
+ 
+    ax.text(0.98, 0.03, "Simulated", transform=ax.transAxes, ha="right", va="bottom",
+            fontsize=12, fontweight="bold", color="#111111")
+    ax.text(0.02, 0.97, "Experimental", transform=ax.transAxes, ha="left", va="top",
+            fontsize=12, fontweight="bold", color="#111111")
+ 
+    title = "Simulated vs. Experimental (triangle split)"
+    if pears is not None:
+        title += f"  •  Pearson r = {pears:.3f}"
+    ax.set_title(title, fontsize=14, fontweight="bold")
+    ax.set_xlabel("Bead index")
+    ax.set_ylabel("Bead index")
+    fig.colorbar(im, ax=ax, shrink=0.8, label="log(1 + contacts)" if log_scale else "Contacts")
+ 
+    _save_fig(fig, path, plot_name)
+ 
+def plot_difference_heatmap(mat_sim, mat_exp, path, plot_name="difference_heatmap", cmap="RdBu_r"):
+    """Symmetric log2-ratio map: red = simulated-enriched, blue = experimental-enriched,
+    white = agreement - useful for spotting where the model over/under-predicts contacts."""
+    eps = 1e-6
+    ratio = np.log2((mat_sim + eps) / (mat_exp + eps))
+    vmax = np.nanpercentile(np.abs(ratio), 99)
+ 
+    fig, ax = plt.subplots(figsize=(7, 6))
+    im = ax.imshow(ratio, cmap=cmap, vmin=-vmax, vmax=vmax, origin="lower")
+    ax.grid(False)
+    ax.set_title("Simulated vs. Experimental (log\u2082 ratio)", fontsize=14, fontweight="bold")
+    ax.set_xlabel("Bead index")
+    ax.set_ylabel("Bead index")
+    fig.colorbar(im, ax=ax, shrink=0.8, label="log\u2082(simulated / experimental)")
+ 
+    _save_fig(fig, path, plot_name)
+ 
+# ============================================================================
+# Main entry point
+# ============================================================================
+ 
+def corr_exp_heat(mat_sim, interaction_file, region, chrom, N_beads, path,
+                   mat_exp=None, insulation_window=5):
+    """
+    Correlate the simulated contact matrix against experimental signal(s).
+ 
+    `interaction_file` format (.bedpe / .bed / .narrowPeak) is auto-detected
+    from its extension, and the loop/site-strength signal is built
+    accordingly (see build_strength_signal()). This correlation is always
+    computed, exactly like the original function.
+ 
+    Three additional correlations are attempted:
+    - P(s) diagonal decay: derived directly from .bedpe loop distances when
+      available, otherwise needs `mat_exp`.
+    - Insulation score and compartment eigenvector: both need a genuine
+      experimental contact matrix - they can't be derived from loop/peak
+      calls alone - so they only run if `mat_exp` (an N_beads x N_beads
+      experimental matrix, e.g. from a .cool/.hic file at the same
+      resolution) is supplied. Otherwise they're skipped with a log message
+      explaining why, rather than being silently omitted.
+ 
+    Returns
+    -------
+    pears : float
+        Pearson correlation of the (always-computed) loop/site-strength signal.
+    """
+    fmt = detect_interaction_format(interaction_file)
+    log.info(f"Detected interaction file format: {fmt}")
+ 
+    _apply_plot_style()
+    os.makedirs(os.path.join(path, 'other'), exist_ok=True)
+    os.makedirs(os.path.join(path, 'plots'), exist_ok=True)
+    corr_path = os.path.join(path, 'other', 'correlations.txt')
+ 
+    with open(corr_path, "w") as f:
+        # ---- 1. Loop / site strength (always available) ----
+        exp_vec, th_vec = build_strength_signal(mat_sim, interaction_file, fmt, region, chrom, N_beads)
+ 
+        pears = report_correlation(
+            exp_vec, th_vec, label="Optimistic", signal_name="loop/site strength",
+            f=f, path=path, plot_name="pearson"
+        )
+ 
+        # Fixed vs. the original: use ONE combined mask so exp_vec/th_vec stay
+        # aligned, instead of masking each vector by the other's zero positions.
+        nonzero = (exp_vec != 0) & (th_vec != 0)
+        report_correlation(
+            exp_vec[nonzero], th_vec[nonzero], label="Pessimistic", signal_name="loop/site strength",
+            f=f, path=path, plot_name=None
+        )
+ 
+        # ---- 2. P(s) diagonal decay ----
+        sim_ps = compute_ps_curve(mat_sim)
+        if fmt == 'bedpe':
+            exp_ps = compute_ps_curve_from_bedpe(interaction_file, region, chrom, N_beads)
+            report_correlation(
+                exp_ps, sim_ps, label="P(s) decay", signal_name="diagonal decay",
+                f=f, path=path, plot_name="ps_decay",
+                xlabel="Genomic distance (simulation beads)"
+            )
+        elif mat_exp is not None:
+            exp_ps = compute_ps_curve(mat_exp)
+            report_correlation(
+                exp_ps, sim_ps, label="P(s) decay", signal_name="diagonal decay",
+                f=f, path=path, plot_name="ps_decay",
+                xlabel="Genomic distance (simulation beads)"
+            )
+        else:
+            log.info("Skipping P(s) diagonal-decay correlation: only possible directly "
+                     "from .bedpe loop distances, or by passing an experimental "
+                     "contact matrix via `mat_exp`.")
+ 
+        # ---- 3. Insulation score & compartment eigenvector ----
+        if mat_exp is not None:
+            ins_sim = compute_insulation_score(mat_sim, insulation_window)
+            ins_exp = compute_insulation_score(mat_exp, insulation_window)
+            report_correlation(
+                ins_exp, ins_sim, label="Insulation score", signal_name="insulation score",
+                f=f, path=path, plot_name="insulation"
+            )
+ 
+            eig_sim = compute_compartment_eigenvector(mat_sim)
+            eig_exp = compute_compartment_eigenvector(mat_exp)
+            report_correlation(
+                eig_exp, eig_sim, label="Eigenvector", signal_name="compartment eigenvector (PC1)",
+                f=f, path=path, plot_name="eigenvector"
+            )
+        else:
+            log.info("Skipping insulation-score and eigenvector correlations: pass an "
+                     "experimental contact matrix via `mat_exp` to enable these - they "
+                     "can't be derived from loop/peak calls alone.")
+ 
+        # ---- 4. Heatmap-vs-heatmap comparison plots ----
+        if mat_exp is not None:
+            plot_heatmaps_side_by_side(mat_sim, mat_exp, path)
+            plot_matrix_triangle_comparison(mat_sim, mat_exp, path, pears=pears)
+            plot_difference_heatmap(mat_sim, mat_exp, path)
+        else:
+            log.info("Skipping heatmap-vs-heatmap comparison plots: pass an experimental "
+                     "contact matrix via `mat_exp` to enable these.")
+ 
     return pears
 
 def write_cmm(comps,name):

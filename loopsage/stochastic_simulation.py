@@ -1038,8 +1038,7 @@ class StochasticSimulation:
         if not do_compartments: self.epi_states=None
         md = MD_LE(self.Ms,self.Ns,self.epi_states,self.N_beads,self.path,platform,angle_ff_strength,le_distance,le_ff_strength,ev_ff_strength,ev_ff_power,tolerance)
         sim_heat = md.run_pipeline(plots=save_plots,sim_step=sim_step,friction=friction,integrator_step=integrator_step,temperature=temperature,ff_path=ff_path,p_ev=p_ev,init_struct=init_struct,continuous_topoisomerase=continuous_topoisomerase)
-        if self.interaction_file.endswith((".bedpe")):
-            corr_exp_heat(sim_heat,self.interaction_file,self.region,self.chrom,self.N_beads,self.path)
+        corr_exp_heat(sim_heat,self.interaction_file,self.region,self.chrom,self.N_beads,self.path)
 
 def main():
     # Definition of Monte Carlo parameters
