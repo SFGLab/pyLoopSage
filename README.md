@@ -35,7 +35,7 @@ $K(m_{i},n_{i};m_{j},n_{j})$ which takes the value 1 when $m_{i} < m_{j} < n_{i}
 
 These $L(\cdot), R(\cdot)$ functions are two functions that define the binding potential and they are orientation specific - so they are different for left and right position of cohesin (because CTCF motifs are orientation specific), therefore when we have a gap in these functions, it means presence of CTCF. These two functions are derived from data with CTCF binning and by running the script for probabilistic orientation. Moreover, by $N_{(\cdot)}$ we symbolize the normalization constants for each factor,
 
-$$c_{\text{fold}}=-\dfrac{N_{\text{beads}}f}{N_{\text{lef}}\log(N_{\text{beads}}/N_{\text{lef}})},\quad c_{\text{bind}}=-\dfrac{N_{\text{beads}}b}{\sum_i \left(L(m_i)+R(n_i)\right)},\quad c_{\text{cross}}=\kappa \times 10^4.$$
+$$c_{\text{fold}}=-\dfrac{N_{\text{beads}}f}{N_{\text{lef}}\log(N_{\text{beads}}/N_{\text{lef}})},\quad c_{\text{bind}}=-\dfrac{2N_{\text{beads}}b}{N_{CTCF}},\quad c_{\text{cross}}=\kappa \times 10^4.$$
 
 The parameters are defined in such a way that when $f=b=\kappa=1$, the three terms of the stochastic energy are balanced. To clarrify, this parametrization is slightly different than this of the original paper. We multiply with $N_{\text{beads}}$, so as to keep the input parameters $f,b,\kappa$ simpler close to 1. Therefore, a value $f=0.1$ leads to unfolded structures, and a value $f=2$ it leads to very fast propagating long loops. 
 
