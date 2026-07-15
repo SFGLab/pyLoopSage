@@ -177,7 +177,8 @@ def main():
         lef_density_file=args.LEF_TRACK_FILE,
         comp_file=comp_file,
         data_loss_mode=args.DATA_LOSS_MODE,
-        contrastive_binding=args.CONTRASTIVE_BINDING
+        contrastive_binding=args.CONTRASTIVE_BINDING,
+        smooth=args.SMOOTHING_INPUT
     )
 
     Es, Ms, Ns, Bs, Ks, Fs, ufs, spins = sim.run_energy_minimization(

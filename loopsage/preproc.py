@@ -46,7 +46,7 @@ def binding_vectors_from_bedpe(
         diagonal_interactions=True,
         alpha=1.0,
         smooth=False,
-        smooth_sigma=2.0,
+        smooth_sigma=1.0,
         contrastive=True
     ):
     '''
@@ -369,7 +369,7 @@ def binding_vectors_from_bedpe(
 
         plt.close()
 
-    return 2*L, 2*R, J, np.sqrt(len(loop_lengths))*J_loss, statistics
+    return L, R, J, np.sqrt(len(loop_lengths))*J_loss, statistics
 
 def _prepare_region(chrom, region):
     """Shared region-resolution logic (identical to binding_vectors_from_bedpe)."""
@@ -400,7 +400,7 @@ def _binding_vectors_from_single_region(
         diagonal_interactions=True,
         alpha=1.0,
         smooth=False,
-        smooth_sigma=2.0,
+        smooth_sigma=1.0,
         contrastive=True,
         source_label="peaks"
     ):
@@ -508,7 +508,7 @@ def _binding_vectors_from_single_region(
             plt.savefig(os.path.join(plot_dir, f"LR_profiles_{source_label}.pdf"), dpi=600, format="pdf")
         plt.close()
  
-    return 2 * L, 2 * R, J, J_loss, statistics
+    return L, R, J, J_loss, statistics
  
 def binding_vectors_from_bed(
         bed_file, N_beads, chrom, region=None, out_path=None,
@@ -517,7 +517,7 @@ def binding_vectors_from_bed(
         diagonal_interactions=True,
         alpha=1.0,
         smooth=False,
-        smooth_sigma=2.0,
+        smooth_sigma=1.0,
         contrastive=True
     ):
     '''
@@ -588,7 +588,7 @@ def binding_vectors_from_narrowpeak(
         diagonal_interactions=True,
         alpha=1.0,
         smooth=False,
-        smooth_sigma=2.0,
+        smooth_sigma=1.0,
         contrastive=True
     ):
     '''

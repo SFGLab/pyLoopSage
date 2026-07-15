@@ -657,7 +657,8 @@ class StochasticSimulation:
             lef_density_file=None,
             comp_file=None,
             data_loss_mode=0,
-            contrastive_binding=True
+            contrastive_binding=True,
+            smooth = False
         ):
             """
             Chromatin stochastic simulation initializer.
@@ -724,7 +725,7 @@ class StochasticSimulation:
  
             # Print basic setup
             log.info(f"Number of beads: {self.N_beads}")
-            self.preprocessing(contrastive_binding)
+            self.preprocessing(contrastive_binding,smooth)
  
             # LEF initialization
             self.N_lef = (
@@ -789,7 +790,7 @@ class StochasticSimulation:
         BWs (np.ndarray): binding weight matrices.
         between_families_penalty (bool): whether to apply penalty for interactions between families.
         '''
-        fold_norm, fold_norm2, bind_norm, k_norm = -self.N_beads*f/((self.N_lef+self.N_lef2)*np.log(self.N_beads/(self.N_lef+self.N_lef2))), -self.N_beads*f2/((self.N_lef+self.N_lef2)*np.log(self.N_beads/(self.N_lef+self.N_lef2))), -self.N_beads*b/(2*self.N_CTCF), kappa*1e4
+        fold_norm, fold_norm2, bind_norm, k_norm = -self.N_beads*f/((self.N_lef+self.N_lef2)*np.log(self.N_beads/(self.N_lef+self.N_lef2))), -self.N_beads*f2/((self.N_lef+self.N_lef2)*np.log(self.N_beads/(self.N_lef+self.N_lef2))), -2*self.N_beads*b/self.N_CTCF, kappa*1e4
         epi_norm = epi_coeff
         self.N_steps, self.MC_step = N_steps, MC_step
         r = np.full(self.N_bws, -self.N_beads / 10) if not r and self.N_bws > 0 else (None if not r else r)
@@ -869,7 +870,7 @@ class StochasticSimulation:
         
         return self.Es, self.Ms, self.Ns, self.Bs, self.Ks, self.Fs, self.ufs, self.epi_states
 
-    def preprocessing(self, contrastive_binding):
+    def preprocessing(self, contrastive_binding, smooth):
         """
         Preprocessing pipeline using updated BEDPE/BED/narrowPeak + BigWig exporters.
  
@@ -892,7 +893,7 @@ class StochasticSimulation:
             viz=True,
             diagonal_interactions=True,
             alpha=1.0,
-            smooth=True,
+            smooth=smooth,
             smooth_sigma=self.N_beads / 100,
             contrastive=contrastive_binding
         )

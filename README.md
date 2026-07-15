@@ -294,40 +294,47 @@ An example, illustrated with Chimera software, simulated trajectory of structure
 ### Long-table of LoopSage arguments
 
 #### General Settings
-| Argument Name          | Description                                                                                                     | Type        | Default Value       |
-|------------------------|-----------------------------------------------------------------------------------------------------------------|------------|---------------------|
-| PLATFORM              | Name of the platform. Available choices: CPU, CUDA, OpenCL                                                      | str        | CPU               |
-| DEVICE                | Device index for CUDA or OpenCL (count from 0)                                                                  | str        | None                  |
-| OUT_PATH              | Output folder name.                                                                                             | str        | ../results       |
-| SAVE_MDT             | True to save metadata of the stochastic simulation.                                                            | bool       | True                |
+| Argument | Description | Type | Default |
+|---|---|---|---|
+| PLATFORM | Simulation platform: CPU, CUDA, or OpenCL | str | CPU |
+| DEVICE | CUDA/OpenCL device index (from 0) | str | None |
+| OUT_PATH | Output folder path | str | ../results |
+| SAVE_MDT | Save simulation metadata | bool | True |
 
 #### Input Data
-| Argument Name          | Description                                                                                                     | Type        | Default Value       |
-|------------------------|-----------------------------------------------------------------------------------------------------------------|------------|---------------------|
-| INTERACTION_FILE      | A .bedpe, .bed or .narrowPeaks input file. It is required.                                                                  | str        | None                  |
-| LEF_TRACK_FILE        | Path to a bw file of cohesin or condensin density. If it is provided, then simulation LEFs preferentially bind in enriched regions. | str | None |
-| BW_FILES              | List of paths to .bw files containing additional data for simulation. Enriched regions would act as barriers for cohesin.                | list       | None                  |
-| REGION_START          | Starting region coordinate.                                                                                     | int        | None                  |
-| REGION_END            | Ending region coordinate.                                                                                       | int        | None                  |
-| CHROM                 | Chromosome that corresponds to the modeling region of interest.                                                 | str        | None                  |
-| GENOME                | Reference genome assembly used to define chromosome sizes and genomic coordinates (e.g., hg19 or hg38).         | str        | hg38                  |
+| Argument | Description | Type | Default |
+|---|---|---|---|
+| INTERACTION_FILE | Loop/peak file (.bedpe, .bed, or .narrowPeak). Required. | str | None |
+| LEF_TRACK_FILE | bigWig track biasing LEF loading toward enriched regions | str | None |
+| BW_FILES | bigWig file(s) acting as extrusion barriers | list | None |
+| SMOOTHING_INPUT | Smooth noisy/sparse loop-peak signal before use | bool | False |
+| COMP_BW_FILE | bigWig track for A/B compartment bias | str | None |
+| COMP_BED_FILE | BED file for A/B compartment bias (alt. to COMP_BW_FILE) | str | None |
+| DATA_LOSS_MODE | 0 = 1D binding potentials (L/R); 1 = 2D loss interpolated from input loops | int | 0 |
+| CONTRASTIVE_BINDING | If True, penalizes loop-free regions so extrusion is confined within TADs; if False, extrusion is uniform everywhere | bool | False |
+| REGION_START | Region start coordinate | int | None |
+| REGION_END | Region end coordinate | int | None |
+| CHROM | Chromosome of the modeled region | str | None |
+| GENOME | Reference genome for chromosome sizes (e.g. hg38) | str | hg38 |
+| FLOAT_LIST | Extra custom numeric settings | list | None |
+| STRING_LIST | Extra custom text settings | list | None |
 
 #### Stochastic Simulation Parameters
-| Argument Name          | Description                                                                                                     | Type        | Default Value       |
-|------------------------|-----------------------------------------------------------------------------------------------------------------|------------|---------------------|
-| N_BEADS               | Number of Simulation Beads.                                                                                     | int        | None                  |
-| N_STEPS               | Number of Monte Carlo steps.                                                                                    | int        | 40000               |
-| MC_STEP               | Monte Carlo frequency to avoid autocorrelated ensembles.                                                       | int        | 200                 |
-| BURNIN               | Burn-in period (steps before equilibrium).                                                                      | int        | 1000                |
-| T_INIT                | Initial Temperature of the Stochastic Model.                                                                   | float      | 2.0                 |
-| T_FINAL               | Final Temperature of the Stochastic Model.                                                                     | float      | 1.0                 |
-| METHOD                | Stochastic modeling method (Metropolis or Simulated Annealing).                                                | str        | 'Annealing'         |
-| LEF_RW                | True if cohesins slide as a random walk instead of one direction.                                               | bool       | True                |
-| LEF_DRIFT             | True if LEFs are pushed back when they encounter other LEFs.                                                   | bool       | False               |
-| N_LEF                 | Number of loop extrusion factors.                                                                               | int        | None                  |
-| N_LEF2                | Number of second family loop extrusion factors.                                                                | int        | 0                   |
-| CROSS_LOOP           | True if the penalty is applied when mi<mj<ni<nj. False if it applies only when mj=ni. When false it is better to enable LEF_DRIFT as well. | bool |True                |
-| BETWEEN_FAMILIES_PENALTY | Penalty applied when loops from different LEF families cross.                                                | bool     | True                 |
+| Argument | Description | Type | Default |
+|---|---|---|---|
+| N_BEADS | Number of simulation beads | int | None |
+| N_STEPS | Monte Carlo steps | int | 40000 |
+| MC_STEP | Sampling frequency (reduces autocorrelation) | int | 200 |
+| BURNIN | Steps discarded before equilibrium | int | 1000 |
+| T_INIT | Initial temperature | float | 2.0 |
+| T_FINAL | Final temperature | float | 1.0 |
+| METHOD | 'Metropolis' or 'Annealing' | str | 'Annealing' |
+| LEF_RW | Cohesins slide as random walk (vs. one direction) | bool | True |
+| LEF_DRIFT | LEFs bounce back off each other | bool | False |
+| N_LEF | Number of loop extrusion factors | int | None |
+| N_LEF2 | Number of second-family LEFs | int | 0 |
+| CROSS_LOOP | Penalize mi<mj<ni<nj crossings (vs. only mj=ni); pair with LEF_DRIFT if False | bool | True |
+| BETWEEN_FAMILIES_PENALTY | Penalize crossings between LEF families | bool | True |
 
 #### Energy Coefficients
 | Argument Name          | Description                                                                                                     | Type        | Default Value       |
