@@ -383,7 +383,7 @@ def _prepare_region(chrom, region):
             raise ValueError(f"Unknown chromosome: {chrom}")
         region = [0, CHROM_LENGTHS[chrom]]
     return region
- 
+
 def _valid_prob_vector(p):
     """Same sanity check binding_vectors_from_bedpe() uses for columns 7/8:
     every value must be -1 (unknown) or in [0, 1] (a real probability)."""
@@ -391,7 +391,7 @@ def _valid_prob_vector(p):
     finite = np.isfinite(p)
     allowed = (p == -1) | ((p >= 0) & (p <= 1))
     return np.all(finite & allowed)
- 
+
 def _binding_vectors_from_single_region(
         beads, weights, probs,
         N_beads, out_path=None,
@@ -400,76 +400,100 @@ def _binding_vectors_from_single_region(
         diagonal_interactions=True,
         alpha=1.0,
         smooth=False,
-        smooth_sigma=1.0,
+        smooth_sigma=2.0,
         contrastive=True,
-        source_label="peaks"
+        source_label="peaks",
+        bead_spans=None
     ):
     '''
     Shared core for single-region (BED / narrowPeak) inputs.
- 
+
     `probs` must already be on the side_strength convention used by
     binding_vectors_from_bedpe(): probability that a site's best-scoring hit
     is REVERSE-oriented ("<"), in [0, 1], or -1 if unknown/no motif found.
-    The two public wrapper functions below take care of that conversion.
- 
+
+    `bead_spans` (optional): list of (bead_start, bead_end) tuples, one per
+    peak. When provided, each peak's weight is spread uniformly across its
+    full bead-width footprint instead of being placed on a single midpoint
+    bead. This prevents narrow peaks from vanishing into a sea of zeros at
+    coarse resolution.
+
     Returns
     -------
-    L, R          : (N_beads,) binding-orientation vectors, same convention
-                    as binding_vectors_from_bedpe() (wx = w*(1-p) -> L,
-                    wy = w*p -> R).
-    J             : (N_beads, N_beads) backbone-only adjacency (no loop info -
-                    BED/narrowPeak sites aren't paired, so this is NOT a
-                    loop-contact matrix, just the diagonal_interactions
-                    backbone, included for return-shape compatibility).
-    J_loss        : (N_beads, N_beads) all zeros, for the same reason.
+    L, R          : (N_beads,) binding-orientation vectors
+    J             : (N_beads, N_beads) backbone-only adjacency
+    J_loss        : (N_beads, N_beads) all zeros
     statistics    : dict
     '''
     L = np.zeros(N_beads, dtype=np.float64)
     R = np.zeros(N_beads, dtype=np.float64)
     J = np.zeros((N_beads, N_beads), dtype=np.float64)
     J_loss = np.zeros((N_beads, N_beads), dtype=np.float64)
- 
+
     orientations_used = []
- 
-    for bead, w, p in zip(beads, weights, probs):
-        bead = int(min(max(bead, 0), N_beads - 1))
- 
+
+    for idx, (bead, w, p) in enumerate(zip(beads, weights, probs)):
         if p is not None and p >= 0:
             wx = w * (1 - p)  # -> L (reverse-biased)
             wy = w * p        # -> R (forward-biased)
             orientations_used.append(p)
         else:
             wx = wy = w * 0.5  # unknown orientation -> split evenly
- 
-        L[bead] += wx
-        R[bead] += wy
- 
+
+        # Spread weight across the peak's bead footprint if available,
+        # otherwise place it on the single summit/midpoint bead.
+        if bead_spans is not None:
+            b_start, b_end = bead_spans[idx]
+            b_start = int(max(0, b_start))
+            b_end = int(min(N_beads, b_end))
+            span = max(b_end - b_start, 1)
+            L[b_start:b_end] += wx / span
+            R[b_start:b_end] += wy / span
+        else:
+            bead = int(min(max(bead, 0), N_beads - 1))
+            L[bead] += wx
+            R[bead] += wy
+
     # Backbone (same convention as binding_vectors_from_bedpe; NOT loop info)
     if diagonal_interactions:
         for i in range(N_beads - 1):
             J[i, i + 1] = 1.0
             J[i + 1, i] = 1.0
- 
+
     if smooth:
-        L = gaussian_filter1d(L, sigma=smooth_sigma, mode="nearest")
-        R = gaussian_filter1d(R, sigma=smooth_sigma, mode="nearest")
- 
+        # Cap smoothing sigma: if the caller passes something huge
+        # (e.g. N_beads/100 = 100 beads), a sparse peak signal gets
+        # smeared into nothing. Limit to ~3x the median inter-peak
+        # distance so smoothing connects nearby peaks without erasing
+        # them entirely.
+        nonzero_beads = np.where(L > 0)[0]
+        if len(nonzero_beads) > 2:
+            median_gap = np.median(np.diff(nonzero_beads))
+            max_sigma = max(3.0, median_gap * 3.0)
+            sigma = min(smooth_sigma, max_sigma)
+            log.info(f"Smoothing sigma: requested={smooth_sigma:.1f}, "
+                     f"capped={sigma:.1f} (median inter-peak gap={median_gap:.0f} beads)")
+        else:
+            sigma = min(smooth_sigma, 5.0)
+        L = gaussian_filter1d(L, sigma=sigma, mode="nearest")
+        R = gaussian_filter1d(R, sigma=sigma, mode="nearest")
+
     mean_L = np.mean(L) if np.mean(L) != 0 else 1.0
     mean_R = np.mean(R) if np.mean(R) != 0 else 1.0
     L, R = L / mean_L, R / mean_R
- 
+
     if contrastive:
         eps = 1e-6
         L = np.tanh((L - np.mean(L)) / (np.std(L) + eps))
         R = np.tanh((R - np.mean(R)) / (np.std(R) + eps))
- 
+
     orientations_used = np.array(orientations_used)
     weights_arr = np.asarray(weights, dtype=np.float64)
- 
+
     statistics = {
         "n_peaks": int(len(beads)),
         "n_with_orientation": int(len(orientations_used)),
-        "orientation_bias": {  # probability of reverse ("<"); side_strength convention
+        "orientation_bias": {
             "mean": float(np.mean(orientations_used)) if len(orientations_used) else 0.0,
             "median": float(np.median(orientations_used)) if len(orientations_used) else 0.0,
         },
@@ -480,18 +504,19 @@ def _binding_vectors_from_single_region(
             "max": float(np.max(weights_arr)) if len(weights_arr) else 0.0,
         }
     }
- 
+
     log.info(f"🧬 {source_label} Binding Vector Stats")
     log.info("=" * 40)
     log.info(f"Total sites: {statistics['n_peaks']} "
               f"({statistics['n_with_orientation']} with known orientation)")
+    log.info(f"Signal sparsity: {np.count_nonzero(L)}/{N_beads} beads have nonzero L")
     log.info("=" * 40)
- 
+
     if viz:
         if out_path is not None:
             plot_dir = os.path.join(out_path, "plots")
             os.makedirs(plot_dir, exist_ok=True)
- 
+
         fig, ax = plt.subplots(figsize=(8, 4), dpi=200)
         ax.plot(L, label="L (reverse-biased)", lw=2, color="darkgreen")
         ax.plot(R, label="R (forward-biased)", lw=2, color="darkred")
@@ -501,15 +526,15 @@ def _binding_vectors_from_single_region(
         ax.legend(frameon=False)
         ax.grid(alpha=0.3)
         plt.tight_layout()
- 
+
         if out_path is not None:
             plt.savefig(os.path.join(plot_dir, f"LR_profiles_{source_label}.svg"), dpi=600, format="svg")
             plt.savefig(os.path.join(plot_dir, f"LR_profiles_{source_label}.png"), dpi=600, format="png")
             plt.savefig(os.path.join(plot_dir, f"LR_profiles_{source_label}.pdf"), dpi=600, format="pdf")
         plt.close()
- 
-    return L, R, J, J_loss, statistics
- 
+
+    return 2 * L, 2 * R, J, J_loss, statistics
+
 def binding_vectors_from_bed(
         bed_file, N_beads, chrom, region=None, out_path=None,
         normalization=False,
@@ -517,28 +542,28 @@ def binding_vectors_from_bed(
         diagonal_interactions=True,
         alpha=1.0,
         smooth=False,
-        smooth_sigma=1.0,
+        smooth_sigma=2.0,
         contrastive=True
     ):
     '''
     Construct L/R binding vectors from a BED file produced by
     bed_motif_finder.py.
- 
+
     Expects either:
     - Plain/default BED columns: chrom, start, end, name, score, strand
     - --prob mode output: the above + prob (col 6) + orientation call (col 7),
       where prob is the side_strength-convention probability that the site's
       best hit is reverse-oriented ("<"), or -1 if no motif was found.
- 
+
     If the probability column is missing or doesn't look like valid
     probabilities (not -1 or 0..1), every site is treated as
     orientation-neutral (50/50 L/R split) and a warning is logged - re-run
     bed_motif_finder.py with --prob for orientation-aware vectors.
- 
+
     See binding_vectors_from_bedpe() for the shared return contract;
     unlike that function, J here is backbone-only (BED sites aren't paired,
     so there's no loop-adjacency information to build).
- 
+
     Returns
     -------
     L, R, J, J_loss, statistics  (see binding_vectors_from_bedpe docstring
@@ -546,19 +571,19 @@ def binding_vectors_from_bed(
     '''
     region = _prepare_region(chrom, region)
     df = pd.read_csv(bed_file, sep='\t', header=None, comment='#')
- 
+
     df = df[
         (df[1] >= region[0]) & (df[2] >= region[0]) &
         (df[1] < region[1]) & (df[2] < region[1]) &
         (df[0] == chrom)
     ].reset_index(drop=True)
- 
+
     resolution = max((region[1] - region[0]) // N_beads, 1)
     beads = ((df[1] + df[2]) // 2 - region[0]) // resolution
- 
+
     weights = (pd.to_numeric(df[4], errors='coerce').fillna(1.0).values
                if df.shape[1] > 4 else np.ones(len(df)))
- 
+
     has_prob = df.shape[1] > 6
     if has_prob:
         prob = pd.to_numeric(df[6], errors='coerce').fillna(-1).values
@@ -572,7 +597,7 @@ def binding_vectors_from_bed(
                     "orientation-neutral (50/50 L/R split). Re-run "
                     "bed_motif_finder.py with --prob for orientation-aware vectors.")
         prob = np.full(len(df), -1.0)
- 
+
     return _binding_vectors_from_single_region(
         beads.values, weights, prob,
         N_beads=N_beads, out_path=out_path, normalization=normalization, viz=viz,
@@ -580,7 +605,7 @@ def binding_vectors_from_bed(
         smooth=smooth, smooth_sigma=smooth_sigma, contrastive=contrastive,
         source_label="BED"
     )
- 
+
 def binding_vectors_from_narrowpeak(
         narrowpeak_file, N_beads, chrom, region=None, out_path=None,
         normalization=False,
@@ -588,74 +613,121 @@ def binding_vectors_from_narrowpeak(
         diagonal_interactions=True,
         alpha=1.0,
         smooth=False,
-        smooth_sigma=1.0,
+        smooth_sigma=2.0,
         contrastive=True
     ):
     '''
     Construct L/R binding vectors from a narrowPeak file produced by
     narrowpeak_motif_finder.py.
- 
-    Expects either:
-    - Default output columns: chrom, start, end, name, score
-    - --prob mode output: the above + prob_forward (col 5) + orientation call
-      (col 6), where prob_forward is the probability the site's best hit is
-      FORWARD-oriented (">"), or -1 if no motif was found.
- 
-    IMPORTANT: prob_forward uses the OPPOSITE convention from
-    binding_vectors_from_bedpe()'s side_strength probabilities (which are
-    reverse-biased). This function converts internally
-    (p_reverse = 1 - p_forward) before applying the same L/R split formula,
-    so results stay consistent with binding_vectors_from_bedpe() and
-    binding_vectors_from_bed().
- 
-    If the probability column is missing or doesn't look like valid
-    probabilities, every site is treated as orientation-neutral (50/50 L/R
-    split) and a warning is logged - re-run narrowpeak_motif_finder.py with
-    --prob for orientation-aware vectors.
- 
+
+    Three improvements over a naive midpoint+score approach:
+
+    1. Weight = signalValue (col 6, fold-enrichment) instead of score
+       (col 4, integer). signalValue has much better dynamic range and
+       actually discriminates strong from weak peaks. Falls back to score
+       if signalValue is missing or all-zero/NaN.
+
+    2. Summit position (col 9, bp offset from start) is used for the
+       primary bead placement instead of (start+end)//2. The summit is
+       where the actual ChIP signal peaks and is typically where the CTCF
+       binding site sits - the midpoint can be hundreds of bp off for
+       asymmetric peaks.
+
+    3. Peak-width footprint spreading: each peak's weight is spread across
+       all beads it covers (start_bead:end_bead), not just the summit bead.
+       At coarse resolution (e.g. 10kb/bead) a 1500bp peak is just one
+       bead out of 10,000 - a single nonzero bead in a sea of zeros,
+       which gets erased by smoothing. Spreading preserves the peak's
+       spatial extent and produces a much less sparse signal.
+
     Returns
     -------
-    L, R, J, J_loss, statistics  (see binding_vectors_from_bedpe docstring
-    for shape/meaning; J/J_loss carry no loop information here)
+    L, R, J, J_loss, statistics
     '''
     region = _prepare_region(chrom, region)
     df = pd.read_csv(narrowpeak_file, sep='\t', header=None, comment='#')
- 
+
     df = df[
         (df[1] >= region[0]) & (df[2] >= region[0]) &
         (df[1] < region[1]) & (df[2] < region[1]) &
         (df[0] == chrom)
     ].reset_index(drop=True)
- 
+
+    if len(df) == 0:
+        log.warning(f"No narrowPeak entries found for {chrom}:{region[0]}-{region[1]}")
+        return _binding_vectors_from_single_region(
+            np.array([]), np.array([]), np.array([]),
+            N_beads=N_beads, out_path=out_path, viz=viz,
+            diagonal_interactions=diagonal_interactions,
+            smooth=smooth, smooth_sigma=smooth_sigma,
+            contrastive=contrastive, source_label="narrowPeak"
+        )
+
     resolution = max((region[1] - region[0]) // N_beads, 1)
-    beads = ((df[1] + df[2]) // 2 - region[0]) // resolution
- 
-    weights = (pd.to_numeric(df[4], errors='coerce').fillna(1.0).values
-               if df.shape[1] > 4 else np.ones(len(df)))
- 
-    has_prob = df.shape[1] > 5
-    if has_prob:
-        prob_forward = pd.to_numeric(df[5], errors='coerce').fillna(-1).values
-        if not _valid_prob_vector(prob_forward):
-            log.warning("Column 5 detected but doesn't look like valid probabilities "
-                        "(expected -1 or 0..1) → ignoring it. Make sure this file was "
-                        "generated with `narrowpeak_motif_finder.py --prob`.")
-            has_prob = False
-    if has_prob:
-        # convert forward-bias convention -> reverse-bias (side_strength) convention
-        prob = np.where(prob_forward >= 0, 1 - prob_forward, -1.0)
+
+    # --- Weight: prefer signalValue (col 6) over score (col 4) ---
+    if df.shape[1] > 6:
+        signal_val = pd.to_numeric(df[6], errors='coerce').fillna(0).values
+        if np.any(signal_val > 0):
+            weights = signal_val
+            log.info("Using signalValue (col 6) as weight — better dynamic range than score.")
+        else:
+            weights = pd.to_numeric(df[4], errors='coerce').fillna(1.0).values
+            log.info("signalValue (col 6) is all-zero/missing — falling back to score (col 4).")
+    elif df.shape[1] > 4:
+        weights = pd.to_numeric(df[4], errors='coerce').fillna(1.0).values
     else:
+        weights = np.ones(len(df))
+
+    # --- Bead placement: use summit (col 9) if available, else midpoint ---
+    if df.shape[1] > 9:
+        summit_offset = pd.to_numeric(df[9], errors='coerce').fillna(-1).astype(int).values
+        valid_summit = summit_offset >= 0
+        summit_bp = np.where(valid_summit, df[1].values + summit_offset,
+                              (df[1].values + df[2].values) // 2)
+    else:
+        summit_bp = (df[1].values + df[2].values) // 2
+
+    beads = np.clip(((summit_bp - region[0]) // resolution).astype(int), 0, N_beads - 1)
+
+    # --- Peak-width footprint: spread weight across [start_bead, end_bead) ---
+    bead_starts = np.clip(((df[1].values - region[0]) // resolution).astype(int), 0, N_beads)
+    bead_ends = np.clip(((df[2].values - region[0]) // resolution).astype(int) + 1, 0, N_beads)
+    bead_spans = list(zip(bead_starts, bead_ends))
+
+    # --- Orientation probability ---
+    # Check for motif_finder --prob output. For the standard narrowPeak
+    # format (10 cols: chrom start end name score strand signalValue pValue
+    # qValue summit), column 5 is "strand" (usually "."), not a probability.
+    # The motif_finder --prob output appends prob_forward AFTER the standard
+    # columns, so it sits in column 10 (0-indexed) for a full 10-col
+    # narrowPeak, or column 5 for the shortened motif_finder output format.
+    # We try col 10 first (standard narrowPeak + appended prob), then col 5
+    # (motif_finder short format).
+    prob = np.full(len(df), -1.0)
+    has_prob = False
+
+    for prob_col in (10, 5):
+        if df.shape[1] > prob_col:
+            candidate = pd.to_numeric(df[prob_col], errors='coerce').fillna(-1).values
+            if _valid_prob_vector(candidate) and np.any(candidate >= 0):
+                prob_forward = candidate
+                prob = np.where(prob_forward >= 0, 1 - prob_forward, -1.0)
+                has_prob = True
+                log.info(f"Found forward-orientation probabilities in column {prob_col}.")
+                break
+
+    if not has_prob:
         log.warning("No probability column detected → treating all sites as "
                     "orientation-neutral (50/50 L/R split). Re-run "
                     "narrowpeak_motif_finder.py with --prob for orientation-aware vectors.")
-        prob = np.full(len(df), -1.0)
- 
+
     return _binding_vectors_from_single_region(
-        beads.values, weights, prob,
+        beads, weights, prob,
         N_beads=N_beads, out_path=out_path, normalization=normalization, viz=viz,
         diagonal_interactions=diagonal_interactions, alpha=alpha,
         smooth=smooth, smooth_sigma=smooth_sigma, contrastive=contrastive,
-        source_label="narrowPeak"
+        source_label="narrowPeak", bead_spans=bead_spans
     )
 
 def get_rnap_energy(path,region,chrom,N_beads,normalization):
