@@ -4,9 +4,11 @@ from .knots import *
 from .utils import human_chromosome_lengths
 import argparse
 import configparser
+import json, os
 from typing import List
 from sys import stdout
 from .logger import get_logger
+from .tuner import TunerConfig, run_parameter_search, best_params_to_kwargs
 
 log = get_logger(__name__)
 
@@ -180,6 +182,52 @@ def main():
         contrastive_binding=args.CONTRASTIVE_BINDING,
         smooth=args.SMOOTHING_INPUT
     )
+
+    if args.AUTO_TUNE:
+            tune_cfg = TunerConfig(
+                # simulation
+                N_steps_short    = args.TUNE_N_STEPS,
+                MC_step          = args.TUNE_MC_STEP,
+                burnin           = args.TUNE_BURNIN,
+                mode             = args.METHOD,          # pass Annealing/Metropolis through
+                kappa            = args.CROSS_COEFF,     # fixed kappa from main config
+                T_min_fraction   = args.T_FINAL / args.T_INIT if args.METHOD == "Annealing" else 0.3,
+                # CMA-ES
+                n_warm           = args.TUNE_N_WARM,
+                lam              = args.TUNE_LAM,
+                max_generations  = args.TUNE_MAX_GEN,
+                sigma0           = args.TUNE_SIGMA0,
+                n_repeats        = 1,
+                # early stopping
+                patience         = args.TUNE_PATIENCE,
+                min_delta        = args.TUNE_MIN_DELTA,
+                loss_std_tol     = args.TUNE_STD_TOL,
+                ema_alpha        = 0.3,
+                # polish
+                n_polish_rounds  = args.TUNE_POLISH,
+                polish_n_repeats = 2,
+                # loss weights
+                w_dist           = args.TUNE_W_DIST,
+                w_density        = args.TUNE_W_DENSITY,
+                w_lendist        = args.TUNE_W_LENDIST,
+                w_unfold         = args.TUNE_W_UNFOLD,
+                w_comp           = args.TUNE_W_COMP,
+                verbose          = True,
+            )
+            best = run_parameter_search(sim, tune_cfg)
+
+            # override the values that came from config/CLI
+            T     = best["T"]
+            T_min = best.get("T_min", T)   # absent when mode=Metropolis
+            f     = best["f"]
+            b     = best["b"]
+            sim.N_lef = best["N_lef"]
+
+            tune_out = os.path.join(output_name, "other", "best_params.json")
+            os.makedirs(os.path.dirname(tune_out), exist_ok=True)
+            with open(tune_out, "w") as fh:
+                json.dump(best, fh, indent=2)
+            log.info("Best tuned parameters saved to %s", tune_out)
 
     Es, Ms, Ns, Bs, Ks, Fs, ufs, spins = sim.run_energy_minimization(
         N_steps,

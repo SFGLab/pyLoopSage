@@ -210,7 +210,26 @@ args = ListOfArgs([
     Arg('SAVE_PLOTS', help="It should be true in case that you would like to save diagnostic plots. In case that you use small MC_STEP or large N_STEPS is better to mark it as False.", type=bool, default='True', val='True'),
     Arg('SAVE_MDT', help="In case that you would liketo save metadata of the stochastic simulation.", type=bool, default='True', val='True'),
     Arg('DETECT_KNOTS', help="In case that you would like to find out if there are knots in the structure.", type=bool, default='False', val='False'),
-    
+
+    # Auto-tuning
+    Arg('AUTO_TUNE',        help="Run automatic parameter search (CMA-ES) before the main simulation.", type=bool,  default='False', val='False'),
+    Arg('TUNE_N_STEPS',     help="MC steps per tuner evaluation run (keep small, e.g. 5000-15000).", type=int,   default='8000',  val='8000'),
+    Arg('TUNE_MC_STEP',     help="Sampling frequency inside each tuner run.", type=int,   default='400',   val='400'),
+    Arg('TUNE_BURNIN',      help="Burn-in steps to discard inside each tuner run.", type=int,   default='2000',  val='2000'),
+    Arg('TUNE_N_WARM',      help="Random warm-start candidates evaluated before CMA-ES begins.", type=int,   default='20',    val='20'),
+    Arg('TUNE_LAM',         help="CMA-ES population size per generation (lambda).", type=int,   default='10',    val='10'),
+    Arg('TUNE_MAX_GEN',     help="Maximum CMA-ES generations.", type=int,   default='60',    val='60'),
+    Arg('TUNE_SIGMA0',      help="Initial CMA-ES step size in normalised [0,1] parameter space.", type=float, default='0.3',   val='0.3'),
+    Arg('TUNE_PATIENCE',    help="Generations with no EMA improvement before early-stop check.", type=int,   default='8',     val='8'),
+    Arg('TUNE_MIN_DELTA',   help="Minimum EMA improvement required to reset patience counter.", type=float, default='0.0005', val='0.0005'),
+    Arg('TUNE_STD_TOL',     help="Stop CMA-ES when inter-generation EMA std drops below this.", type=float, default='0.003', val='0.003'),
+    Arg('TUNE_POLISH',      help="Max rounds of neighbourhood polishing after CMA-ES.", type=int,   default='4',     val='4'),
+    Arg('TUNE_W_DIST',      help="Weight of distance-heatmap Pearson loss term.", type=float, default='1.0',   val='1.0'),
+    Arg('TUNE_W_DENSITY',   help="Weight of 1D loop-density vs CTCF profile loss term.", type=float, default='0.5',   val='0.5'),
+    Arg('TUNE_W_LENDIST',   help="Weight of loop-length KL divergence loss term.", type=float, default='0.3',   val='0.3'),
+    Arg('TUNE_W_UNFOLD',    help="Weight of unfolding fraction penalty.", type=float, default='0.2',   val='0.2'),
+    Arg('TUNE_W_COMP',      help="Weight of compartment agreement (set 0 if no comp file).", type=float, default='0.4',   val='0.4'),
+
     # Molecular Dynamic Properties
     Arg('INITIAL_STRUCTURE_TYPE', help="you can choose between: rw, confined_rw, self_avoiding_rw, helix, circle, spiral, sphere.", type=str, default='rw', val='rw'),
     Arg('INTEGRATOR_STEP', help="The step of the integrator.", type=Quantity, default='`100 femtosecond', val='100 femtosecond'),

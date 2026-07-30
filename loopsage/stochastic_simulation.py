@@ -830,7 +830,7 @@ class StochasticSimulation:
             N_epi_states=N_epi_states,   # NEW
             p_spin=p_spin,        # NEW
             loss_mode = self.data_loss_mode,
-            step_length=int(self.min_length) if is_variable_step else 1
+            step_length=int(self.min_length) if (is_variable_step and self.min_length is not None) else 1
         )        
         end = time.time()
         elapsed = end - start
