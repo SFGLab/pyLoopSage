@@ -76,35 +76,7 @@ For the implementation of this model in python, we used OpenMM and CUDA accelera
 In general the user can run simulation in two different ways:
 
 1. **Energy minimization (EM)**: It means that for each sample of cohesin positions $C_{t_i}=(m_j(t_i),n_j(t_i))$ start from a different initial structure (usually 3D random walk) and we apply the forcefield. For each structure we start from a different initial condition. In general, it is suggested to run the model in this way because it is faster, less prone to errors and the structures are not correlated to each other.
-2. **Molecular Dynamics (MD)**: In this case we have only one initial structure, we minimize the energy according to the forcefield only once and then we run a molecular dynamics simulation over time. This creates a continuous trajectory of structures, and it is cool for visualization pruposes. It is also biophysically more correct, in the sense that loop extrusion should be time-dependent, and the structure at time $t_i$ has to me correlated with structures at time $t_{i\pm1}$. It is a little bit more prone to error, and you may need to change the simulation frequence and step in case of instability (smaller frequency and more steps to stabilize it). 
-
-#### Experimental: Automatic Parameter Tuning
-
-LoopSage provides an **experimental** automatic parameter tuner for estimating the stochastic simulation parameters directly from experimental chromatin interaction data. The optimization currently searches for
-
-$$
-\theta = (T, f, b, N_{\mathrm{LEF}}),
-$$
-
-where $T$ is the Monte Carlo temperature, $f$ the folding coefficient, $b$ the CTCF binding coefficient, and $N_{\mathrm{LEF}}$ the number of loop extrusion factors.
-
-Since every function evaluation requires a complete stochastic simulation (and optionally molecular simulation), parameter estimation is formulated as a **derivative-free black-box optimization** problem,
-
-$$\theta^*=\arg\min_{\theta}L(\theta),$$
-
-where $L(\theta)$ is a composite loss measuring the agreement between simulated and experimental chromatin organization.
-
-The optimizer is based on the **Covariance Matrix Adaptation Evolution Strategy (CMA-ES)**. At every iteration, candidate parameter vectors are sampled from
-
-$$
-\theta_i \sim \mathcal{N}(\mathbf{m},\,\sigma^2\mathbf{C}),
-$$
-
-where $\mathbf{m}$ is the current estimate of the optimum, $\sigma$ is the global search step, and $\mathbf{C}$ is the learned covariance matrix that captures correlations between parameters. After evaluating all candidates, CMA-ES updates $(\mathbf{m},\sigma,\mathbf{C})$ toward regions producing lower loss.
-
-The objective function combines several structural metrics, including contact-map similarity, compartment agreement, loop-density profiles and loop-length distributions. Since LoopSage is stochastic, multiple independent simulations can optionally be averaged for each candidate to improve robustness against Monte Carlo noise.
-
-> **Note:** The tuning module is currently experimental and both the optimization strategy and objective function may change in future releases.
+2. **Molecular Dynamics (MD)**: In this case we have only one initial structure, we minimize the energy according to the forcefield only once and then we run a molecular dynamics simulation over time. This creates a continuous trajectory of structures, and it is cool for visualization pruposes. It is also biophysically more correct, in the sense that loop extrusion should be time-dependent, and the structure at time $t_i$ has to me correlated with structures at time $t_{i\pm1}$. It is a little bit more prone to error, and you may need to change the simulation frequence and step in case of instability (smaller frequency and more steps to stabilize it).
 
 ## Installation
 
@@ -396,29 +368,6 @@ An example, illustrated with Chimera software, simulated trajectory of structure
 |------------------------|-----------------------------------------------------------------------------------------------------------------|------------|---------------------|
 | VIZ_HEATS            | True to visualize the output average heatmap.                                                                | bool       | True                |
 | SAVE_PLOTS           | True to save diagnostic plots.                                                                                 | bool       | True                |
-
-
-### Experimental: Automatic Parameter Tuning
-
-| Argument         | Description                                                                                                                    | Type  | Default  |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----- | -------- |
-| `AUTO_TUNE`      | Run the experimental CMA-ES parameter tuner before the main simulation.                                                        | bool  | `False`  |
-| `TUNE_N_STEPS`   | Number of Monte Carlo steps performed for each tuner evaluation. Smaller values significantly speed up optimization.           | int   | `8000`   |
-| `TUNE_MC_STEP`   | Sampling frequency used during each tuner simulation.                                                                          | int   | `400`    |
-| `TUNE_BURNIN`    | Number of burn-in Monte Carlo steps discarded during each tuner evaluation.                                                    | int   | `2000`   |
-| `TUNE_N_WARM`    | Number of randomly sampled warm-start candidates evaluated before CMA-ES optimization begins.                                  | int   | `20`     |
-| `TUNE_LAM`       | CMA-ES population size ($\lambda$), i.e. candidate solutions evaluated per generation.                                         | int   | `10`     |
-| `TUNE_MAX_GEN`   | Maximum number of CMA-ES generations.                                                                                          | int   | `60`     |
-| `TUNE_SIGMA0`    | Initial CMA-ES search step size ($\sigma_0$) in the normalized parameter space.                                                | float | `0.3`    |
-| `TUNE_PATIENCE`  | Number of consecutive generations without sufficient EMA improvement before early stopping is considered.                      | int   | `8`      |
-| `TUNE_MIN_DELTA` | Minimum improvement in the exponentially weighted moving-average (EMA) loss required to reset the patience counter.            | float | `0.0005` |
-| `TUNE_STD_TOL`   | Early stopping threshold. Optimization terminates when the standard deviation of the recent EMA losses falls below this value. | float | `0.003`  |
-| `TUNE_POLISH`    | Maximum number of local neighbourhood-polishing rounds performed after CMA-ES convergence.                                     | int   | `4`      |
-| `TUNE_W_DIST`    | Weight of the distance-heatmap Pearson correlation loss.                                                                       | float | `1.0`    |
-| `TUNE_W_DENSITY` | Weight of the 1D loop-density profile loss.                                                                                    | float | `0.5`    |
-| `TUNE_W_LENDIST` | Weight of the loop-length distribution KL-divergence loss.                                                                     | float | `0.3`    |
-| `TUNE_W_UNFOLD`  | Weight of the polymer unfolding penalty.                                                                                       | float | `0.2`    |
-| `TUNE_W_COMP`    | Weight of the compartment agreement loss. Set to `0` when no compartment data are provided.                                    | float | `0.4`    |
 
 
 ## Citation
