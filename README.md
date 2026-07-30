@@ -83,18 +83,14 @@ In general the user can run simulation in two different ways:
 LoopSage provides an **experimental** automatic parameter tuner for estimating the stochastic simulation parameters directly from experimental chromatin interaction data. The optimization currently searches for
 
 $$
-\theta = (T,\;f,\;b,\;N_{\mathrm{LEF}}),
+\theta = (T, f, b, N_{\mathrm{LEF}}),
 $$
 
 where $T$ is the Monte Carlo temperature, $f$ the folding coefficient, $b$ the CTCF binding coefficient, and $N_{\mathrm{LEF}}$ the number of loop extrusion factors.
 
 Since every function evaluation requires a complete stochastic simulation (and optionally molecular simulation), parameter estimation is formulated as a **derivative-free black-box optimization** problem,
 
-$$
-\theta^{*}
-=
-\arg\min_{\theta}L(\theta),
-$$
+$$\theta^*=\arg\min_{\theta}L(\theta),$$
 
 where $L(\theta)$ is a composite loss measuring the agreement between simulated and experimental chromatin organization.
 
