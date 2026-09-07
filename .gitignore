@@ -51,4 +51,4 @@ slurm-*.out
 tmp/
 temp/
 test/
-results/
+*results*/

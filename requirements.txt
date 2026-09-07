@@ -1,0 +1,40 @@
+# ============================================================
+# requirements.txt — pyLoopSage + Boltzmann Generator
+# ============================================================
+# NOTE: openmm and pyBigWig install more reliably via conda than
+# pip on Linux/macOS. If you hit binary-compatibility errors
+# (e.g. "numpy.core.multiarray failed to import" from openmm's
+# xtc_utils), install these two via conda instead:
+#     conda install -c conda-forge "openmm>=8.5.1" pybigwig
+# and remove them from this file before running pip install.
+# ============================================================
+
+# ---- core numerics ----
+numpy>=2.0
+scipy>=1.11
+pandas>=2.0
+numba>=0.59
+
+# ---- molecular dynamics (LoopSage MD stage) ----
+openmm>=8.5.1
+mdtraj>=1.10
+
+# ---- genomic data I/O ----
+pyBigWig>=0.3.22
+
+# ---- plotting / visualization ----
+matplotlib>=3.8
+seaborn>=0.13
+statsmodels>=0.14
+imageio>=2.34
+pillow>=10.0
+
+# ---- utilities ----
+tqdm>=4.66
+rich>=13.7
+
+# ---- Boltzmann generator (normalizing flow) ----
+torch>=2.2
+
+# ---- optional: auto-tuning (CMA-ES, referenced in args_definition.py) ----
+cma>=3.3
