@@ -64,6 +64,10 @@ def build_viewer(frames, path, title="LoopSage 3D viewer", comp=None, fps: int =
 def _pyvista():
     """Import pyvista lazily; start a virtual display on headless Linux if needed."""
     import pyvista as pv
+    from logger import console
+    if console.quiet:                                    # also mute VTK's own C++ warnings
+        from vtkmodules.vtkCommonCore import vtkObject
+        vtkObject.GlobalWarningDisplayOff()
     pv.OFF_SCREEN = True
     return pv
 
@@ -108,7 +112,7 @@ def render_stills(frames, mode="purple", comp=None, size=640, representation="tu
         for name, mesh in _meshes(pv, pts, s, bond, representation).items():
             pl.add_mesh(mesh, name=name, scalars="s", cmap=cmap, clim=clim, specular=0.9, specular_power=45, ambient=0.3,
                         diffuse=0.8, smooth_shading=True, show_scalar_bar=False, reset_camera=False)
-        _camera(pl, radius, reach=3.2)
+        _camera(pl, radius, reach=3.8)
         pl.reset_camera_clipping_range()
         images.append(pl.screenshot(return_img=True))
     pl.close()

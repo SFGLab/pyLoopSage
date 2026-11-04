@@ -58,6 +58,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 |---|---|---|---|
 | `-o`, `--out` | text | *(empty)* | Results folder (empty = <project>/results); each run gets its own subfolder |
 | `--run` | integer | *(empty)* | Run number in the folder name (empty = next free; standalone stages reuse the latest) |
+| `-q`, `--quiet` / `--no-quiet` | true / false | `False` | Print nothing to the console (the log file and the report are still written) |
 | `--seed` | integer | *(empty)* | Random seed (empty = random) |
 | `--report` / `--no-report` | true / false | `True` | Write report.html |
 | `--metadata` / `--no-metadata` | true / false | `True` | Save map matrices (MC and MD heatmaps, distances, strengths) as .npy in data/metadata |

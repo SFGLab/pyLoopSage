@@ -76,6 +76,7 @@ Rules:
 | `out_path` | text | *(empty)* | `--out` | Results folder (empty = <project>/results); each run gets its own subfolder |
 | `run_number` | integer | *(empty)* | `--run` | Run number in the folder name (empty = next free; standalone stages reuse the latest) |
 | `verbosity` | integer | `0` | *ini only* | Console detail: 0 main steps + progress bars, 1 + tables, 2 + info messages, 3 + debug (CLI: -v, -vv, -vvv) |
+| `quiet` | true / false | `False` | `--quiet` | Print nothing to the console (the log file and the report are still written) |
 | `seed` | integer | *(empty)* | `--seed` | Random seed (empty = random) |
 | `report` | true / false | `True` | `--report` | Write report.html |
 | `save_metadata` | true / false | `True` | `--metadata` | Save map matrices (MC and MD heatmaps, distances, strengths) as .npy in data/metadata |

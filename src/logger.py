@@ -33,6 +33,11 @@ def get_verbosity() -> int:
     return _verbosity
 
 
+def set_quiet(quiet: bool = True) -> None:
+    """Silence all console output (banner, steps, tables, progress bars)."""
+    console.quiet = bool(quiet)
+
+
 def setup_logging(verbosity: int = 0, log_file=None) -> None:
     """Configure the 'loopsage' logger for the console and an optional file."""
     global _verbosity
@@ -44,7 +49,7 @@ def setup_logging(verbosity: int = 0, log_file=None) -> None:
 
     console_handler = _Handler(console=console, show_path=False, markup=False,
                                   show_time=_verbosity >= 2, rich_tracebacks=True)
-    console_handler.setLevel(_LEVELS[_verbosity])
+    console_handler.setLevel(logging.CRITICAL + 10 if console.quiet else _LEVELS[_verbosity])
     root.addHandler(console_handler)
 
     if log_file:

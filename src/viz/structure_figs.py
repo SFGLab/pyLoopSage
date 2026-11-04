@@ -208,24 +208,27 @@ def _crop_common(images, pad=12):
 def snapshots_figure(images, picks, md, mc):
     """Three large 3D renders (start, middle, end), a filmstrip of all renders, a Monte Carlo step bar and an order-parameter (T) bar.
 
-    images: renders of the MD frames `picks` (evenly spaced, in time order).
+    images: renders of the MD frames `picks` (evenly spaced, in time order); only the three representative structures
+    (A, B, C) are boxed, and the same boxes mark them on the Monte Carlo and T bars.
     """
     import matplotlib.pyplot as plt
     from matplotlib.colors import Normalize
     from matplotlib.offsetbox import AnnotationBbox, OffsetImage
     from viz.theme import apply_theme
     apply_theme()
-    fig = plt.figure(figsize=(14.4, 6.0), layout="constrained")
-    gs = fig.add_gridspec(4, 3, height_ratios=[10, 2.2, 1.0, 1.0])
+    fig = plt.figure(figsize=(14.4, 5.4), layout="constrained")
+    gs = fig.add_gridspec(4, 3, height_ratios=[7.5, 2.4, 1.0, 1.0])
     step, burn = mc.meta["mc_step"], mc.meta["burnin"]
     snap = np.asarray(md.frame_idx)[picks]                       # MC snapshot behind each render
     steps = snap * step / 1e3
     images = _crop_common(images)
-    big = [0, len(images) // 2, len(images) - 1]
-    for k, name in zip(big, ("Start", "Middle", "End")):
-        ax = fig.add_subplot(gs[0, big.index(k)])
+    n = len(images)
+    big = [0, n // 2, n - 1]
+    for pos, (k, name) in enumerate(zip(big, ("Start", "Middle", "End"))):
+        ax = fig.add_subplot(gs[0, pos])
         ax.imshow(images[k])
-        ax.set(xticks=[], yticks=[], title=f"{name}: MC step {int(snap[k] * step):,}   T = {mc.Ts[snap[k]]:.3g}")
+        ax.set(xticks=[], yticks=[])
+        ax.set_title(f"{name}: MC step {int(snap[k] * step):,},  T = {mc.Ts[snap[k]]:.3g}", loc="left", pad=14, fontsize=11)
         ax.grid(False)
         ax.set_frame_on(False)
     x = np.arange(len(mc.Ts)) * step / 1e3                       # MC step axis (thousands)
@@ -234,33 +237,39 @@ def snapshots_figure(images, picks, md, mc):
         ax._twin = True                                          # not a lettered panel
         ax.set(yticks=[], xlim=(0, x[-1]))
         ax.grid(False)
-    strip.set(xticklabels=[], ylim=(0, 1))
+    strip.set(xticklabels=[], ylim=(0, 1.3))
     strip.set_frame_on(False)
-    n, th = len(images), _thumb(images[0], 3)
-    w = x[-1] / n                                                # thumbnail width in x units
-    zoom = 0.84 * fig.get_figwidth() * fig.dpi / n * 0.92 / th.shape[1]
+    fig.canvas.draw()                                            # resolve the layout to size the thumbnails
+    th = _thumb(images[0], 3)
+    cell_px = strip.get_window_extent().width / n
+    zoom = 0.84 * cell_px * 72 / (fig.dpi * th.shape[1])
+    w = x[-1] / n
     for k, img in enumerate(images):                             # one small structure per sampled step, in time order
         xv = w / 2 + k * (x[-1] - w) / max(n - 1, 1)
-        strip.add_artist(AnnotationBbox(OffsetImage(_thumb(img, 3), zoom=zoom), (xv, 0.5), frameon=k in big, pad=0.05,
-                                        bboxprops=dict(ec=VIOLET, lw=1.6, fc="none")))
+        strip.add_artist(AnnotationBbox(OffsetImage(_thumb(img, 3), zoom=zoom), (xv, 0.5), frameon=k in big, pad=0.12,
+                                        bboxprops=dict(boxstyle="round,pad=0.0,rounding_size=0.25", ec=VIOLET, lw=2.2, fc="white")))
         if k in big:
-            strip.text(xv, 1.0, "ABC"[big.index(k)], ha="center", va="bottom", fontsize=8, fontweight="bold", color="#111", transform=strip.get_xaxis_transform())
-    strip.set_ylabel("Structures\n(in time order)", rotation=0, ha="right", va="center")
+            strip.text(xv, 1.0, "ABC"[big.index(k)], ha="center", va="bottom", fontsize=8, fontweight="bold", color="white",
+                       bbox=dict(boxstyle="round,pad=0.25", fc=VIOLET, ec="none"))
+    strip.set_ylabel("Structures\n(in time order)", rotation=0, ha="right", va="center", labelpad=10)
+    span = x[-1]
     mcbar.axvspan(0, burn / 1e3, color="#d9d3ea", lw=0)
-    mcbar.axvspan(burn / 1e3, x[-1], color=VIOLET, alpha=0.85, lw=0)
-    mcbar.text(burn / 2e3, 0.5, "burn-in", ha="center", va="center", fontsize=8, color=MUTED, transform=mcbar.get_xaxis_transform())
-    mcbar.text((burn / 1e3 + x[-1]) / 2, 0.5, "Monte Carlo sampling", ha="center", va="center", fontsize=8, color="white", transform=mcbar.get_xaxis_transform())
+    mcbar.axvspan(burn / 1e3, span, color=VIOLET, alpha=0.85, lw=0)
+    tr = mcbar.get_xaxis_transform()
+    if burn / 1e3 > 0.12 * span:
+        mcbar.text(burn / 2e3, 0.5, "burn-in", ha="center", va="center", fontsize=8, color=MUTED, transform=tr)
+        mcbar.text(burn / 1e3 + 0.02 * span, 0.5, "Monte Carlo sampling", ha="left", va="center", fontsize=8, color="white", transform=tr)
+    else:                                                        # burn-in too narrow for its own label
+        mcbar.text(burn / 1e3 + 0.01 * span, 0.5, "Monte Carlo sampling   (grey: burn-in)", ha="left", va="center", fontsize=8, color="white", transform=tr)
     mcbar.set(xticklabels=[])
-    mcbar.set_ylabel("Monte Carlo", rotation=0, ha="right", va="center")
+    mcbar.set_ylabel("Monte Carlo", rotation=0, ha="right", va="center", labelpad=10)
+    mcbar.scatter(steps[big], np.ones(3), c="#111", marker="v", s=46, ec="white", lw=0.8, transform=tr, clip_on=False, zorder=5)
     T = np.asarray(mc.Ts, dtype=float)
     tbar.imshow(T[None, :], aspect="auto", cmap="YlOrRd", norm=Normalize(T.min(), T.max() if T.max() > T.min() else T.min() + 1),
-                extent=(0, x[-1], 0, 1))
+                extent=(0, span, 0, 1))
+    tbar.scatter(steps[big], np.zeros(3), c="#111", marker="^", s=46, ec="white", lw=0.8, transform=tbar.get_xaxis_transform(), clip_on=False, zorder=5)
     tbar.set(xlabel="MC step (thousands)")
-    tbar.set_ylabel("Order parameter\n(temperature T)", rotation=0, ha="right", va="center")
+    tbar.set_ylabel("Order parameter\n(temperature T)", rotation=0, ha="right", va="center", labelpad=10)
     tbar.text(0.995, 0.5, f"T: {T[0]:.3g} \u2192 {T[-1]:.3g}" if abs(T[0] - T[-1]) > 1e-9 else f"T = {T[0]:.3g} (constant)",
               ha="right", va="center", fontsize=8, color="black", transform=tbar.transAxes)
-    for ax in (mcbar, tbar):
-        for xv in steps[big]:
-            ax.axvline(xv, color="white", lw=2.4)
-            ax.axvline(xv, color="#111", lw=1.0)
     save_figure(fig, "struct_snapshots", **_TXT("struct_snapshots"))

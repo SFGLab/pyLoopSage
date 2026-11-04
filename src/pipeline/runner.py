@@ -9,7 +9,7 @@ from common.genome import fmt_duration, Geometry
 from common.runtime import apply_threads, create_run_dirs, OutputDirs
 from common.utils import Timer
 from knots import stage as stage_knots
-from logger import get_logger, print_banner, setup_logging
+from logger import get_logger, print_banner, set_quiet, setup_logging
 from pipeline import stage_analysis, stage_mc, stage_md, stage_preproc, stage_report, stage_structure
 from preproc.loader import build_geometry
 from reporting.report import REGISTRY
@@ -66,6 +66,7 @@ STAGES = [stage_preproc, stage_mc, stage_md, stage_structure, stage_analysis, st
 
 def make_context(cfg, reuse_latest=False) -> RunContext:
     """Create the run folder, logging and the shared state."""
+    set_quiet(cfg.quiet)
     print_banner()
     geom = build_geometry(cfg)
     dirs = create_run_dirs(cfg.out_path, geom, cfg.run_number, reuse_latest)

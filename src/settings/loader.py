@@ -152,7 +152,7 @@ examples:
   loopsage -c config.ini                 # sectioned config file
   loopsage -c config.ini --no-run-MD -vv # file + overrides, MC only, info messages
 
-verbosity: none = main steps + progress bars | -v + tables | -vv + info messages | -vvv + debug
+verbosity: none = main steps + progress bars | -v + tables | -vv + info messages | -vvv + debug | -q = no console output
 Anything not listed here can be set in config.ini, or one-off with --set KEY=VALUE.
 """
 

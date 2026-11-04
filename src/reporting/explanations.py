@@ -97,7 +97,7 @@ EXPLAIN = {
         section="structure_3d", title="Structure at the start, middle and end of the simulation",
         caption="Start, middle and end structures (pyvista), a filmstrip of 20 structures along the run, the Monte Carlo progress bar and the order parameter.",
         explain="Each render is an MD structure built from the loop configuration at that point of the Monte Carlo run "
-                "(same camera and colouring, structures aligned). <b>Filmstrip:</b> 20 small structures, each placed at the Monte Carlo step it was built from, so you can follow how the fold changes as the temperature changes; the framed ones are A, B and C. <b>Monte Carlo bar:</b> burn-in (grey) is discarded "
+                "(same camera, structures aligned, rainbow colour from the first bead to the last). <b>Filmstrip:</b> 20 small structures, each placed at the Monte Carlo step it was built from, so you can follow how the fold changes as the temperature changes; the boxed ones are the three representative structures A, B and C. <b>Monte Carlo bar:</b> burn-in (grey) is discarded "
                 "from the statistics; the black ticks mark where the three structures come from. <b>Order parameter bar:</b> "
                 "the Monte Carlo temperature T that controls how freely loops rearrange. It is constant for Metropolis and "
                 "decays from T_init to T_final for Annealing, so the structure should become more ordered towards the end."),

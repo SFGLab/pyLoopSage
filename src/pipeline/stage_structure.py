@@ -70,8 +70,7 @@ def _snapshots(ctx, comp):
         return
     try:
         from viz3d.render import render_stills
-        mode = "compartments" if comp is not None else "purple"
-        imgs = render_stills(align_frames(np.asarray(md.coords, dtype=float))[picks], mode, comp, ctx.cfg.video_size, ctx.cfg.representation)
+        imgs = render_stills(align_frames(np.asarray(md.coords, dtype=float))[picks], "rainbow", None, ctx.cfg.video_size, ctx.cfg.representation)
     except Exception as e:                                         # noqa: BLE001 - rendering is optional
         log.warning("Could not render the start/middle/end structures: %s", e)
         return

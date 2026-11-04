@@ -98,3 +98,19 @@ def test_example_configs_have_known_keys():
         cp = configparser.ConfigParser(inline_comment_prefixes=(";",))
         cp.read(f)
         assert {k for s in cp.sections() for k in cp[s]} <= known, f.name
+
+
+def test_quiet_flag_mutes_console(tiny_args, capfd):
+    from logger import set_quiet
+    try:
+        ctx = run_pipeline(load_config(tiny_args + ["-q"]))
+        out = capfd.readouterr()
+        assert out.out == "" and out.err == ""
+        assert (ctx.dirs.root / "logs" / "loopsage.log").stat().st_size > 0      # log file still written
+    finally:
+        set_quiet(False)
+
+
+def test_default_is_not_quiet(tiny_args, capfd):
+    ctx = run_pipeline(load_config(tiny_args))
+    assert "Run folder" in capfd.readouterr().out

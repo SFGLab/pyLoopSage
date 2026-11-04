@@ -58,6 +58,7 @@ PARAMS = (
     Param("out_path", "output", "str", None, "Results folder (empty = <project>/results); each run gets its own subfolder", flag="--out", short="-o"),
     Param("run_number", "output", "int", None, "Run number in the folder name (empty = next free; standalone stages reuse the latest)", flag="--run"),
     Param("verbosity", "output", "int", 0, "Console detail: 0 main steps + progress bars, 1 + tables, 2 + info messages, 3 + debug (CLI: -v, -vv, -vvv)"),
+    Param("quiet", "output", "bool", False, "Print nothing to the console (the log file and the report are still written)", flag="--quiet", short="-q"),
     Param("seed", "output", "int", None, "Random seed (empty = random)", flag="--seed"),
     Param("report", "output", "bool", True, "Write report.html", flag="--report"),
     Param("save_metadata", "output", "bool", True, "Save map matrices (MC and MD heatmaps, distances, strengths) as .npy in data/metadata", flag="--metadata"),
