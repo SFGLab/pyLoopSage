@@ -30,6 +30,7 @@ SECTIONS = {
     "molecular_dynamics": "Molecular dynamics (3D structures)",
     "structure_3d": "3D structure analysis and rendering",
     "analysis": "Analysis",
+    "optimizer": "Parameter optimizer (--optimize)",
 }
 
 _INIT = ("rw", "confined_rw", "self_avoiding_rw", "circle", "helix", "spiral", "sphere")
@@ -134,6 +135,9 @@ PARAMS = (
     Param("zoom_snapshots", "analysis", "int", 120, "Snapshots shown in the zoomed kymograph (window near equilibrium)", "snapshots"),
     Param("zoom_start", "analysis", "int", None, "First snapshot of the zoom window (empty = middle of production)", "snapshot"),
     Param("knots_stride", "analysis", "int", 10, "Use every n-th MD frame for linking numbers", "frames"),
+    Param("optimize", "optimizer", "bool", False, "Before the run, fit the number of LEFs, folding and binding coefficients with Nelder-Mead on short Monte Carlo runs (n_lef of the first family, f, b and the temperature schedule), then run with them", flag="--optimize"),
+    Param("opt_evals", "optimizer", "int", 60, "Maximum number of short Monte Carlo evaluations of the optimizer", "evaluations", flag="--opt-evals"),
+    Param("opt_steps", "optimizer", "int", 20000, "Monte Carlo steps of one evaluation (the final candidate check runs 3x longer)", "MC steps", flag="--opt-steps"),
 )
 
 BY_NAME = {p.name: p for p in PARAMS}

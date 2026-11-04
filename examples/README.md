@@ -14,3 +14,4 @@ Edit the file paths, then run `loopsage -c examples/<file>.ini`. All keys are li
 | `07_two_lef_families.ini` | Two LEF families with different folding strength |
 | `08_cluster_replicas.ini` | Long production run with replicas and a GPU |
 | `09_quick_test.ini` | Small test with the shipped demo data |
+| `10_optimize_parameters.ini` | Fit K, f and b first (`--optimize`), then run with them |

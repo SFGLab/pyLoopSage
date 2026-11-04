@@ -123,6 +123,8 @@ def enabled(cfg) -> bool:
 
 
 def compute(ctx):
+    if getattr(ctx, "optimization", None) is not None:
+        log.step("Running the full Monte Carlo (all %d steps) with the optimized parameters", ctx.cfg.n_steps)
     return run_mc(ctx.cfg, ctx.inputs, ctx.geom)
 
 

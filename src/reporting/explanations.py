@@ -93,6 +93,24 @@ EXPLAIN = {
                 "convex hull (the smallest convex envelope of all beads) with a sphere of equal volume: 1 means "
                 "spherical. <b>Hull volume</b> measures the space the chromatin occupies. Stable curves mean a "
                 "stable overall fold; steady drifts mean the structures are still relaxing."),
+    "optimizer": dict(
+        section="optimizer", title="Optimizer convergence",
+        caption="Loss of every short Monte Carlo evaluation (left) and how K, f, b and the temperature scale moved (right).",
+        explain="The optimizer (Nelder-Mead) proposes the number of LEFs <b>K</b>, the folding coefficient <b>f</b> and the binding "
+                "coefficient <b>b</b>, runs a short Monte Carlo for each, and scores the simulated loop map against the experimental "
+                "loops (<b>loss</b> = 1 - correlation of the observed/expected maps + mismatch of the contact decay + 1 - correlation of the "
+                "insulation scores; 0 is perfect). Every short run is a noisy estimate, so the best few candidates and the start are "
+                "re-scored on longer runs with new seeds, and the winner is used for the production run. Dots: single evaluations; "
+                "line: best so far; dashed and dotted lines: the long-run loss of the start and of the chosen parameters."),
+    "optimizer_landscape": dict(
+        section="optimizer", title="What the optimizer explored",
+        caption="Loss against K (left), f (middle) and b (right) for every evaluation; later evaluations are darker, bigger dots mean a hotter temperature.",
+        explain="Each dot is one short Monte Carlo evaluation. A good parameter shows a clear valley: low losses concentrated in a narrow range, "
+                "with the dots getting darker (later) inside it. A flat cloud means the loss hardly depends on that parameter, or that the "
+                "Monte Carlo noise is larger than the effect. The star marks the chosen parameters (its height is the long-run loss). "
+                "Note that at a fixed temperature the energy depends on f/T and b/T only, so the temperature and the two coefficients partly "
+                "trade off; several combinations can give the same loss.",
+    ),
     "struct_snapshots": dict(
         section="structure_3d", title="Structure at the start, middle and end of the simulation",
         caption="Start, middle and end structures (pyvista), a filmstrip of 20 structures along the run, the Monte Carlo progress bar and the order parameter.",

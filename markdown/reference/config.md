@@ -174,3 +174,11 @@ Rules:
 | `zoom_snapshots` | integer (snapshots) | `120` | *ini only* | Snapshots shown in the zoomed kymograph (window near equilibrium) |
 | `zoom_start` | integer (snapshot) | *(empty)* | *ini only* | First snapshot of the zoom window (empty = middle of production) |
 | `knots_stride` | integer (frames) | `10` | *ini only* | Use every n-th MD frame for linking numbers |
+
+## `[optimizer]`: Parameter optimizer (--optimize)
+
+| Key | Type (unit) | Default | CLI option | What it does |
+|---|---|---|---|---|
+| `optimize` | true / false | `False` | `--optimize` | Before the run, fit the number of LEFs, folding and binding coefficients with Nelder-Mead on short Monte Carlo runs (n_lef of the first family, f, b and the temperature schedule), then run with them |
+| `opt_evals` | integer (evaluations) | `60` | `--opt-evals` | Maximum number of short Monte Carlo evaluations of the optimizer |
+| `opt_steps` | integer (MC steps) | `20000` | `--opt-steps` | Monte Carlo steps of one evaluation (the final candidate check runs 3x longer) |

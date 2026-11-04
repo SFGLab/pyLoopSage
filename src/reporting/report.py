@@ -16,6 +16,7 @@ from settings.schema import PARAMS, SECTIONS as PARAM_SECTIONS
 
 SECTIONS = {
     "input": "Input data",
+    "optimizer": "Parameter optimizer",
     "monte_carlo": "Loop extrusion (Monte Carlo)",
     "molecular_dynamics": "3D structures (molecular dynamics)",
     "validation": "Validation against experiment",
@@ -86,6 +87,9 @@ REGISTRY = Registry()
 SECTION_INTRO = {
     "input": "What went into the model: the experimental loops or CTCF peaks, converted to bead resolution "
              "(one <em>simulation bead</em> = a fixed stretch of DNA, its size in bp is given in the tables).",
+    "optimizer": "Before the production run, Nelder-Mead searches the number of loop extrusion factors (first family), the folding and "
+                 "binding coefficients and the temperature schedule. Every candidate is scored by a short Monte Carlo run: how well its loop map "
+                 "reproduces the experimental loops. The best candidates are re-checked on longer runs and the winner is used below.",
     "monte_carlo": "A stochastic sampler moves loop extrusion factors (LEFs) along the chromatin fibre and "
                    "accepts moves that lower an energy (Metropolis rule). The result is an ensemble of loop "
                    "configurations consistent with the data. Energies are in arbitrary units (a.u.); "
@@ -154,7 +158,7 @@ def _overview() -> str:
 
 
 def _parameters(cfg) -> str:
-    values, tags = cfg.as_dict(), {"default": "", "ini": "ini", "cli": "cli"}
+    values, tags = cfg.as_dict(), {"default": "", "ini": "ini", "cli": "cli", "optimizer": "opt"}
     cards = []
     for sec, title in PARAM_SECTIONS.items():
         rows = "".join(

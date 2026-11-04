@@ -1,0 +1,106 @@
+"""Stage (optional, --optimize): fit K, f, b with Nelder-Mead on short MC runs; the following MC stage uses the result."""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from common.runtime import fun_bar
+from common.utils import emit_table
+from logger import get_logger
+from optimizer.nelder_mead import optimize, OptResult
+from optimizer.objective import loss_parts, Objective, target_map
+from reporting.report import REGISTRY
+from settings.loader import write_ini
+from validation.compare import detect_format
+
+NAME, ATTR, CACHE = "optimize", "optimization", "optimization.json"
+log = get_logger(__name__)
+
+
+def enabled(cfg) -> bool:
+    return bool(cfg.optimize)
+
+
+def save(res: OptResult, path) -> None:
+    Path(path).write_text(json.dumps(res.__dict__, indent=1))
+
+
+def load(path) -> OptResult:
+    return OptResult(**json.loads(Path(path).read_text()))
+
+
+def compute(ctx):
+    cfg, g = ctx.cfg, ctx.geom
+    if detect_format(ctx.loops_file) != "bedpe":
+        log.warning("--optimize needs a BEDPE loop file as the target: skipped.")
+        return None
+    k0 = cfg.n_lef or max(ctx.inputs.loops.n_sites // 2, 1)
+    log.info("Optimizer start: n_lef=%d f=%.3g b=%.3g, temperature %.3g -> %.3g; %d evaluations of %d MC steps", k0, cfg.folding_coeff, cfg.bind_coeff, cfg.t_init, cfg.t_final, cfg.opt_evals, cfg.opt_steps)
+    seed = (cfg.seed if cfg.seed is not None else 0) + 100_000                       # never the seed of the production run
+    obj = Objective(cfg, ctx.inputs, g, target_map(cfg, ctx.inputs, g, ctx.loops_file), cfg.opt_steps, seed)
+    with fun_bar("Optimizer", cfg.opt_evals + 4) as tick:                             # search evaluations + 3 candidate checks + the start check
+        res = optimize(obj, k0, cfg.folding_coeff, cfg.bind_coeff, g.n_beads, cfg.opt_evals, tick=tick,
+                       log=lambda k, n, loss, best: log.info("evaluation %d/%d: loss %.4f (best %.4f)", k, n, loss, best))
+    for d in (res.start, res.best):
+        d["t_init"], d["t_final"] = cfg.t_init * d["T"], cfg.t_final * d["T"]
+    log.step(verdict(res))
+    return res
+
+
+def verdict(res: OptResult) -> str:
+    """One plain sentence: did the search converge, and did it beat the start?"""
+    s, b = res.start, res.best
+    how = ("converged (the simplex shrank below the tolerance)" if res.converged
+           else f"did not converge (stopped at the budget of {res.evaluations} evaluations)")
+    same = (s["K"], s["f"], s["b"], s["T"]) == (b["K"], b["f"], b["b"], b["T"])
+    if same:
+        return f"Optimizer {how}; no candidate beat the starting parameters on the long check, so they are kept (it gave up)."
+    gain = 100 * (1 - b["loss"] / s["loss"]) if s["loss"] > 0 else 0.0
+    tail = "this is the optimum found" if res.converged else "just the best found so far, more evaluations (--opt-evals) may improve it"
+    return f"Optimizer {how}; loss {s['loss']:.3f} -> {b['loss']:.3f} ({gain:.0f}% lower): {tail}."
+
+
+def apply(ctx, res: OptResult) -> None:
+    """Put the chosen K (first family only), f, b and temperatures into the run configuration and rewrite the resolved ini."""
+    cfg, b = ctx.cfg, res.best
+    cfg.n_lef, cfg.folding_coeff, cfg.bind_coeff, cfg.t_init, cfg.t_final = b["K"], b["f"], b["b"], b["t_init"], b["t_final"]
+    for k in ("n_lef", "folding_coeff", "bind_coeff", "t_init", "t_final"):
+        cfg.source[k] = "optimizer"
+    write_ini(ctx.dirs.config, cfg.as_dict(), cfg.source)
+
+
+def describe(ctx):
+    res = ctx.optimization
+    apply(ctx, res)
+    s, b, tr = res.start, res.best, np.array(res.trace)
+    gain = 100 * (1 - b["loss"] / s["loss"]) if s["loss"] > 0 else 0.0
+    emit_table("Parameter optimizer (Nelder-Mead)", ["Parameter", "Start", "Optimized", "Unit"],
+               [["Number of LEFs K (first family only)", s["K"], b["K"], "LEFs"], ["Folding coefficient f", s["f"], b["f"], ""],
+                ["Binding coefficient b", s["b"], b["b"], ""], ["Initial temperature", s["t_init"], b["t_init"], "a.u."],
+                ["Final temperature", s["t_final"], b["t_final"], "a.u. (Annealing)"], ["Loss (long check run)", s["loss"], b["loss"], "0 = perfect"],
+                ["Evaluations", "", res.evaluations, "short MC runs"], ["Converged", "", "yes" if res.converged else "no (budget reached)", ""], ["Search time", "", res.seconds, "s"]],
+               "Loss = (1 - r of O/E maps) + decay mismatch + (1 - r of insulation scores) against the experimental loop map. "
+               + verdict(res) + " The Monte Carlo stage then runs all its steps with the optimized values.", "optimizer")
+    emit_table("Optimizer loss terms (long check run)", ["Term", "Start", "Optimized", "Meaning"],
+               [["1 - r of O/E maps", s["parts"][0], b["parts"][0], "pattern beyond the decay"], ["Decay mismatch", s["parts"][1], b["parts"][1], "shape of P(s)"],
+                ["1 - r of insulation", s["parts"][2], b["parts"][2], "domain boundaries"], ["Total", s["loss"], b["loss"], ""]],
+               "Each term is 0 for a perfect match.", "optimizer")
+    top = tr[np.argsort(tr[:, 1])[:8]]
+    hit = [r[1] for r in tr if (int(r[2]), r[3], r[4], r[5]) == (b["K"], b["f"], b["b"], b["T"])]
+    emit_table("Best optimizer evaluations", ["Evaluation", "K", "f", "b", "T scale", "Loss (short run)"],
+               [[int(np.flatnonzero((tr == r).all(axis=1))[0]) + 1, int(r[2]), r[3], r[4], r[5], r[1]] for r in top],
+               "Short-run losses are noisy: the chosen point scored %.3f in its search run and %.3f in the long check (the winner's curse)."
+               % (hit[0] if hit else float("nan"), b["loss"]), "optimizer")
+    REGISTRY.fact("Optimizer", ("converged" if res.converged else "not converged") + f": K={b['K']}, f={b['f']:.3g}, b={b['b']:.3g}, T x{b['T']:.2f}; loss {s['loss']:.3f} -> {b['loss']:.3f} ({gain:.0f}% lower)")
+    from viz import optimizer_figs
+    optimizer_figs.convergence_figure(res)
+    optimizer_figs.landscape_figure(res)
+
+
+if __name__ == "__main__":
+    from pipeline.runner import run_standalone
+    run_standalone(NAME)

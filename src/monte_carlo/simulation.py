@@ -4,6 +4,7 @@
 """
 import json
 import threading
+from contextlib import nullcontext
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -104,13 +105,14 @@ def _chain(cfg, p, n_tot, n_save, n_beads, seed, advance):
     return rec, acc, speeds
 
 
-def run_mc(cfg, inputs, geom) -> MCResult:
-    """Sample LEF configurations; returns snapshots every cfg.mc_step steps (replica 0, others in .replicas)."""
+def run_mc(cfg, inputs, geom, quiet: bool = False) -> MCResult:
+    """Sample LEF configurations; returns snapshots every cfg.mc_step steps (replica 0, others in .replicas). quiet = no progress bar or step messages."""
+    say = log.debug if quiet else log.step
     n_lef = cfg.n_lef or max(inputs.loops.n_sites // 2, 1)
     p = build_params(cfg, inputs, geom.n_beads, n_lef)
     n_tot, n_save, n_rep = n_lef + cfg.n_lef2, -(-cfg.n_steps // cfg.mc_step), max(int(cfg.replicas), 1)
     workers = min(n_threads(cfg), n_rep)
-    log.step("Sampling %d LEFs on %d beads: %d steps, %d snapshots, %d replica(s) on %d thread(s)",
+    say("Sampling %d LEFs on %d beads: %d steps, %d snapshots, %d replica(s) on %d thread(s)",
              n_tot, geom.n_beads, cfg.n_steps, n_save, n_rep, workers)
     log.info("fold_norm=%.3g bind_norm=%.3g", p.fold_norm, p.bind_norm)
     log.info("LEF motion: %s, %s speeds", "random-walk sliding" if cfg.lef_rw else "outward extrusion", cfg.lef_speed_dist)
@@ -118,7 +120,8 @@ def run_mc(cfg, inputs, geom) -> MCResult:
     lock = threading.Lock()
 
     log.info("Compiling the sampler on first use (cached afterwards)")
-    with Timer() as t, stage_bar("Monte Carlo sampling" + (f" x{n_rep}" if n_rep > 1 else ""), cfg.n_steps * n_rep) as bar:
+    bar_ctx = nullcontext(lambda k: None) if quiet else stage_bar("Monte Carlo sampling" + (f" x{n_rep}" if n_rep > 1 else ""), cfg.n_steps * n_rep)
+    with Timer() as t, bar_ctx as bar:
         def advance(k):
             with lock:
                 bar(k)

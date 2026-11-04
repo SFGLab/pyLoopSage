@@ -10,7 +10,7 @@ from common.runtime import apply_threads, create_run_dirs, OutputDirs
 from common.utils import Timer
 from knots import stage as stage_knots
 from logger import get_logger, print_banner, set_quiet, setup_logging
-from pipeline import stage_analysis, stage_mc, stage_md, stage_preproc, stage_report, stage_structure
+from pipeline import stage_analysis, stage_mc, stage_md, stage_optimize, stage_preproc, stage_report, stage_structure
 from preproc.loader import build_geometry
 from reporting.report import REGISTRY
 from settings.loader import load_config, write_ini
@@ -36,6 +36,7 @@ class RunContext:
     links: Any = None        # LinkResult (optional knots stage)
     report_path: Any = None
     _pool: Any = None
+    optimization: Any = None   # optimizer.nelder_mead.OptResult (with --optimize)
     mc_epi_profile: Any = None   # average epigenetic state per bead (MC compartment track), None when the epigenetic model is off
     val_source: str = ""     # which contact map was validated
 
@@ -58,10 +59,10 @@ class RunContext:
 # ---- Chain the stages; each one computes (or loads a cached result) and describes it ----
 
 log = get_logger(__name__)
-TITLES = {"preproc": "Reading the input and describing it", "mc": "Monte Carlo loop extrusion", "md": "3D molecular dynamics",
+TITLES = {"preproc": "Reading the input and describing it", "optimize": "Optimizing the number of LEFs, folding, binding and temperature (Nelder-Mead)", "mc": "Monte Carlo loop extrusion", "md": "3D molecular dynamics",
           "structure": "3D structure analysis and viewer", "analysis": "Validation against experiment and map features",
           "knots": "Linking numbers of loops", "report": "Writing report.html"}
-STAGES = [stage_preproc, stage_mc, stage_md, stage_structure, stage_analysis, stage_knots, stage_report]
+STAGES = [stage_preproc, stage_optimize, stage_mc, stage_md, stage_structure, stage_analysis, stage_knots, stage_report]
 
 
 def make_context(cfg, reuse_latest=False) -> RunContext:

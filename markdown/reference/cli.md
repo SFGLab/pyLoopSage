@@ -111,6 +111,14 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 |---|---|---|---|
 | `--knots` / `--no-knots` | true / false | `False` | Optional linking analysis of loops in 3D (slow; off by default) |
 
+### Parameter optimizer (--optimize)
+
+| Option | Type (unit) | Default | What it does |
+|---|---|---|---|
+| `--optimize` / `--no-optimize` | true / false | `False` | Before the run, fit the number of LEFs, folding and binding coefficients with Nelder-Mead on short Monte Carlo runs (n_lef of the first family, f, b and the temperature schedule), then run with them |
+| `--opt-evals` | integer (evaluations) | `60` | Maximum number of short Monte Carlo evaluations of the optimizer |
+| `--opt-steps` | integer (MC steps) | `20000` | Monte Carlo steps of one evaluation (the final candidate check runs 3x longer) |
+
 ## Output
 
 Every run gets its own folder, `results/<chrom>_<start>_<end>_<run>/`, with the report in `report/report.html`, the figures in `visualizations/`, the 3D structures in `structures/`, and the numerical results in `data/` (matrices in `data/metadata/` as `.npy` files).

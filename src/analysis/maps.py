@@ -60,7 +60,11 @@ def loop_map(res, n_beads: int, dot=1.0, domain=0.1, hop=0.4, depth=3, sigma=0.8
     - base: weak 1/(1+s) polymer background (s = bead separation) so that the P(s) decay is defined.
     Stripes are not added by hand; they appear when LEFs hold one anchor and the other leg moves.
     """
-    c = loop_counts(res, n_beads)
+    return loop_map_from_counts(loop_counts(res, n_beads), n_beads, dot, domain, hop, depth, sigma, base)
+
+
+def loop_map_from_counts(c, n_beads: int, dot=1.0, domain=0.1, hop=0.4, depth=3, sigma=0.8, base=0.3) -> np.ndarray:
+    """The same map from a symmetric (N, N) loop-count matrix (simulated or experimental)."""
     link, step = c.copy(), c.copy()
     near = np.eye(n_beads) + np.eye(n_beads, k=1) + np.eye(n_beads, k=-1)      # anchors on the same or adjacent beads communicate
     for _ in range(depth - 1):                                   # i-j-k chains of increasing length
