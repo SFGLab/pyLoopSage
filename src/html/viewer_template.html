@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{title}}</title>
+<style>
+:root{--ink:#111;--muted:#5a5a66;--accent:#6a3de8;--soft:#f1eefb;--line:#e6e4ec}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font-family:"Nunito","Quicksand",ui-rounded,"SF Pro Rounded","Segoe UI",system-ui,sans-serif}
+#wrap{display:flex;flex-direction:column;height:100vh;min-height:420px}
+#bar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;padding:10px 14px;background:#f7f6fa;border-bottom:1px solid var(--line);font-size:13px;font-weight:700}
+#bar label{display:flex;align-items:center;gap:6px;color:var(--muted)}
+button,select{font:inherit;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--accent);padding:5px 14px;cursor:pointer;font-weight:800}
+button:hover{background:var(--soft)}
+input[type=range]{accent-color:var(--accent)}
+#c{flex:1;width:100%;display:block;cursor:grab;touch-action:none}
+#c:active{cursor:grabbing}
+#info{position:absolute;right:12px;bottom:8px;color:var(--muted);font-size:12px;font-weight:700;pointer-events:none}
+</style></head>
+<body><div id="wrap">
+<div id="bar">
+ <button id="play">Pause</button>
+ <label>Frame <input id="seek" type="range" min="0" max="0" value="0" style="width:200px"></label>
+ <label>Speed <input id="speed" type="range" min="0.25" max="4" step="0.25" value="1"></label>
+ <label>Colouring <select id="mode"></select></label>
+ <label><input id="spin" type="checkbox" checked> auto-rotate</label>
+ <label>Representation <select id="rep"><option value="tube">Tube (linear)</option><option value="beads">Beads on a string</option></select></label>
+ <label>Thickness <input id="size" type="range" min="0.5" max="1.6" step="0.05" value="1"></label>
+</div>
+<canvas id="c"></canvas><div id="info"></div></div>
+<script id="meta" type="application/json">{{meta}}</script>
+<script>
+const D = JSON.parse(document.getElementById('meta').textContent);
+const bin = atob(D.data), bytes = new Uint8Array(bin.length);
+for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+const Q = new Int16Array(bytes.buffer), N = D.beads, T = D.frames, S = D.scale;
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let frame = 0, playing = true, yaw = 0.7, pitch = 0.35, zoom = 1, spin = true, speed = 1, sizeK = 1, rep = 'tube', mode = 'purple', acc = 0, last = 0;
+
+// geometry constants: largest radius, typical bond length
+let R = 0; for (let k = 0; k < Q.length; k += 3) R = Math.max(R, Math.hypot(Q[k], Q[k + 1], Q[k + 2]) * S);
+let bond = 0; for (let i = 1; i < N; i++) bond += Math.hypot(...[0, 1, 2].map(a => (Q[(i * 3) + a] - Q[((i - 1) * 3) + a]) * S)); bond /= (N - 1);
+
+const modes = {purple: 'Purple, depth cued', rainbow: 'Rainbow by bead index'};
+if (D.comp) modes.compartments = 'Compartments (B blue, A red)';
+const sel = document.getElementById('mode');
+for (const k in modes) sel.add(new Option(modes[k], k));
+const seek = document.getElementById('seek'); seek.max = T - 1;
+
+const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+const rgb = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+function baseColor(i, depth) {                       // depth: 0 far .. 1 near
+  if (mode === 'purple') return mix([226, 216, 255], [74, 31, 176], Math.pow(depth, 0.8));
+  let c;
+  if (mode === 'rainbow') {
+    c = hsl(280 * (1 - i / (N - 1)), 0.78, 0.55);
+  } else {
+    const s = Math.max(-1, Math.min(1, D.comp[i])), t = Math.abs(s);
+    c = mix([236, 232, 240], s < 0 ? [43, 98, 217] : [209, 48, 63], Math.pow(t, 0.7));
+  }
+  return mix([255, 255, 255], c, 0.62 + 0.38 * depth);
+}
+function hsl(h, s, l) {
+  const a = s * Math.min(l, 1 - l), f = n => { const k = (n + h / 30) % 12; return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); };
+  return [Math.round(255 * f(0)), Math.round(255 * f(8)), Math.round(255 * f(4))];
+}
+
+function resize() {
+  const r = window.devicePixelRatio || 1, b = cv.getBoundingClientRect();
+  cv.width = b.width * r; cv.height = b.height * r; ctx.setTransform(r, 0, 0, r, 0, 0);
+}
+window.addEventListener('resize', resize); resize();
+
+
+function drawBeads(P, order, zr, camD, px) {
+  for (const i of order) {
+    const z = P[i * 3 + 2], depth = zr(i), p = camD / (camD - z);
+    const r = 0.62 * bond * px * p * sizeK, x = P[i * 3], y = P[i * 3 + 1], c = baseColor(i, depth);
+    const g = ctx.createRadialGradient(x - 0.35 * r, y - 0.4 * r, 0.1 * r, x, y, r);
+    g.addColorStop(0, rgb(mix(c, [255, 255, 255], 0.75)));
+    g.addColorStop(0.35, rgb(c));
+    g.addColorStop(1, rgb(mix(c, [30, 10, 80], 0.38)));
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fillStyle = g; ctx.fill();
+  }
+}
+
+// continuous tube: Catmull-Rom curve through the beads, drawn as depth-sorted round-capped segments
+const SUB = 4;
+function drawTube(P, zr, camD, px) {
+  const at = i => Math.max(0, Math.min(N - 1, i)), segs = [];
+  const cr = (a, b, c, d, t) => 0.5 * (2 * b + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (3 * b - a - 3 * c + d) * t * t * t);
+  let prev = null;
+  for (let i = 0; i < N - 1; i++) for (let k = 0; k < SUB; k++) {
+    const t = k / SUB, q = [0, 1, 2].map(a => cr(P[at(i - 1) * 3 + a], P[i * 3 + a], P[at(i + 1) * 3 + a], P[at(i + 2) * 3 + a], t));
+    q.push(i + t, zr(i) * (1 - t) + zr(i + 1) * t);
+    if (prev) segs.push([prev, q]); prev = q;
+  }
+  const last = [P[(N - 1) * 3], P[(N - 1) * 3 + 1], P[(N - 1) * 3 + 2], N - 1, zr(N - 1)];
+  if (prev) segs.push([prev, last]);
+  segs.sort((a, b) => (a[0][2] + a[1][2]) - (b[0][2] + b[1][2]));
+  ctx.lineCap = 'round';
+  const line = (a, b, w, col) => { ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineWidth = w; ctx.strokeStyle = col; ctx.stroke(); };
+  for (const [a, b] of segs) {
+    const depth = (a[4] + b[4]) / 2, p = camD / (camD - (a[2] + b[2]) / 2), w = 0.8 * bond * px * p * sizeK;
+    const c = baseColor(Math.round((a[3] + b[3]) / 2), depth);
+    line(a, b, w, rgb(mix(c, [20, 8, 60], 0.45)));                     // dark rim
+    line(a, b, w * 0.72, rgb(c));                                      // body
+    line(a, b, w * 0.26, rgb(mix(c, [255, 255, 255], 0.7)));           // highlight
+  }
+}
+
+function draw() {
+  const w = cv.clientWidth, h = cv.clientHeight, cx = w / 2, cy = h / 2;
+  ctx.clearRect(0, 0, w, h);
+  const cY = Math.cos(yaw), sY = Math.sin(yaw), cP = Math.cos(pitch), sP = Math.sin(pitch);
+  const camD = 4.2 * R, px = 0.62 * Math.min(w, h) / R * zoom, base = frame * N * 3;
+  const P = new Float32Array(N * 3), order = Array.from({length: N}, (_, i) => i);
+  for (let i = 0; i < N; i++) {
+    const x = Q[base + i * 3] * S, y = Q[base + i * 3 + 1] * S, z = Q[base + i * 3 + 2] * S;
+    const x1 = cY * x + sY * z, z1 = -sY * x + cY * z, y2 = cP * y - sP * z1, z2 = sP * y + cP * z1;
+    const p = camD / (camD - z2);
+    P[i * 3] = cx + px * x1 * p; P[i * 3 + 1] = cy - px * y2 * p; P[i * 3 + 2] = z2;
+  }
+  order.sort((a, b) => P[a * 3 + 2] - P[b * 3 + 2]);
+  const zmin = P[order[0] * 3 + 2], zspan = (P[order[N - 1] * 3 + 2] - zmin) || 1;
+  const zr = i => (P[i * 3 + 2] - zmin) / zspan;
+  if (rep === 'tube') drawTube(P, zr, camD, px); else drawBeads(P, order, zr, camD, px);
+  document.getElementById('info').textContent = `frame ${frame + 1}/${T}  |  ${N} beads  |  drag to rotate, wheel to zoom`;
+}
+
+function tick(t) {
+  const dt = (t - last) / 1000; last = t;
+  if (playing) { acc += dt * D.fps * speed; while (acc >= 1) { frame = (frame + 1) % T; acc -= 1; } seek.value = frame; }
+  if (spin && !drag) yaw += dt * 0.35;
+  draw(); requestAnimationFrame(tick);
+}
+let drag = false, lx = 0, ly = 0;
+cv.addEventListener('pointerdown', e => { drag = true; lx = e.clientX; ly = e.clientY; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointerup', () => drag = false);
+cv.addEventListener('pointermove', e => { if (!drag) return; yaw += (e.clientX - lx) * 0.01; pitch = Math.max(-1.5, Math.min(1.5, pitch + (e.clientY - ly) * 0.01)); lx = e.clientX; ly = e.clientY; });
+cv.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(0.3, Math.min(4, zoom * (e.deltaY < 0 ? 1.08 : 0.92))); }, {passive: false});
+document.getElementById('play').onclick = e => { playing = !playing; e.target.textContent = playing ? 'Pause' : 'Play'; };
+seek.oninput = () => { frame = +seek.value; };
+document.getElementById('speed').oninput = e => speed = +e.target.value;
+document.getElementById('size').oninput = e => sizeK = +e.target.value;
+document.getElementById('rep').onchange = e => rep = e.target.value;
+document.getElementById('spin').onchange = e => spin = e.target.checked;
+sel.onchange = () => mode = sel.value;
+requestAnimationFrame(tick);
+</script></body></html>

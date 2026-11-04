@@ -1,0 +1,62 @@
+/* LoopSage docs: black, purple and white; serious and quiet */
+:root {
+  --ls-violet: #6a3de8;
+  --ls-deep: #3d1fa8;
+  --ls-ink: #111114;
+  --ls-soft: #f4f1fc;
+  --ls-line: #e3ddf5;
+}
+
+/* page and text */
+.md-typeset { color: var(--ls-ink); font-size: 0.78rem; line-height: 1.7; }
+.md-typeset h1 { color: var(--ls-ink); font-weight: 700; letter-spacing: -0.01em; }
+.md-typeset h2 { color: var(--ls-ink); font-weight: 650; border-bottom: 2px solid var(--ls-line); padding-bottom: 0.25rem; }
+.md-typeset h3 { color: var(--ls-deep); font-weight: 600; }
+.md-typeset a { color: var(--ls-violet); }
+.md-typeset a:hover { color: var(--ls-deep); }
+
+/* header: white bar with the logo, thin violet rule; tabs in black */
+.md-header { background: #fff; color: var(--ls-ink); box-shadow: none; border-bottom: 3px solid var(--ls-violet); }
+.md-header__button.md-logo img { height: 1.9rem; width: auto; }
+.md-header__title, .md-header .md-icon { color: var(--ls-ink); }
+.md-search__input, .md-search__input::placeholder { color: var(--ls-ink); }
+.md-search__form { background: var(--ls-soft); }
+.md-tabs { background: var(--ls-ink); color: #fff; }
+.md-tabs__link { color: #cfc6ee; opacity: 1; }
+.md-tabs__link--active, .md-tabs__link:hover { color: #fff; box-shadow: inset 0 -3px 0 var(--ls-violet); }
+
+/* side navigation */
+.md-nav__link--active, .md-nav__link:hover { color: var(--ls-violet); }
+.md-nav__title { color: var(--ls-ink); }
+
+/* tables: black header row, violet rule, soft stripes */
+.md-typeset table:not([class]) { border: 1px solid var(--ls-line); border-radius: 4px; font-size: 0.72rem; box-shadow: none; }
+.md-typeset table:not([class]) th { background: var(--ls-ink); color: #fff; font-weight: 600; border-bottom: 3px solid var(--ls-violet); }
+.md-typeset table:not([class]) tbody tr:nth-child(even) { background: var(--ls-soft); }
+.md-typeset table:not([class]) td { border-top: 1px solid var(--ls-line); vertical-align: top; }
+
+/* table cells keep option names on one line */
+.md-typeset table:not([class]) td code { white-space: nowrap; }
+
+/* code: dark blocks, violet inline code */
+.md-typeset pre > code { background: #0d0626; color: #ece6fb; border-radius: 4px; }
+.md-typeset code { background: var(--ls-soft); color: var(--ls-deep); border-radius: 3px; }
+.md-typeset pre > code span { color: #ece6fb !important; }                      /* readable on the dark block */
+.md-typeset pre > code .c1, .md-typeset pre > code .cm, .md-typeset pre > code .ch, .md-typeset pre > code .c { color: #9a8fc4 !important; }
+.md-typeset pre > code .m, .md-typeset pre > code .mi, .md-typeset pre > code .mf { color: #ffd45e !important; }
+.md-typeset pre > code .s, .md-typeset pre > code .s1, .md-typeset pre > code .s2 { color: #9be3c4 !important; }
+.md-typeset pre > code .k, .md-typeset pre > code .nb, .md-typeset pre > code .nv, .md-typeset pre > code .nt, .md-typeset pre > code .na { color: #b9a3f2 !important; }
+
+/* notes */
+.md-typeset .admonition, .md-typeset details { border: 1px solid var(--ls-line); border-left: 4px solid var(--ls-violet); border-radius: 4px; box-shadow: none; }
+.md-typeset .admonition-title, .md-typeset summary { background: var(--ls-soft); }
+
+.md-typeset .admonition.tip, .md-typeset .admonition.note, .md-typeset .admonition.info { border-left-color: var(--ls-violet); }
+.md-typeset .tip > .admonition-title, .md-typeset .note > .admonition-title, .md-typeset .info > .admonition-title { background: var(--ls-soft); }
+.md-typeset .tip > .admonition-title::before, .md-typeset .note > .admonition-title::before, .md-typeset .info > .admonition-title::before { background-color: var(--ls-violet); }
+.md-header__title { display: none; }
+.md-header__inner .md-search { margin-left: auto; }                               /* search bar on the right */                                              /* the logo already carries the name */
+
+/* footer */
+.md-footer, .md-footer-meta { background: var(--ls-ink); }
+img[alt^="GPL"], img[src*="shields.io"] { margin: 2px; vertical-align: middle; }

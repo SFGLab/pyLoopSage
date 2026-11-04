@@ -1,0 +1,57 @@
+site_name: LoopSage
+site_description: Energy-based stochastic modelling of chromatin loop extrusion and 3D genome structure
+site_url: https://sfglab.github.io/pyLoopSage/
+repo_url: https://github.com/SFGLab/pyLoopSage
+repo_name: SFGLab/pyLoopSage
+docs_dir: markdown
+exclude_docs: |
+  README.md
+
+theme:
+  name: material
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  palette:
+    scheme: default
+    primary: custom
+    accent: custom
+  font:
+    text: Inter
+    code: JetBrains Mono
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - content.code.copy
+    - search.highlight
+
+extra_css:
+  - stylesheets/loopsage.css
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+
+nav:
+  - Intro:
+      - Home: intro/index.md
+      - Installation: intro/installation.md
+  - Theory:
+      - theory/index.md
+  - Implementation:
+      - implementation/index.md
+  - Reference:
+      - Overview: reference/index.md
+      - Command-line interface: reference/cli.md
+      - Config files: reference/config.md
+  - Acknowledgments:
+      - acknowledgments/index.md

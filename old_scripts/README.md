@@ -1,0 +1,377 @@
+# pyLoopSage
+Updated version of the stochastic loop extrusion model: LoopSage with capability to run incredibly fast, parallelized across CPU cores. This package is even more user-friendly and it can be installed via PyPI.
+
+![screenshot](https://github.com/user-attachments/assets/7c338772-9fd5-4b57-8965-65d346b7f11c)
+
+## New features
+
+- More user-friendly environment.
+- Installable with `pip install pyLoopSage`.
+- Parralelization of the stochastic simulation across multiple CPUs.
+- Capability of modelling the whole chromosome.
+- Visualization functions.
+- Capability to run form terminal with a simple command `loopsage -c config.ini`.
+
+## The model
+
+### Stochastic Simulation
+Before simulating 3D structures, a stochastic simulation takes place that it purely applies in the locations of cohesins. The purpose of it is to create realistic ensemble of cohesin locations, and recontruct their trajectories. Otherwise, a molecular simulation alone, could not have enough variability to reconstruct the experimental heatmaps with the same fixed positions. Therefore, the stochastic simulation can be seen as a generator of cohesin possible configurations.
+
+We have a polymer chain with $N_{\text{beads}}$ number of monomers. In general we can scale by deault the granularity of the simulation so as to give reasonable results. Therefore if we have a `region` counted in genomic coordinates, we can assume that `N_beads=(region[1]-region[0])//2000`.
+
+Let's assume that each cohesin $i$ can be represented of two coordinates $(m_{i},n_{i})$ we allow three moves in our simulation:
+
+* Slide both locations randomly (linearly or as 1D random walk) or
+* Rebind somewhere else.
+
+In general a good working assumption is that the number of cohesins (or loop extrusion factors LEFs) is $N_{\text{lef}}=2N_{\text{CTCF}}$.
+
+The main idea of the algorithm is to ensemble loop extrusion from a Boltzmann probability distribution, with Hamiltonian,
+
+$$E = c_{\text{fold}}\sum_{i=1}^{N_{\text{coh}}}\log(n_i-m_i)+c_{\text{cross}}\sum_{i,j}K(m_i,n_i;m_j,n_j)+c_{\text{bind}}\sum_{i=1}^{N_{\text{coh}}}\left(L(m_i)+R(n_i)\right)$$
+
+The first term corresponds to the folding of chromatin, and the second term is a penalty for the appearance of crosss. Therefore, we have the function,
+$K(m_{i},n_{i};m_{j},n_{j})$ which takes the value 1 when $m_{i} < m_{j} < n_{i} < n_{j}$ or $m_{i}=m_{j}$ or $m_{i}=n_{j}$.
+
+These $L(\cdot), R(\cdot)$ functions are two functions that define the binding potential and they are orientation specific - so they are different for left and right position of cohesin (because CTCF motifs are orientation specific), therefore when we have a gap in these functions, it means presence of CTCF. These two functions are derived from data with CTCF binning and by running the script for probabilistic orientation. Moreover, by $N_{(\cdot)}$ we symbolize the normalization constants for each factor,
+
+$$c_{\text{fold}}=-\dfrac{N_{\text{beads}}f}{N_{\text{lef}}\log(N_{\text{beads}}/N_{\text{lef}})},\quad c_{\text{bind}}=-\dfrac{2N_{\text{beads}}b}{N_{CTCF}},\quad c_{\text{cross}}=\kappa \times 10^4.$$
+
+The parameters are defined in such a way that when $f=b=\kappa=1$, the three terms of the stochastic energy are balanced. To clarrify, this parametrization is slightly different than this of the original paper. We multiply with $N_{\text{beads}}$, so as to keep the input parameters $f,b,\kappa$ simpler close to 1. Therefore, a value $f=0.1$ leads to unfolded structures, and a value $f=2$ it leads to very fast propagating long loops. 
+
+And the energy difference can be expressed as the energy difference of each term,
+
+$$\Delta E = \Delta E_{\text{fold}}+\Delta E_{\text{cross}}+\Delta E_{\text{bind}}.$$
+
+In this manner we accept a move in two cases:
+
+* If $\Delta E<0$ or,
+* if $\Delta E>0$ with probability $e^{-\Delta E/kT}$.
+
+And of course, the result - the distribution of loops in equilibrium -  depends on temperature of Boltzmann distribution $T$.
+
+#### Modelling with two families of cohesins
+
+In this version of LoopSage it is possible to have two families of cohesins (LEFs) as well, with different folding coefficients (which is equivalent to different cohesin speeds). Therefore, we could write the energy of folding,
+
+$$E_{\text{fold}} = c_{\text{fold,1}}\sum_{i=1}^{N_{\text{coh,1}}}\log(n_i-m_i)+c_{\text{fold,2}}\sum_{i=N_{\text{coh,1}}}^{N_{\text{coh,1}}+N_{\text{coh},2}}\log(n_i-m_i)$$
+
+The coefficient of the first family of LEFs is set to one by default $f_1 = 1$, whereas the other one is set to zero $f_2 = 0$. Usually a small amount of fast cohesins with $f_2>f_1$ can reconstruct more long-range loops, because the cohesins have time to extrude. Contrary, leads in very stable small loops.
+
+### Molecular Simulation
+
+Let us consider a system comprising $N_{\text{lef}}$ LEFs, as well as two matrices, $M$ and $N$, both of which possess dimensions $N_{\text{lef}}\times N_{\text{steps}}$. These matrices represent the respective constraints associated with each LEF. Consequently, we define a time-dependent force field as follows:
+
+$$E(t) = E_{\text{bond}}+E_{\text{angle}}+E_{\text{rep}}+E_{\text{loop}}(t)$$
+
+where,
+
+- $E_{\text{bond}}$ corresponds to a typical harmonic bond force field that connects adjacent beads $i$ and $i+1$, with an equilibrium length of $x_{0}=0.1 \text{nm}$ and a Hook constant assumed to be $k=3\times 10^5 \text{kJ/(mol}\cdot \text{nm}^2)$.
+- $E_{\text{angle}}$ a harmonic angle force that connects beads $i-1,i,i+1$, and has equilibrium angle $\theta_{0}=\pi$ and Hook constant $200  kJ/(mol\cdot nm^2)$. The strength of the angle force, can be tuned by the user.
+- $E_{\text{rep}}$ which is a repelling forcefield of the form: $$E_{\text{rep}} = \epsilon\left(\frac{\sigma_{1}+\sigma_{2}}{r}\right)^{\alpha}$$ where $\epsilon=10 kJ/mol$ and $\sigma_{1}=\sigma_{2}=0.05 nm$. The power $\alpha$ is a parameter of the simulation, but it is set as $\alpha=3$ by default.
+- $E_{\text{loop}}(t)$ represents a time-dependent LE force. This force reads the matrices $M$ and $N$, applying a distinct set of constraints $C_{t_i}=(m_j(t_i),n_j(t_i))$ at each time step $t_i$. Each LEF $j$ is subjected to specific constraints $m_{j,t_i}$ and $n_{j,t_i}$. The functional form of this force is also a harmonic bond force, with parameters $x_{0}=0.1 \text{nm}$ and a Hook constant assumed to be $k=5\times 10^4 \text{kJ/(mol}\cdot \text{nm}^2)$. The strength and equillibrium distance of the looping bonds can also be set in different way, if the user wishes.
+  
+For the implementation of this model in python, we used OpenMM and CUDA acceleration. To minimize the energy Langevin dynamics were used, in temperature of $T_{L}=310 K$, friction coefficient $\gamma = 0.05  psec^{-1}$ and time step $t_{s}=100 fsec$. Note that the temperature of molecular dynamics simulation is independent from the temperature of stochastic simulation and they represent different physical realities. 
+
+In general the user can run simulation in two different ways:
+
+1. **Energy minimization (EM)**: It means that for each sample of cohesin positions $C_{t_i}=(m_j(t_i),n_j(t_i))$ start from a different initial structure (usually 3D random walk) and we apply the forcefield. For each structure we start from a different initial condition. In general, it is suggested to run the model in this way because it is faster, less prone to errors and the structures are not correlated to each other.
+2. **Molecular Dynamics (MD)**: In this case we have only one initial structure, we minimize the energy according to the forcefield only once and then we run a molecular dynamics simulation over time. This creates a continuous trajectory of structures, and it is cool for visualization pruposes. It is also biophysically more correct, in the sense that loop extrusion should be time-dependent, and the structure at time $t_i$ has to me correlated with structures at time $t_{i\pm1}$. It is a little bit more prone to error, and you may need to change the simulation frequence and step in case of instability (smaller frequency and more steps to stabilize it).
+
+## Installation
+
+Can be easily installed with `pip install pyLoopSage`. To have CUDA acceleration, it is needed to have cuda-toolkit installed in case that you use nvidia drivers (otherwise you can use OpenCL or parallelization across CPU cores).
+
+## 🐳 Running LoopSage with Docker
+
+To use LoopSage in a fully containerized and reproducible way, you can build and run it using Docker. This is a very efficient way when you want to use CUDA.
+
+### Step 1: Build the Docker Image
+
+Clone the repository and build the image:
+
+```bash
+docker build -t pyloopsage-cuda .
+```
+
+The `Dockerfile` can be found in the GitHub repo of pyLoopSage.
+
+### Step 2: Run the Simulation
+
+Use the following command to run your simulation:
+
+```bash
+docker run --rm -it --gpus all \
+  -v "$PWD/config.ini:/app/config.ini:ro" \
+  -v "$PWD/tmp:/app/output" \
+  -v "$HOME/Data:/home/blackpianocat/Data:ro" \
+  pyloopsage-cuda \
+  python -m loopsage.run -c /app/config.ini
+```
+
+**What this does:**
+
+* `--rm`: Automatically removes the container after it finishes.
+* `--gpus all`: It detects the gpus of the system.
+* `-it`: Runs with an interactive terminal.
+* `-v "$PWD/config.ini:/app/config.ini:ro"`: Mounts your local `config.ini` as read-only inside the container.
+* `-v "$PWD/tmp:/app/output"`: Maps the `tmp/` directory for outputs.
+* `-v "$HOME/Data:/home/blackpianocat/Data:ro"`: Mounts your full data directory so LoopSage can access input files.
+* The final command runs LoopSage with your config file.
+
+You do **not** need to manually stop or clean up anything—the container is temporary and self-destructs after it completes. The image (`pyloopsage-cuda`) remains available on your system and can be deleted anytime using:
+
+```bash
+docker rmi pyloopsage-cuda
+docker system prune -a
+```
+
+**Note:** Install `nvidia-container-toolkit` in your system if you want to use the container with CUDA: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+
+## How to use?
+
+### Python Implementation
+
+The main script is `stochastic_simulation.py`. However, the implementation of the code is very easy and it can be described in the following lines,
+
+```python
+# Definition of Monte Carlo parameters
+import loopsage.stochastic_simulation as lps
+
+N_steps, MC_step, burnin, T, T_min = int(4e4), int(5e2), 1000, 2.5, 1.0
+mode = 'Metropolis'
+
+# Simulation Strengths
+f, b, kappa = 1.0, 1.0, 1.0
+
+# Definition of region
+region, chrom = [15550000,16850000], 'chr6'
+
+# Definition of data
+output_name='../HiChIP_Annealing_T1_MD_region'
+interaction_file = '/home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe'
+
+sim = lps.StochasticSimulation(region,chrom,interaction_file,out_dir=output_name,N_beads=1000)
+Es, Ms, Ns, Bs, Ks, Fs, ufs = sim.run_energy_minimization(N_steps,MC_step,burnin,T,T_min,mode=mode,viz=True,save=True)
+sim.run_EM('CUDA')
+```
+
+Behind the scenes, the class still walks through the same steps as before: it sets the main simulation parameters (`N_beads, N_coh, kappa, f, b`, or sensible defaults if you'd rather not specify them, though it's worth double-checking they suit your system), along with the Monte Carlo parameters (`N_steps, MC_step, burnin, T`), before initializing `LoopSage()`. Calling `sim.run_energy_minimization()` then launches the stochastic Monte Carlo simulation, which yields a set of cohesin constraints (`Ms, Ns`) — generated in one of two modes, `Annealing` or `Metropolis`. These constraints are passed on to the molecular simulation stage, where either `EM_LE()` or `MD_LE()` turns them into a trajectory of 3D structures and an average contact heatmap. `MD_LE()` goes a step further and produces an actual trajectory together with a `.dcd` video of the simulation evolving over time, though it's memory-hungry — a bond has to be defined at every timestep, which can make it impractical for larger systems. For those cases, `EM_LE()` is the better choice, since it achieves the same goal without the heavy memory footprint.
+
+#### Input data
+Firstly, we need to define the input files from which LoopSage would take the information to construct the potential. We define also the specific region that we would like to model. Therefore, in the code script above we define an `interaction_file` from which information about the CTCF loops or CTCF binding sites is imported. The format is auto-detected from the file extension, and three alternatives are supported: `.bedpe`, `.bed`, and `.narrowPeak`.
+
+1. `.bedpe` (paired loop anchors)
+
+This is the richest format, since each line already describes a candidate loop between two anchors. The `.bedpe` file must be in the following format:
+
+```
+chr1	903917	906857	chr1	937535	939471	16	3.2197903072213415e-05	0.9431392038374097
+chr1	979970	987923	chr1	1000339	1005916	56	0.00010385804708107556	0.9755733944997329
+chr1	980444	982098	chr1	1063024	1065328	12	0.15405319074060866	0.999801529750033
+chr1	981076	985322	chr1	1030933	1034105	36	9.916593137693526e-05	0.01617512105347667
+chr1	982171	985182	chr1	990837	995510	27	2.7536240913152036e-05	0.5549511180231224
+chr1	982867	987410	chr1	1061124	1066833	71	1.105408615726611e-05	0.9995462969421808
+chr1	983923	985322	chr1	1017610	1019841	11	1.7716275555648395e-06	0.10890923034907056
+chr1	984250	986141	chr1	1013038	1015474	14	1.7716282101935205e-06	0.025665007111095667
+chr1	990949	994698	chr1	1001076	1003483	34	0.5386388489931403	0.9942742844900859
+chr1	991375	993240	chr1	1062647	1064919	15	1.0	0.9997541297643132
+```
+
+where the last two columns represent the probabilities for the left and right anchor respectively to be tandem right. If the probability is negative it means that no CTCF motif was detected in this anchor.
+
+*Alternativelly, it is possible to import a `.bedpe` file without the last two columns (CTCF orientation). In this case, CTCF would act as an orientation independent barrier. This might affect slightly the results, but it is an easier option, if you do not want to run a CTCF motif finding script.*
+
+2. `.bed` (single CTCF sites, e.g. ChIP-seq intervals)
+
+If you only have unpaired CTCF binding intervals rather than loop calls, you can pass a `.bed` file instead. LoopSage will still build orientation-aware `L`/`R` binding vectors from it, but since there is no anchor-pairing information in a `.bed` file, no loop-adjacency matrix (`J`) can be constructed - CTCF sites contribute individually rather than as loop anchors. Expected columns: `chrom, start, end, name, score, strand`, optionally followed by a probability column (probability the site's best motif hit is reverse-oriented) and an orientation call (`>`, `<`, or `.`).
+
+3. `.narrowPeak` (single CTCF peaks, e.g. MACS2/HiChIP peaks)
+
+Similarly, a `.narrowPeak` file of individual peaks can be used in place of a `.bedpe`/`.bed` file, with the same caveat: no `J` loop matrix is built, only `L`/`R`. Expected columns: `chrom, start, end, name, score`, optionally followed by a forward-orientation probability column and an orientation call.
+
+#### Extracting CTCF motif orientation
+
+To generate the orientation/probability columns for any of the three formats above (`.bedpe`, `.bed`, or `.narrowPeak`), use the motif-finding scripts from [BlackPianoCat/motif_finder](https://github.com/BlackPianoCat/motif_finder):
+
+- `motif_finder_bedpe.py` for `.bedpe` loop files
+- `bed_motif_finder.py` for `.bed` interval files
+- `motif_finder_peaks.py` for `.narrowPeak` peak files
+
+Run the appropriate script with `--prob` to get the probability columns shown above (e.g. `python motif_finder_bedpe.py -i loops.bedpe -g genome.fa -m CTCF.pfm -o loops_with_motif.bedpe --prob`). See that repo's README for full usage details on each script.
+
+You also need to download the reference genome from: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/GRCh38_reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa
+
+### Running LoopSage from command-line
+
+Running LoopSage from the command line comes down to a single command. 
+
+```bash
+loopsage -c config.ini
+```
+
+This command runs the model using the parameters specified in a `config.ini` file. Here's an example of what that file might look like:
+
+```txt
+[Main]
+
+; Input Data and Information
+INTERACTION_FILE = /home/skorsak/Data/HiChIP/Maps/hg00731_smc1_maps_2.bedpe
+REGION_START = 15550000
+REGION_END = 16850000
+CHROM = chr6
+OUT_PATH = ../HiChIP_Annealing_T15_MD_region
+
+; Simulation Parameters
+N_BEADS = 1000
+N_STEPS = 40000
+MC_STEP = 500
+BURNIN = 1000
+T_INIT = 1.5
+T_FINAL = 0.01
+METHOD = Metropolis
+
+; Molecular Dynamics
+PLATFORM = CUDA
+INITIAL_STRUCTURE_TYPE = rw
+SIMULATION_TYPE = EM 
+TOLERANCE = 1.0
+```
+
+### Visualization with PyVista
+
+There are many tools for visualization of polymer structures. A very good one is UCSF chimera: https://www.cgl.ucsf.edu/chimera/. Usually these visualization tools work well for proteins, but we can use them for chromatin as well.
+
+LoopSage offers its own visualization which relies in the `pyvista` python library. To visualize a structure, you can run some very simple commands, which call LoopSage functions,
+
+```python
+import loopsage.vizualization_tools as vz
+import loopsage.utils as uts
+
+V = uts.get_coordinates_cif('/home/skorsak/Projects/mine/LoopSage/HiChIP_Annealing_T15_EM_region/ensemble/EMLE_1.cif')
+vz.viz_structure(V)
+```
+
+The output should be something like that,
+
+![image](https://github.com/user-attachments/assets/457d2b1f-e037-4ff1-8cec-c9eef7de789d)
+
+
+In case that you would like to create a continuous video from the enseble of structures, you can use the following command, which would generate an interactive video in gif format which would show how the structure changes in 3D. The command includes quaternion Kabsch aligment as well.
+
+```python
+import loopsage.vizualization_tools as vz
+
+vz.interactive_plot('/home/skorsak/Projects/mine/LoopSage/HiChIP_Annealing_T15_EM_region/ensemble')
+```
+
+### Output Files
+In the output files, simulation produces one folder with 4 subfolders. In subfolder `plots`, you can find plots that are the diagnostics of the algorithm. One of the most basic results you should see is the trajectories of cohesins (LEFs). this diagram should look like that,
+
+![coh_trajectories](https://github.com/SFGLab/LoopSage/assets/49608786/f73ffd2b-8359-4c6d-958b-9a770d4834ba)
+
+In this diagram, each LEF is represented by a different colour. In case of Simulated Annealing, LEFs should shape shorter loops in the first simulation steps, since they have higher kinetic energy due to the high temperature, and very stable large loops in the final steps if the final temperature $T_f$ is low enough. Horizontal lines represent the presence of CTCF points. In case of Metropolis, the distribution of LEFs should look invariant in respect to computational time,
+
+![coh_trajectories](https://github.com/SFGLab/LoopSage/assets/49608786/b48e2383-2509-4c68-a726-91a5e61aabf3)
+
+Good cohesin trajectory diagrams should be like the ones previously shown, which means that we do not want to see many unoccupied (white) regions, but we also do not like to see static loops. If the loops are static then it is better to choose higher temperature, or bigger number of LEFs. If the loops are too small, maybe it is better to choose smaller temperature.
+
+Now, to reassure that our algorithm works well we need to observe some fundamental diagnostics of Monte Carlo algorithms. Some other important diagnostics can be seen in the following picture,
+
+![github_diagnostics](https://github.com/SFGLab/LoopSage/assets/49608786/b90e2355-be84-47c4-906f-5a2a62497b26)
+
+In graph A, we can see the plot of the energy as a function of simulation time. In Metropolis after some steps, the simulation should reach equillibrium after the defined burnin period (blue vertical line). In case of Simulated Annealing, the energy should decrease as function of time because the temperature decreases, and thus the energy should not be conserved. Autocorrelations (B), show us if the thermodyncamic ensembles that we obtained are autocorrelated or not. The Monte Carlo step (sampling frequency) should be big enough so as to have small autocorrelations (<0.5). The averaged heatmap (C), shows the simulated heatmap, after averaging inversed all-versus-all distances of the region of interest. Finally, (D) shows the Pearson correlation between projected 1D signal of heatmap of experimental and simulated data.
+
+In the output folder there are another three subfolders: 
+* `ensembles` has the ensembles of 3D structures in `.cif` format (it can open with vizualization software Chimera: https://www.cgl.ucsf.edu/chimera/) or `pyvista`,
+* `heatmaps` with the inversed all-versus-all distance heatmap of each one of these structures.
+* `other` here are some numpy arrays and some computed statistics. Numpy arrays like `Ms` and `Ns` have the degrees of freedoms of LEFs over time, then `Fs, Ks, Es` they have folding, corssing energy and total energy over time. `Ts` is the temperature over time. And finally in `other.txt` you can see the statistics of the simulation and the input parameters. In `correlations.txt` you can find a file with Pearson, Spearmann and Kendau tau correlations between estimated and experimental data. We provide an optimistic simulations where zeros of the signal are taken into account, and a pessimistic one where the zeros are not taken into account.
+
+An example, illustrated with Chimera software, simulated trajectory of structures after running Simulated Annealing and molecular dynamics.
+
+![siman_traj_GitHub](https://github.com/SFGLab/LoopSage/assets/49608786/c6626641-f709-46e0-b01b-42566b1829ef)
+
+### Long-table of LoopSage arguments
+
+#### General Settings
+| Argument | Description | Type | Default |
+|---|---|---|---|
+| PLATFORM | Simulation platform: CPU, CUDA, or OpenCL | str | CPU |
+| DEVICE | CUDA/OpenCL device index (from 0) | str | None |
+| OUT_PATH | Output folder path | str | ../results |
+| SAVE_MDT | Save simulation metadata | bool | True |
+
+#### Input Data
+| Argument | Description | Type | Default |
+|---|---|---|---|
+| INTERACTION_FILE | Loop/peak file (.bedpe, .bed, or .narrowPeak). Required. | str | None |
+| LEF_TRACK_FILE | bigWig track biasing LEF loading toward enriched regions | str | None |
+| BW_FILES | bigWig file(s) acting as extrusion barriers | list | None |
+| SMOOTHING_INPUT | Smooth noisy/sparse loop-peak signal before use | bool | False |
+| COMP_BW_FILE | bigWig track for A/B compartment bias | str | None |
+| COMP_BED_FILE | BED file for A/B compartment bias (alt. to COMP_BW_FILE) | str | None |
+| DATA_LOSS_MODE | 0 = 1D binding potentials (L/R); 1 = 2D loss interpolated from input loops | int | 0 |
+| CONTRASTIVE_BINDING | If True, penalizes loop-free regions so extrusion is confined within TADs; if False, extrusion is uniform everywhere | bool | False |
+| REGION_START | Region start coordinate | int | None |
+| REGION_END | Region end coordinate | int | None |
+| CHROM | Chromosome of the modeled region | str | None |
+| GENOME | Reference genome for chromosome sizes (e.g. hg38) | str | hg38 |
+| FLOAT_LIST | Extra custom numeric settings | list | None |
+| STRING_LIST | Extra custom text settings | list | None |
+
+#### Stochastic Simulation Parameters
+| Argument | Description | Type | Default |
+|---|---|---|---|
+| N_BEADS | Number of simulation beads | int | None |
+| N_STEPS | Monte Carlo steps | int | 40000 |
+| MC_STEP | Sampling frequency (reduces autocorrelation) | int | 200 |
+| BURNIN | Steps discarded before equilibrium | int | 1000 |
+| T_INIT | Initial temperature | float | 2.0 |
+| T_FINAL | Final temperature | float | 1.0 |
+| METHOD | 'Metropolis' or 'Annealing' | str | 'Annealing' |
+| LEF_RW | Cohesins slide as random walk (vs. one direction) | bool | True |
+| LEF_DRIFT | LEFs bounce back off each other | bool | False |
+| N_LEF | Number of loop extrusion factors | int | None |
+| N_LEF2 | Number of second-family LEFs | int | 0 |
+| CROSS_LOOP | Penalize mi<mj<ni<nj crossings (vs. only mj=ni); pair with LEF_DRIFT if False | bool | True |
+| BETWEEN_FAMILIES_PENALTY | Penalize crossings between LEF families | bool | True |
+
+#### Energy Coefficients
+| Argument Name          | Description                                                                                                     | Type        | Default Value       |
+|------------------------|-----------------------------------------------------------------------------------------------------------------|------------|---------------------|
+| FOLDING_COEFF         | Folding coefficient.                                                                                           | float      | 1.0                 |
+| FOLDING_COEFF2        | Folding coefficient for the second family of LEFs.                                                            | float      | 0.0                 |
+| CROSS_COEFF          | LEF crossing coefficient.                                                                                      | float      | 1.0                 |
+| BIND_COEFF           | CTCF binding coefficient.                                                                                      | float      | 1.0                 |
+| BW_STRENGTHS          | List of strengths of the energy (floats) corresponding to each BW file. This equivalent to the `r` parameter in the LoopSage paper.                                                              | list       | None                  |
+
+#### Molecular Dynamics Simulation
+| Argument Name          | Description                                                                                                     | Type        | Default Value       |
+|------------------------|-----------------------------------------------------------------------------------------------------------------|------------|---------------------|
+| INITIAL_STRUCTURE_TYPE | Choose from: rw, confined_rw, self_avoiding_rw, helix, circle, spiral, sphere.                                | str        | rw                |
+| INTEGRATOR_STEP       | Step of the integrator.                                                                                        | Quantity   | 100 femtosecond   |
+| FORCEFIELD_PATH       | Path to XML file with forcefield.                                                                             | str        | default_xml_path    |
+| ANGLE_FF_STRENGTH     | Angle force strength.                                                                                          | float      | 200.0               |
+| LE_FF_LENGTH         | Equilibrium distance of loop forces.                                                                          | float      | 0.1                 |
+| LE_FF_STRENGTH       | Interaction Strength of loop forces.                                                                          | float      | 50000.0             |
+| CONTINUOUS_TOP       | True if the topological constraints are applied continuously during the simulation.                           | bool       | False               |
+| EV_P                 | Probability that excluded volume is disabled. Enable it only in case of topoisomerase activity simulation.    | float      | 0.0                 |
+| EV_FF_STRENGTH       | Excluded-volume strength.                                                                                     | float      | 100.0               |
+| EV_FF_POWER          | Excluded-volume power.                                                                                        | float      | 3.0                 |
+| FRICTION             | Friction coefficient of the Langevin integrator.                                                              | float      | 0.1              |
+| TOLERANCE            | Stopping condition for energy minimization.     | float      | 0.001              |
+| SIM_TEMP             | Temperature of the 3D simulation (EM or MD).                                                                  | Quantity   | 310 kelvin        |
+| SIM_STEP             | Amount of simulation steps for loop force adjustments.                                                        | int        | 2000                |
+
+#### Visualization
+| Argument Name          | Description                                                                                                     | Type        | Default Value       |
+|------------------------|-----------------------------------------------------------------------------------------------------------------|------------|---------------------|
+| VIZ_HEATS            | True to visualize the output average heatmap.                                                                | bool       | True                |
+| SAVE_PLOTS           | True to save diagnostic plots.                                                                                 | bool       | True                |
+
+
+## Citation
+Please cite the method and biological paper in case that you would like to use this model for your work,
+
+* Korsak, Sevastianos, and Dariusz Plewczynski. "LoopSage: An energy-based Monte Carlo approach for the loop extrusion modelling of chromatin." Methods (2024).
+* Jodkowska, K., Parteka-Tojek, Z., Agarwal, A., Denkiewicz, M., Korsak, S., Chiliński, M., Banecki, K., & Plewczynski, D. (2024). Improved cohesin HiChIP protocol and bioinformatic analysis for robust detection of chromatin loops and stripes. In bioRxiv (p. 2024.05.16.594268). https://doi.org/10.1101/2024.05.16.594268
