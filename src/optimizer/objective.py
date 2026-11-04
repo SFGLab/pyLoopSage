@@ -1,22 +1,33 @@
 """Loss of one parameter set (K, f, b): how well the MC loop map reproduces the experimental loop map.
 
-loss = (1 - r_OE) + decay mismatch + (1 - r_ins), each term 0 for a perfect match:
+loss = 1.0 (1 - r_OE) + 0.5 decay mismatch + 1.5 (1 - r_ins), each term 0 for a perfect match (WEIGHTS):
 - r_OE: Pearson r of log(O/E + 0.2) (observed / expected = each diagonal divided by its mean, so the decay drops out);
 - decay mismatch: variance of log P(s) differences (shape of the decay, scale free);
 - r_ins: Pearson r of the insulation scores.
+The decay is easy to reproduce and the insulation (domain boundaries) is not, so the insulation counts three times the decay.
 """
 import copy
 
 import numpy as np
 
-from analysis.maps import insulation_score, loop_map, loop_map_from_counts, ps_curve
+from analysis.maps import fill_masked, insulation_score, loop_map, loop_map_from_counts, ps_curve
 from monte_carlo.simulation import run_mc
 from preproc.readers import read_region_table
 from validation.compare import loop_matrix
 
 
-def target_map(cfg, inputs, geom, path) -> np.ndarray:
-    """Experimental loop map: the input loops drawn like the simulated ones, scaled to the default number of LEFs."""
+WEIGHTS = (1.0, 0.5, 1.5)          # O/E map, decay, insulation
+
+
+def weighted(parts) -> float:
+    """Loss from the three terms of loss_parts."""
+    return float(np.dot(WEIGHTS, parts))
+
+
+def target_map(cfg, inputs, geom, path, hic=None) -> np.ndarray:
+    """Target map: the Hi-C map when given (NaN = masked beads), else the input loops drawn like the simulated ones, scaled to the default number of LEFs."""
+    if hic is not None:
+        return np.array(hic, float)
     c = loop_matrix(read_region_table(path, geom, paired=True), geom)
     k_ref = max(inputs.loops.n_sites // 2, 1)
     return loop_map_from_counts(c * (2 * k_ref / max(c.sum(), 1e-12)), geom.n_beads)
@@ -31,9 +42,11 @@ def loss_parts(m, t, window: int = 5):
     """(1 - r_OE, decay mismatch, 1 - r_ins) of a simulated map `m` against the target `t`."""
     n = len(m)
     up = np.triu_indices(n, 1)
+    seen = np.isfinite(t)                                              # masked Hi-C beads do not count
+    t = fill_masked(t)
     m, t = m / m[up].mean(), t / t[up].mean()
     sep = np.abs(np.subtract.outer(np.arange(n), np.arange(n)))
-    band = (sep >= 2) & (sep <= max(n // 3, 5)) & (np.triu(np.ones((n, n)), 1) > 0)
+    band = (sep >= 2) & (sep <= max(n // 3, 5)) & (np.triu(np.ones((n, n)), 1) > 0) & seen
     r_map = np.corrcoef(np.log(_oe(m, sep)[band] + 0.2), np.log(_oe(t, sep)[band] + 0.2))[0, 1]
     half = slice(1, n // 2)
     d = np.log(ps_curve(m)[half] + 0.02) - np.log(ps_curve(t)[half] + 0.02)
@@ -64,4 +77,4 @@ class Objective:
         self.calls += 1
         mc = run_mc(c, self.inputs, self.geom, quiet=True)
         self.parts = loss_parts(loop_map(mc, self.geom.n_beads), self.target)
-        return float(sum(self.parts))
+        return weighted(self.parts)

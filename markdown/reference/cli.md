@@ -45,6 +45,9 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | Option | Type (unit) | Default | What it does |
 |---|---|---|---|
 | `-f`, `--file` | text | *(empty)* | Loops/peaks file: .bedpe, .bed or .narrowPeak (required) |
+| `--hic` | text | *(empty)* | Optional Hi-C map (.hic, read with hic-straw): reference for the validation and, with --optimize, the target of the optimizer |
+| `--hic-norm` | text | `KR` | Hi-C normalisation to read (falls back to SCALE, VC_SQRT, VC, NONE when missing) |
+| `--hic-resolution` | integer (bp) | `0` | Hi-C bin size to read (0 = automatic, closest to the bead size) |
 | `--genome` | text | `hg38` | Genome assembly for chromosome sizes |
 | `-n`, `--n-beads` | integer (beads) | *(empty)* | Number of simulation beads (empty = region / 2 kb) |
 | `--min-pet` | integer (PET) | `0` | BEDPE: keep only loops with at least this many PET counts / score (0 = keep all) |

@@ -21,7 +21,7 @@ From one command you get an HTML report with the contact maps, loop statistics, 
 
 ## Installation
 
-Python 3.10 or newer is required. `openmm` and `pyBigWig` install most reliably from conda.
+Python 3.10 or newer is required. `openmm` and `pyBigWig` install most reliably from conda. `hic-straw` (reads `.hic` files for the optional `--hic` reference) needs a C++ compiler and libcurl when no wheel exists for your system.
 
 ```bash
 git clone https://github.com/SFGLab/pyLoopSage.git

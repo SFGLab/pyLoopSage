@@ -39,6 +39,7 @@ class RunContext:
     optimization: Any = None   # optimizer.nelder_mead.OptResult (with --optimize)
     mc_epi_profile: Any = None   # average epigenetic state per bead (MC compartment track), None when the epigenetic model is off
     val_source: str = ""     # which contact map was validated
+    _hic: Any = None
 
     @property
     def loops_file(self) -> str:
@@ -47,6 +48,14 @@ class RunContext:
             return str(self.input_file)
         ann = self.dirs.data / "loops_annotated.bedpe"
         return str(ann) if ann.is_file() else self.cfg.interaction_file
+
+    @property
+    def hic(self):
+        """(map on the bead grid with NaN = masked, info) of the optional --hic file; None without one."""
+        if self._hic is None and self.cfg.hic_file:
+            from preproc.hic import hic_for_run
+            self._hic = hic_for_run(self.cfg, self.geom, self.dirs.data / "metadata")
+        return self._hic
 
     @property
     def mc_ens(self):

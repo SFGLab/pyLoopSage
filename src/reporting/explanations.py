@@ -93,13 +93,31 @@ EXPLAIN = {
                 "convex hull (the smallest convex envelope of all beads) with a sphere of equal volume: 1 means "
                 "spherical. <b>Hull volume</b> measures the space the chromatin occupies. Stable curves mean a "
                 "stable overall fold; steady drifts mean the structures are still relaxing."),
+    "hic_input": dict(
+        section="input", title="Hi-C map of the region",
+        caption="The Hi-C map read for this region (left), its contact decay with distance (middle) and its insulation score (right).",
+        explain="The .hic file is read with hic-straw and put on the bead grid of the model (finer bins are summed, coarser bins are spread; beads with too little coverage are masked). "
+                "<b>Contact decay P(s):</b> the mean contact frequency at genomic distance s, normalised to sum to 1; polymers lose contacts with distance. "
+                "<b>Insulation score:</b> the mean contact across each bead in a small diamond (log2, relative to the mean); dips are domain (TAD) boundaries. "
+                "With --optimize these three quantities (the observed/expected map, the decay and the insulation) are the target of the optimizer."),
+    "hic_validation": dict(
+        section="validation", title="Simulation against Hi-C",
+        caption="Hi-C (upper triangle) against the simulated map (lower triangle), the contact decay of both, and their insulation scores with the TAD boundaries.",
+        explain="<b>Map:</b> both triangles are scaled to their own 99th percentile, so the colours compare patterns and not absolute counts. <b>Decay:</b> the mean contact at each genomic distance; "
+                "curves on top of each other mean the polymer loses contacts with distance at the right rate. <b>Insulation:</b> dips mark domain boundaries; the triangles show the boundaries called in the Hi-C map (black) and in the simulation (violet)."),
+    "hic_scores": dict(
+        section="validation", title="Agreement with Hi-C",
+        caption="Seven agreement scores between each simulated map and the Hi-C map (1 = identical).",
+        explain="<b>log-contact r:</b> correlation of log contacts over all bead pairs (dominated by the decay). <b>O/E r:</b> same after dividing each diagonal by its mean, so only the pattern of loops and domains remains. "
+                "<b>SCC:</b> stratified correlation, the mean of per-diagonal correlations. <b>P(s) r:</b> decay shape. <b>Insulation r:</b> domain boundaries. <b>Boundary F1:</b> TAD boundaries found in both maps (within 2 beads). "
+                "<b>Compartment |r|:</b> leading eigenvector of the observed/expected correlation map, sign free."),
     "optimizer": dict(
         section="optimizer", title="Optimizer convergence",
         caption="Loss of every short Monte Carlo evaluation (left) and how K, f, b and the temperature scale moved (right).",
         explain="The optimizer (Nelder-Mead) proposes the number of LEFs <b>K</b>, the folding coefficient <b>f</b> and the binding "
                 "coefficient <b>b</b>, runs a short Monte Carlo for each, and scores the simulated loop map against the experimental "
-                "loops (<b>loss</b> = 1 - correlation of the observed/expected maps + mismatch of the contact decay + 1 - correlation of the "
-                "insulation scores; 0 is perfect). Every short run is a noisy estimate, so the best few candidates and the start are "
+                "loops (<b>loss</b> = 1 - correlation of the observed/expected maps + 0.5 x mismatch of the contact decay + 1.5 x (1 - correlation of the "
+                "insulation scores); 0 is perfect, and the insulation weighs most because the decay is easy to reproduce and the domain boundaries are not). Every short run is a noisy estimate, so the best few candidates and the start are "
                 "re-scored on longer runs with new seeds, and the winner is used for the production run. Dots: single evaluations; "
                 "line: best so far; dashed and dotted lines: the long-run loss of the start and of the chosen parameters."),
     "optimizer_landscape": dict(

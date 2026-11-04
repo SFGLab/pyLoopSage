@@ -75,7 +75,7 @@ def _tag_panels(fig) -> None:
         return
     axes.sort(key=lambda a: (round(a.get_position().x0, 2), -round(a.get_position().y1, 2)))
     for letter, ax in zip("ABC", axes):
-        getattr(ax, "text2D", ax.text)(-0.02, 1.13, letter, transform=ax.transAxes, fontsize=10, fontweight="bold", color="white", ha="right",
+        getattr(ax, "text2D", ax.text)(-0.02, getattr(ax, "_tag_y", 1.13), letter, transform=ax.transAxes, fontsize=10, fontweight="bold", color="white", ha="right",
                 va="center", bbox=dict(boxstyle="round,pad=0.35", fc=VIOLET, ec="none"))
 
 

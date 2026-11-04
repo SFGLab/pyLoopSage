@@ -24,6 +24,21 @@ def ps_curve(mat) -> np.ndarray:
     return np.array([np.diagonal(mat, k).mean() for k in range(mat.shape[0])])
 
 
+def fill_masked(mat) -> np.ndarray:
+    """Replace NaN (masked beads) by the mean of their diagonal, so they are neutral in O/E, P(s) and insulation."""
+    m = np.array(mat, float)
+    if np.isfinite(m).all():
+        return m
+    n = len(m)
+    for k in range(n):
+        d = np.diagonal(m, k)
+        bad = ~np.isfinite(d)
+        if bad.any():
+            ix = np.arange(n - k)[bad]
+            m[ix, ix + k] = m[ix + k, ix] = np.nanmean(d) if (~bad).any() else 0.0
+    return m
+
+
 def insulation_score(mat, window: int = 5) -> np.ndarray:
     """Diamond insulation score: mean contact across each bead."""
     n = mat.shape[0]

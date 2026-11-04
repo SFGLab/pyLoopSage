@@ -229,6 +229,7 @@ def snapshots_figure(images, picks, md, mc):
         ax.imshow(images[k])
         ax.set(xticks=[], yticks=[])
         ax.set_title(f"{name}: MC step {int(snap[k] * step):,},  T = {mc.Ts[snap[k]]:.3g}", loc="left", pad=14, fontsize=11)
+        ax._tag_y = 1.2                                   # A/B/C badge a bit higher
         ax.grid(False)
         ax.set_frame_on(False)
     x = np.arange(len(mc.Ts)) * step / 1e3                       # MC step axis (thousands)

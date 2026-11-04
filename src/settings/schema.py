@@ -38,6 +38,9 @@ _INIT = ("rw", "confined_rw", "self_avoiding_rw", "circle", "helix", "spiral", "
 PARAMS = (
     # ---- input ----
     Param("interaction_file", "input", "str", None, "Loops/peaks file: .bedpe, .bed or .narrowPeak (required)", flag="--file", short="-f"),
+    Param("hic_file", "input", "str", None, "Optional Hi-C map (.hic, read with hic-straw): reference for the validation and, with --optimize, the target of the optimizer", flag="--hic"),
+    Param("hic_norm", "input", "str", "KR", "Hi-C normalisation to read (falls back to SCALE, VC_SQRT, VC, NONE when missing)", flag="--hic-norm"),
+    Param("hic_resolution", "input", "int", 0, "Hi-C bin size to read (0 = automatic, closest to the bead size)", "bp", flag="--hic-resolution"),
     Param("chrom", "input", "str", None, "Chromosome, e.g. chr1 (CLI: use --region)"),
     Param("region_start", "input", "int", None, "Region start (empty = chromosome start)", "bp"),
     Param("region_end", "input", "int", None, "Region end (empty = chromosome end)", "bp"),

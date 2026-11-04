@@ -47,6 +47,7 @@ setup(
         'imageio[ffmpeg]',
         'pillow',
         'pyBigWig',
+        'hic-straw',
         'topoly',
     ],
     entry_points={

@@ -1,8 +1,9 @@
 """Parameter optimizer: loss, search and the --optimize pipeline stage."""
+import json
 import numpy as np
 
 from optimizer.nelder_mead import _clip, optimize
-from optimizer.objective import loss_parts
+from optimizer.objective import loss_parts, WEIGHTS, weighted
 from pipeline.runner import run_pipeline
 from settings.loader import load_config
 
@@ -18,6 +19,10 @@ def test_loss_is_zero_for_identical_maps_and_positive_for_different_ones():
     m = _map()
     assert max(abs(v) for v in loss_parts(m, m)) < 1e-9
     assert sum(loss_parts(m, _map(seed=5))) > 0.1
+
+
+def test_insulation_weighs_more_than_the_decay():
+    assert WEIGHTS[2] > WEIGHTS[1] and weighted([0, 1, 0]) < weighted([0, 0, 1])
 
 
 def test_clip_respects_bounds():
@@ -43,6 +48,8 @@ def test_optimize_flag_changes_the_production_parameters(tiny_args):
     b = ctx.optimization.best
     assert ctx.cfg.n_lef == b["K"] and ctx.cfg.folding_coeff == b["f"] and ctx.cfg.bind_coeff == b["b"]
     assert ctx.mc.meta["n_lef"] == b["K"] and ctx.cfg.n_lef2 == 0 and ctx.cfg.t_final == b["t_final"]
+    saved = json.loads((ctx.dirs.data / "metadata" / "optimized_parameters.json").read_text())
+    assert saved["chosen"]["n_lef"] == b["K"] and "verdict" in saved
     assert (ctx.dirs.figures / "optimizer_landscape.png").exists()
     assert (ctx.dirs.figures / "optimizer.png").exists()
     assert "Parameter optimizer" in (ctx.dirs.root / "report" / "report.html").read_text()

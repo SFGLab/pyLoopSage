@@ -51,6 +51,9 @@ Rules:
 | Key | Type (unit) | Default | CLI option | What it does |
 |---|---|---|---|---|
 | `interaction_file` | text | *(empty)* | `--file` | Loops/peaks file: .bedpe, .bed or .narrowPeak (required) |
+| `hic_file` | text | *(empty)* | `--hic` | Optional Hi-C map (.hic, read with hic-straw): reference for the validation and, with --optimize, the target of the optimizer |
+| `hic_norm` | text | `KR` | `--hic-norm` | Hi-C normalisation to read (falls back to SCALE, VC_SQRT, VC, NONE when missing) |
+| `hic_resolution` | integer (bp) | `0` | `--hic-resolution` | Hi-C bin size to read (0 = automatic, closest to the bead size) |
 | `chrom` | text | *(empty)* | *ini only* | Chromosome, e.g. chr1 (CLI: use --region) |
 | `region_start` | integer (bp) | *(empty)* | *ini only* | Region start (empty = chromosome start) |
 | `region_end` | integer (bp) | *(empty)* | *ini only* | Region end (empty = chromosome end) |

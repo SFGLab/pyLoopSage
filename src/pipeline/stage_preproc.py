@@ -121,6 +121,22 @@ def _input_use(ctx):
     REGISTRY.fact("Data energy uses", "J_loss (2D loop map)" if two_d else "L and R (1D profiles)")
 
 
+def _hic(ctx):
+    """Optional Hi-C reference: what was read, and the map with its decay and insulation."""
+    from viz.hic_figs import hic_input_figure
+    H, info = ctx.hic
+    emit_table("Hi-C reference", ["Quantity", "Value", "Unit"],
+               [["File", info["file"], ".hic"], ["Resolution read", info["resolution"], "bp"], ["Normalisation", info["norm"], ""],
+                ["Beads covered", info["coverage"], "fraction"], ["Used for", "validation" + (" and the optimizer target" if cfg_opt(ctx) else ""), ""]],
+               "The Hi-C map of the region read with hic-straw and put on the bead grid of the model (masked beads stay empty).", "input")
+    REGISTRY.fact("Hi-C", f"{info['resolution'] // 1000} kb, {info['norm']}")
+    hic_input_figure(H, ctx.geom, info)
+
+
+def cfg_opt(ctx) -> bool:
+    return bool(ctx.cfg.optimize)
+
+
 def compute(ctx):
     """Optional BEDPE preparation (PET filter, CTCF motif search), then read the loops."""
     cfg, g = ctx.cfg, ctx.geom
@@ -158,6 +174,8 @@ def describe(ctx):
                    "Distance between the two anchors of each unique input loop.", "input")
         REGISTRY.fact("Input loops", len(lo.loop_lengths))
     _input_use(ctx)
+    if ctx.hic is not None:
+        _hic(ctx)
     if lo.fmt == "bedpe":
         _anchors(ctx, _motif(ctx))
     binding_profiles(ctx.inputs, g)

@@ -41,6 +41,22 @@ def compute(ctx):
     return out
 
 
+def _hic(ctx):
+    """Simulated maps against the optional Hi-C map: scorecard table, figures, headline facts."""
+    from validation.hic_compare import compare_hic, METRICS
+    from viz.hic_figs import hic_scores_figure, hic_validation_figure
+    H, info = ctx.hic
+    res = {src: compare_hic(m, H) for src, m in _sources(ctx).items()}
+    f = lambda v: "n/a" if v != v else f"{v:.2f}"
+    emit_table("Validation vs Hi-C", ["Score", *res, "Meaning"],
+               [[name, *[f(r[key]) for r in res.values()], note] for name, key, note in METRICS],
+               f"Simulated contact maps against the Hi-C map ({info['resolution']:,} bp, {info['norm']}) on the same beads; 1 = identical, 0 = unrelated.", "validation")
+    hic_validation_figure(res[ctx.val_source], ctx.geom, ctx.val_source)
+    hic_scores_figure(res)
+    REGISTRY.fact("Hi-C O/E r", f"{res[ctx.val_source]['r_oe']:.2f}")
+    return res
+
+
 def describe(ctx):
     both = len(ctx.validation) > 1
     for src, res in ctx.validation.items():
@@ -65,6 +81,8 @@ def describe(ctx):
         if sm:
             REGISTRY.fact("Pearson r (smoothed)", f"{sm[0]['pearson']:.2f} ({sm[0]['strength']})")
     validation_summary({src: res.rows for src, res in ctx.validation.items()})
+    if ctx.hic is not None:
+        _hic(ctx)
 
 
 if __name__ == "__main__":
