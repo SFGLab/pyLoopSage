@@ -7,6 +7,7 @@
   <img alt="NumPy" src="https://img.shields.io/badge/NumPy-013243?logo=numpy&logoColor=white">
   <img alt="SciPy" src="https://img.shields.io/badge/SciPy-8CAAE6?logo=scipy&logoColor=white">
   <img alt="MDTraj" src="https://img.shields.io/badge/MDTraj-trajectories-1a1a1f">
+  <img alt="pytest" src="https://img.shields.io/badge/tested%20with-pytest-0A9EDC?logo=pytest&logoColor=white">
   <img alt="GPL v3 license" src="https://img.shields.io/badge/License-GPL%20v3-blue">
 </p>
 
@@ -59,7 +60,7 @@ LoopSage reproduces this process in a computer:
 ## Quick start
 
 ```bash
-PYTHONPATH=src python src/run.py -f loops.bedpe -r chr1:77000000-95000000
+loopsage -f loops.bedpe -r chr1:77000000-95000000
 ```
 
 Then open `results/chr1_77000000_95000000_1/report/report.html` in a browser.

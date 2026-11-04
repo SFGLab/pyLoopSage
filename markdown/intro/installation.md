@@ -24,10 +24,12 @@ conda install -c conda-forge "openmm>=8.5.1" pybigwig -y
 
 # 4. all other packages
 pip install -r requirements.txt
+
+# 5. install pyLoopSage itself (creates the `loopsage` command)
+pip install -e .
 ```
 
-!!! note "Why `PYTHONPATH=src`?"
-    The code lives in the `src/` folder and is not installed as a package yet. Run it from the repository root with `PYTHONPATH=src`, or put the line `PYTHONPATH=src` in a file named `.env`.
+Check the installation with `loopsage -h`. Without installing, you can also run `PYTHONPATH=src python src/run.py`.
 
 ## Check that it works
 

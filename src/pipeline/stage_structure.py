@@ -5,6 +5,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
+
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -59,6 +61,23 @@ def compute(ctx):
     return res
 
 
+def _snapshots(ctx, comp):
+    """Start / middle / end renders, a 20-structure filmstrip and the MC and temperature bars (skipped without pyvista)."""
+    from molecular_dynamics.structures import align_frames
+    md = ctx.md
+    picks = np.unique(np.linspace(0, len(md.coords) - 1, 20).round().astype(int))      # frames shown in the filmstrip
+    if len(picks) < 3:
+        return
+    try:
+        from viz3d.render import render_stills
+        mode = "compartments" if comp is not None else "purple"
+        imgs = render_stills(align_frames(np.asarray(md.coords, dtype=float))[picks], mode, comp, ctx.cfg.video_size, ctx.cfg.representation)
+    except Exception as e:                                         # noqa: BLE001 - rendering is optional
+        log.warning("Could not render the start/middle/end structures: %s", e)
+        return
+    structure_figs.snapshots_figure(imgs, picks, md, ctx.mc)
+
+
 def _viewer_block(res, ctx):
     """Report card: embedded interactive viewer plus the videos (linked relative to the report)."""
     page = html.escape(res.viewer.read_text(encoding="utf-8"), quote=True)
@@ -100,6 +119,8 @@ def describe(ctx):
     REGISTRY.fact("Fractal dimension", f"{1 / nu:.2f}" if nu == nu else "n/a")
     if res.viewer is not None:
         _viewer_block(res, ctx)
+    if ctx.cfg.render_3d:
+        _snapshots(ctx, ctx.inputs.comp)
     structure_figs.shape_figure(m, md)
     structure_figs.pairs_figure(m, md)
     structure_figs.scaling_figure(m, md)

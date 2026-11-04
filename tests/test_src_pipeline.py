@@ -81,3 +81,20 @@ def test_run_py_help(capsys):
         run.main(["-h"])
     out = capsys.readouterr().out
     assert "--run-MD" in out and "-v" in out
+
+
+def test_version_and_command_entry():
+    from version import __version__
+    import run
+    assert __version__ == "2.0.0" and callable(run.main)
+
+
+def test_example_configs_have_known_keys():
+    import configparser
+    from pathlib import Path
+    from settings.schema import PARAMS
+    known = {p.name for p in PARAMS}
+    for f in sorted(Path(__file__).resolve().parents[1].glob("examples/*.ini")):
+        cp = configparser.ConfigParser(inline_comment_prefixes=(";",))
+        cp.read(f)
+        assert {k for s in cp.sections() for k in cp[s]} <= known, f.name

@@ -3,7 +3,7 @@
 LoopSage is run with one command. Every option below can also be written in a [config file](config.md); the command line always wins.
 
 ```bash
-PYTHONPATH=src python src/run.py [options]
+loopsage [options]
 ```
 
 !!! tip "Where options are read from"
@@ -14,16 +14,16 @@ PYTHONPATH=src python src/run.py [options]
 
 ```bash
 # Minimal run: a loop file and a region
-python src/run.py -f loops.bedpe -r chr1:77000000-95000000
+loopsage -f loops.bedpe -r chr1:77000000-95000000
 
 # Everything from a config file, but without the 3D stage and with info messages
-python src/run.py -c config.ini --no-run-MD -vv
+loopsage -c config.ini --no-run-MD -vv
 
 # Read CTCF orientation from the genome, keep loops with at least 3 PET counts, 4 threads
-python src/run.py -f loops.bedpe -r chr1:77000000-95000000 --motif-genome hg38.fa --min-pet 3 -t 4
+loopsage -f loops.bedpe -r chr1:77000000-95000000 --motif-genome hg38.fa --min-pet 3 -t 4
 
 # Set any config key that has no option of its own
-python src/run.py -c config.ini -s epi_coeff=0.5 -s bind_coeff=2
+loopsage -c config.ini -s epi_coeff=0.5 -s bind_coeff=2
 ```
 
 ## General options

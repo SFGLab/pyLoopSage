@@ -4,7 +4,7 @@ A config file keeps all the settings of a run in one place, so a run can be repe
 Pass it with `-c`:
 
 ```bash
-python src/run.py -c config.ini
+loopsage -c config.ini
 ```
 
 `config_example.ini` in the repository root lists every key with its default and a one-line description. Copy it and change what you need.
@@ -123,6 +123,7 @@ Rules:
 | `cross_loop` | true / false | `True` | *ini only* | Penalise crossing loops, not only shared anchors |
 | `between_families_penalty` | true / false | `True` | *ini only* | Apply crossing penalty between LEF families |
 | `data_loss_mode` | integer | `0` | *ini only* | 0 = 1D anchor profiles L/R; 1 = 2D loop map |
+| `loss_sigma` | number (beads) | `2.0` | *ini only* | Gaussian width of the 2D loop map J_loss when data_loss_mode = 1, so LEF legs feel a smooth landscape (advanced, config.ini only) |
 | `contrastive_binding` | true / false | `False` | *ini only* | Penalise loop-free regions (tanh-contrast signals) |
 
 ## `[molecular_dynamics]`: Molecular dynamics (3D structures)

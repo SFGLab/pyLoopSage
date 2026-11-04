@@ -96,6 +96,7 @@ PARAMS = (
     Param("cross_loop", "energy", "bool", True, "Penalise crossing loops, not only shared anchors"),
     Param("between_families_penalty", "energy", "bool", True, "Apply crossing penalty between LEF families"),
     Param("data_loss_mode", "energy", "int", 0, "0 = 1D anchor profiles L/R; 1 = 2D loop map"),
+    Param("loss_sigma", "energy", "float", 2.0, "Gaussian width of the 2D loop map J_loss when data_loss_mode = 1, so LEF legs feel a smooth landscape (advanced, config.ini only)", "beads"),
     Param("contrastive_binding", "energy", "bool", False, "Penalise loop-free regions (tanh-contrast signals)"),
     # ---- molecular dynamics ----
     Param("run_md", "molecular_dynamics", "bool", True, "Run the 3D molecular dynamics stage", flag="--run-MD"),

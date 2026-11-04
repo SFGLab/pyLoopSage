@@ -82,6 +82,39 @@ def _meshes(pv, pts, s, bond, representation="tube"):
     return out
 
 
+def _camera(pl, radius, reach=2.7):
+    """Fixed oblique camera looking at the origin."""
+    pl.camera.focal_point = (0, 0, 0)
+    pl.camera.up = (0, 0, 1)
+    pl.camera.position = tuple(np.array([1.0, 0.55, 0.45]) / np.linalg.norm([1.0, 0.55, 0.45]) * radius * reach)
+    pl.camera.view_angle = 30
+
+
+def render_stills(frames, mode="purple", comp=None, size=640, representation="tube") -> list:
+    """Render each (aligned) frame off-screen with one shared camera; returns RGB image arrays."""
+    pv = _pyvista()
+    frames = np.asarray(frames, dtype=float)
+    frames = frames - frames.mean(axis=(0, 1))                   # centre on the origin
+    radius = float(np.linalg.norm(frames, axis=2).max())
+    bond = float(np.linalg.norm(np.diff(frames[0], axis=0), axis=1).mean())
+    pl = pv.Plotter(off_screen=True, window_size=(size, size))
+    pl.set_background("white")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        pl.enable_anti_aliasing("fxaa")
+    images = []
+    for pts in frames:
+        s, cmap, clim = scalars(mode, pts, pl.camera.position, radius, comp)
+        for name, mesh in _meshes(pv, pts, s, bond, representation).items():
+            pl.add_mesh(mesh, name=name, scalars="s", cmap=cmap, clim=clim, specular=0.9, specular_power=45, ambient=0.3,
+                        diffuse=0.8, smooth_shading=True, show_scalar_bar=False, reset_camera=False)
+        _camera(pl, radius, reach=3.2)
+        pl.reset_camera_clipping_range()
+        images.append(pl.screenshot(return_img=True))
+    pl.close()
+    return images
+
+
 def render_video(frames, path, mode, comp=None, fps=30, size=640, poster=None, turns=1.0, representation="tube") -> Path:
     """Write an mp4 of the (already interpolated) trajectory while the camera orbits once."""
     pv = _pyvista()
@@ -93,10 +126,7 @@ def render_video(frames, path, mode, comp=None, fps=30, size=640, poster=None, t
     with warnings.catch_warnings():                       # OSMesa builds swap FXAA for SSAA and warn
         warnings.simplefilter("ignore")
         pl.enable_anti_aliasing("fxaa")
-    pl.camera.focal_point = (0, 0, 0)
-    pl.camera.up = (0, 0, 1)
-    pl.camera.position = tuple(np.array([1.0, 0.55, 0.45]) / np.linalg.norm([1.0, 0.55, 0.45]) * radius * 2.7)
-    pl.camera.view_angle = 30
+    _camera(pl, radius)
     pl.open_movie(str(path), framerate=fps, quality=8)
     step = 360.0 * turns / max(n_frames, 1)
     with stage_bar(f"Video: {mode}", n_frames) as advance:

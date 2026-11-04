@@ -108,13 +108,16 @@ def _input_use(ctx):
     two_d = int(cfg.data_loss_mode) == 1
     epi = float(cfg.epi_coeff) > 0
     sigma = g.n_beads / 100
-    proc = ("Gaussian smoothing (sigma = %.1f beads)" % sigma if cfg.smoothing_input else "no smoothing") + (", tanh-contrast" if cfg.contrastive_binding else "")
+    smooth = "Gaussian smoothing (sigma = %.1f beads)" % sigma if cfg.smoothing_input else "no smoothing"
+    tanh = ", tanh-contrast" if cfg.contrastive_binding else ""
+    proc = smooth + tanh
+    proc_loss = ("smoothed to a continuous landscape (sigma = %.1f beads)" % float(cfg.loss_sigma) if cfg.loss_sigma > 0 else "not smoothed") + tanh
     dyn = str(cfg.epigenetic_mode).lower() == "dynamic"
     rows = [["Anchor profiles L, R", "USED: data energy at the left / right legs" if not two_d else "not used (computed for display)", proc],
-            ["Loop map J_loss", "USED: data energy of every loop (m, n)" if two_d else "not used (computed for display)", proc if two_d else ""],
+            ["Loop map J_loss", "USED: data energy of every loop (m, n)" if two_d else "not used (computed for display)", proc_loss if two_d else ""],
             ["Loop adjacency J", ("USED: epigenetic coupling" + (" (replaced by the current LEF loops in 'dynamic' mode)" if dyn else "")) if epi else "not used (epi_coeff = 0)", "binary, never smoothed"]]
     emit_table("What the simulation uses as input", ["Input", "Role in the simulation", "Processing"], rows,
-               "data_loss_mode = %d selects %s. J_loss is the loop strength map, smoothed only when smoothing is on." % (int(cfg.data_loss_mode), "the 2D loop map J_loss" if two_d else "the 1D profiles L and R"), "input")
+               "data_loss_mode = %d selects %s. J_loss is the loop strength map; in the 2D mode it is a smooth landscape that the LEF legs move on." % (int(cfg.data_loss_mode), "the 2D loop map J_loss" if two_d else "the 1D profiles L and R"), "input")
     REGISTRY.fact("Data energy uses", "J_loss (2D loop map)" if two_d else "L and R (1D profiles)")
 
 

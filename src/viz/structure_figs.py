@@ -186,3 +186,81 @@ def time_figure(m, md):
     glow(axs[2], tp, m.pairs["contacts"], ORANGE)
     axs[2].set(title="Contacts per bead", xlabel="MD time (ns)", ylabel="Non-bonded contacts (count)")
     save_figure(fig, "struct_time", **_TXT("struct_time"))
+
+
+# ---- Start / middle / end structures with a filmstrip and the simulation progress bars ----
+
+def _thumb(img, k=4):
+    """Block-average an RGB image by k (small copy for the filmstrip)."""
+    h, w = (img.shape[0] // k) * k, (img.shape[1] // k) * k
+    return img[:h, :w].reshape(h // k, k, w // k, k, -1).mean(axis=(1, 3)).astype(np.uint8)
+
+
+def _crop_common(images, pad=12):
+    """Crop all renders to the same box around the structures (removes the white margin)."""
+    ink = np.any([np.any(im < 245, axis=2) for im in images], axis=0)
+    rows, cols = np.flatnonzero(ink.any(1)), np.flatnonzero(ink.any(0))
+    r0, r1 = max(rows[0] - pad, 0), rows[-1] + pad
+    c0, c1 = max(cols[0] - pad, 0), cols[-1] + pad
+    return [im[r0:r1, c0:c1] for im in images]
+
+
+def snapshots_figure(images, picks, md, mc):
+    """Three large 3D renders (start, middle, end), a filmstrip of all renders, a Monte Carlo step bar and an order-parameter (T) bar.
+
+    images: renders of the MD frames `picks` (evenly spaced, in time order).
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import Normalize
+    from matplotlib.offsetbox import AnnotationBbox, OffsetImage
+    from viz.theme import apply_theme
+    apply_theme()
+    fig = plt.figure(figsize=(14.4, 6.0), layout="constrained")
+    gs = fig.add_gridspec(4, 3, height_ratios=[10, 2.2, 1.0, 1.0])
+    step, burn = mc.meta["mc_step"], mc.meta["burnin"]
+    snap = np.asarray(md.frame_idx)[picks]                       # MC snapshot behind each render
+    steps = snap * step / 1e3
+    images = _crop_common(images)
+    big = [0, len(images) // 2, len(images) - 1]
+    for k, name in zip(big, ("Start", "Middle", "End")):
+        ax = fig.add_subplot(gs[0, big.index(k)])
+        ax.imshow(images[k])
+        ax.set(xticks=[], yticks=[], title=f"{name}: MC step {int(snap[k] * step):,}   T = {mc.Ts[snap[k]]:.3g}")
+        ax.grid(False)
+        ax.set_frame_on(False)
+    x = np.arange(len(mc.Ts)) * step / 1e3                       # MC step axis (thousands)
+    strip, mcbar, tbar = (fig.add_subplot(gs[r, :]) for r in (1, 2, 3))
+    for ax in (strip, mcbar, tbar):
+        ax._twin = True                                          # not a lettered panel
+        ax.set(yticks=[], xlim=(0, x[-1]))
+        ax.grid(False)
+    strip.set(xticklabels=[], ylim=(0, 1))
+    strip.set_frame_on(False)
+    n, th = len(images), _thumb(images[0], 3)
+    w = x[-1] / n                                                # thumbnail width in x units
+    zoom = 0.84 * fig.get_figwidth() * fig.dpi / n * 0.92 / th.shape[1]
+    for k, img in enumerate(images):                             # one small structure per sampled step, in time order
+        xv = w / 2 + k * (x[-1] - w) / max(n - 1, 1)
+        strip.add_artist(AnnotationBbox(OffsetImage(_thumb(img, 3), zoom=zoom), (xv, 0.5), frameon=k in big, pad=0.05,
+                                        bboxprops=dict(ec=VIOLET, lw=1.6, fc="none")))
+        if k in big:
+            strip.text(xv, 1.0, "ABC"[big.index(k)], ha="center", va="bottom", fontsize=8, fontweight="bold", color="#111", transform=strip.get_xaxis_transform())
+    strip.set_ylabel("Structures\n(in time order)", rotation=0, ha="right", va="center")
+    mcbar.axvspan(0, burn / 1e3, color="#d9d3ea", lw=0)
+    mcbar.axvspan(burn / 1e3, x[-1], color=VIOLET, alpha=0.85, lw=0)
+    mcbar.text(burn / 2e3, 0.5, "burn-in", ha="center", va="center", fontsize=8, color=MUTED, transform=mcbar.get_xaxis_transform())
+    mcbar.text((burn / 1e3 + x[-1]) / 2, 0.5, "Monte Carlo sampling", ha="center", va="center", fontsize=8, color="white", transform=mcbar.get_xaxis_transform())
+    mcbar.set(xticklabels=[])
+    mcbar.set_ylabel("Monte Carlo", rotation=0, ha="right", va="center")
+    T = np.asarray(mc.Ts, dtype=float)
+    tbar.imshow(T[None, :], aspect="auto", cmap="YlOrRd", norm=Normalize(T.min(), T.max() if T.max() > T.min() else T.min() + 1),
+                extent=(0, x[-1], 0, 1))
+    tbar.set(xlabel="MC step (thousands)")
+    tbar.set_ylabel("Order parameter\n(temperature T)", rotation=0, ha="right", va="center")
+    tbar.text(0.995, 0.5, f"T: {T[0]:.3g} \u2192 {T[-1]:.3g}" if abs(T[0] - T[-1]) > 1e-9 else f"T = {T[0]:.3g} (constant)",
+              ha="right", va="center", fontsize=8, color="black", transform=tbar.transAxes)
+    for ax in (mcbar, tbar):
+        for xv in steps[big]:
+            ax.axvline(xv, color="white", lw=2.4)
+            ax.axvline(xv, color="#111", lw=1.0)
+    save_figure(fig, "struct_snapshots", **_TXT("struct_snapshots"))

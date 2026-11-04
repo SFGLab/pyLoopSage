@@ -1,7 +1,7 @@
 """LoopSage entry point: the whole pipeline from a config file or the command line.
 
-    python run.py -c config.ini
-    python run.py -f loops.bedpe -r chr1:80000000-90000000 --run-MD -vv
+    loopsage -c config.ini
+    loopsage -f loops.bedpe -r chr1:80000000-90000000 --run-MD -vv
 """
 import sys
 from pathlib import Path

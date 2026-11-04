@@ -1,12 +1,15 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
+import re
 from pathlib import Path
 
 with open('README.md', 'r', encoding='utf-8') as f:
     long_description = f.read()
 
+VERSION = re.search(r'"([^"]+)"', Path('src/version.py').read_text().split('__version__')[1]).group(1)
+
 setup(
     name='pyLoopSage',  # Package name
-    version='1.1.7',  # Version of the software
+    version=VERSION,  # read from src/version.py
     description='An energy-based stochastic model of loop extrusion in chromatin.',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -14,10 +17,14 @@ setup(
     author_email='s.korsak@datascience.edu.pl',
     url='https://github.com/SFGLab/pyLoopSage',  # GitHub repository URL
     license='GNU General Public License v3.0',
-    packages=find_packages(include=['loopsage', 'loopsage.*']),
+    package_dir={'': 'src'},
+    packages=find_namespace_packages('src', exclude=['*__pycache__*']),
+    py_modules=['run', 'logger', 'version'],
     include_package_data=True,
     package_data={
-    'loopsage': ['forcefields/*'],
+        'html': ['*.html', '*.css'],
+        'molecular_dynamics.forcefields': ['*.xml'],
+        'motif_finder.data': ['*.pfm'],
     },
     install_requires=[  # List your package dependencies here
         'numpy>1.2,<2.0',
@@ -44,7 +51,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'loopsage=loopsage.run:main',  # loopsage command points to run.py's main function
+            'loopsage=run:main',  # the `loopsage` command runs src/run.py
         ],
     },
     classifiers=[

@@ -134,8 +134,9 @@ def load_inputs(cfg, geom, path=None) -> InputData:
     ext = Path(path).suffix.lower()
     if ext not in _READERS:
         raise ValueError(f"unsupported input format '{ext}' (use .bedpe, .bed or .narrowPeak)")
+    extra = dict(loss_sigma=float(cfg.loss_sigma)) if ext == ".bedpe" and int(cfg.data_loss_mode) == 1 else {}
     loops = _READERS[ext](path, geom, smooth=cfg.smoothing_input,
-                          contrastive=cfg.contrastive_binding, sigma=geom.n_beads / 100)
+                          contrastive=cfg.contrastive_binding, sigma=geom.n_beads / 100, **extra)
     bws = [bigwig_to_beads(f, geom) for f in cfg.bw_files]
     lef = None
     if cfg.lef_track_file:

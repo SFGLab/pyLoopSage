@@ -51,3 +51,9 @@ def test_region_fallback_to_whole_chromosome(demo_bedpe):
     cfg = load_config(["-f", str(demo_bedpe), "--set", "chrom=chr21", "-n", "50"])
     geom = build_geometry(cfg)
     assert geom.start == 0 and geom.end > 40_000_000
+
+
+def test_loss_map_is_smooth_only_in_2d_mode(tiny_args):
+    raw = _inputs(tiny_args + ["-s", "contrastive_binding=False"])[2].loops.J_loss
+    two_d = _inputs(tiny_args + ["-s", "data_loss_mode=1", "-s", "contrastive_binding=False"])[2].loops.J_loss
+    assert (two_d > 0).sum() > 3 * (raw > 0).sum()        # sparse dots become a continuous field

@@ -1,1 +1,2 @@
 exclude Dockerfile
+recursive-include src *.html *.css *.xml *.pfm

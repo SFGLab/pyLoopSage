@@ -11,6 +11,7 @@
   <a href="https://numpy.org"><img alt="NumPy" src="https://img.shields.io/badge/NumPy-013243?logo=numpy&logoColor=white"></a>
   <a href="https://scipy.org"><img alt="SciPy" src="https://img.shields.io/badge/SciPy-8CAAE6?logo=scipy&logoColor=white"></a>
   <a href="https://mdtraj.org"><img alt="MDTraj" src="https://img.shields.io/badge/MDTraj-trajectories-1a1a1f"></a>
+  <a href="tests"><img alt="pytest" src="https://img.shields.io/badge/tested%20with-pytest-0A9EDC?logo=pytest&logoColor=white"></a>
   <a href="https://www.gnu.org/licenses/gpl-3.0.html"><img alt="GPL v3 license" src="https://img.shields.io/badge/License-GPL%20v3-blue"></a>
 </p>
 
@@ -27,25 +28,25 @@ git clone https://github.com/SFGLab/pyLoopSage.git
 cd pyLoopSage
 conda create -n loopsage python=3.11 -y && conda activate loopsage
 conda install -c conda-forge "openmm>=8.5.1" pybigwig -y
-pip install -r requirements.txt
+pip install -r requirements.txt && pip install -e .
 ```
 
-Run from the repository root with `PYTHONPATH=src` (or put that line in a `.env` file).
+Then install the package (`pip install -e .`) to get the `loopsage` command (version 2.0.0).
 
 ## Usage
 
 ```bash
 # Minimal run: loops file + region
-PYTHONPATH=src python src/run.py -f loops.bedpe -r chr1:77000000-95000000
+loopsage -f loops.bedpe -r chr1:77000000-95000000
 
 # Settings from a config file, with command-line overrides
-PYTHONPATH=src python src/run.py -c config.ini -t 4 --n-replicas 3
+loopsage -c config.ini -t 4 --n-replicas 3
 
 # BEDPE without orientation columns: read CTCF orientation from the reference genome, keep loops with >= 3 PET
-PYTHONPATH=src python src/run.py -f loops.bedpe -r chr1:77000000-95000000 --motif-genome hg38.fa --min-pet 3
+loopsage -f loops.bedpe -r chr1:77000000-95000000 --motif-genome hg38.fa --min-pet 3
 
 # See every option
-PYTHONPATH=src python src/run.py -h
+loopsage -h
 ```
 
 - **Input:** a `.bedpe` loop file, or `.bed` / `.narrowPeak` CTCF sites, plus the genomic region.

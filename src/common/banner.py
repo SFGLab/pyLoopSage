@@ -109,11 +109,13 @@ def _paint(block: str, colors, split=None) -> Text:
     return out
 
 
-def print_banner(version: str = "2.0") -> None:
+def print_banner(version: str = None) -> None:
     """Show the logo, a loop sketch and a random quote."""
     text, author = pick()
     quote = Text(f"“{text}”", style="italic #c9c6d3", justify="center")
     quote.append(f"  - {author}", style="#9d7df0")
+    from version import __version__
+    version = version or __version__
     sub = Text(f"stochastic loop extrusion + 3D chromatin dynamics  ·  v{version}", style="bold #b79cf0", justify="center")
     body = Group(Align.center(_paint(_LOOPS, ["#b79cf0", "#6a3de8"])), Text(""), Align.center(_paint(_LOGO, SAGE_GRADIENT, SPLIT)),
                  Text(""), sub, Text(""), quote)

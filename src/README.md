@@ -2,8 +2,8 @@
 
 Run the whole pipeline:
 
-    python src/run.py -c config_example.ini
-    python src/run.py -f loops.bedpe -r chr1:80000000-90000000 --run-MD -v
+    loopsage -c config_example.ini
+    loopsage -f loops.bedpe -r chr1:80000000-90000000 --run-MD -v
 
 Verbosity: no flag = progress bars only; `-v` = result tables; `-vv` = + info messages; `-vvv` = debug.
 Results go to `results/` in the project root (git-ignored), one folder per run, named `{chrom}_{start}_{end}_{run}`:

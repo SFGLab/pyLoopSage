@@ -148,9 +148,9 @@ def validate(cfg) -> None:
 
 _EPILOG = """\
 examples:
-  python run.py -f loops.bedpe -r chr1:75000000-95000000 -n 1000 -o out
-  python run.py -c config.ini                 # sectioned config file
-  python run.py -c config.ini --no-run-MD -vv # file + overrides, MC only, info messages
+  loopsage -f loops.bedpe -r chr1:75000000-95000000 -n 1000 -o out
+  loopsage -c config.ini                 # sectioned config file
+  loopsage -c config.ini --no-run-MD -vv # file + overrides, MC only, info messages
 
 verbosity: none = main steps + progress bars | -v + tables | -vv + info messages | -vvv + debug
 Anything not listed here can be set in config.ini, or one-off with --set KEY=VALUE.
@@ -161,7 +161,7 @@ _METAVAR = {"interaction_file": "FILE", "out_path": "DIR", "platform": "NAME", "
 
 
 def build_parser() -> argparse.ArgumentParser:
-    ap = argparse.ArgumentParser(prog="run.py", description="LoopSage: loop extrusion + 3D chromatin structure pipeline.",
+    ap = argparse.ArgumentParser(prog="loopsage", description="LoopSage: loop extrusion + 3D chromatin structure pipeline.",
                                  formatter_class=argparse.RawDescriptionHelpFormatter, epilog=_EPILOG)
     ap.add_argument("-c", "--config", metavar="FILE", help="sectioned config .ini (flags override it)")
     ap.add_argument("-r", "--region", metavar="CHR:START-END", help="genomic region in bp, e.g. chr1:75000000-95000000")
@@ -246,7 +246,7 @@ def load_config(argv=None, default_config: bool = False) -> Config:
         cfg = Config(**values)
         cfg.source, cfg.notes, cfg.config_file = source, notes, ini_path
         cfg.verbosity = ns.verbose or int(values["verbosity"] or 0)      # -v on the command line wins over the ini
-        cfg.command = "python src/run.py " + " ".join(shlex.quote(a) for a in (sys.argv[1:] if argv is None else argv))
+        cfg.command = "loopsage " + " ".join(shlex.quote(a) for a in (sys.argv[1:] if argv is None else argv))
         validate(cfg)
     except (ValueError, FileNotFoundError) as e:
         parser.error(str(e))

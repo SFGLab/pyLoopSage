@@ -142,8 +142,8 @@ def _stats(J, centers):
     return lengths, stats
 
 
-def vectors_from_bedpe(path, geom, smooth=False, contrastive=True, sigma=1.0) -> LoopData:
-    """Build model inputs from a BEDPE file for the region in `geom`."""
+def vectors_from_bedpe(path, geom, smooth=False, contrastive=True, sigma=1.0, loss_sigma=0.0) -> LoopData:
+    """Build model inputs from a BEDPE file for the region in `geom` (loss_sigma > 0: J_loss becomes a smooth field)."""
     n = geom.n_beads
     df = read_region_table(path, geom, paired=True)
     x = np.asarray(geom.bead_of(((df[1] + df[2]) // 2).to_numpy()))
@@ -170,6 +170,8 @@ def vectors_from_bedpe(path, geom, smooth=False, contrastive=True, sigma=1.0) ->
     if smooth:
         L, R = gaussian_filter1d(L, sigma, mode="nearest"), gaussian_filter1d(R, sigma, mode="nearest")
         J_loss = gaussian_filter(J_loss, sigma)
+    if loss_sigma > 0:                               # smooth 2D landscape for the loop-map data energy
+        J_loss = gaussian_filter(J_loss, loss_sigma)
     L, R = mean_scale(L), mean_scale(R)
     if contrastive:
         J_loss, L, R = contrast_map(J_loss), contrast(L), contrast(R)
