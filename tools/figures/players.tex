@@ -1,0 +1,20 @@
+\input{preamble.tex}
+\begin{document}
+\begin{tikzpicture}
+  \panelbg{-1.2}{-2.9}{13.2}{4.9}
+  \base{0}{12}{6}{0.5}
+  \lloop{6}{0.5}{1.8}{3.2}{cohesin}
+  \prot{4.7}{0}{f}\prot{7.3}{0}{r}
+  % callouts
+  \node[lab,anchor=east,align=right] at (3.2,3.1) {\textbf{chromatin fibre}\\[-1pt]{\footnotesize DNA with its proteins}};
+  \draw[leader] (3.3,3.1)--(4.45,3.1) node[fill=ink,circle,inner sep=1.2pt] {};
+  \node[lab,anchor=west,align=left,text=cohesin!80!black] at (8.8,2.9) {\textbf{cohesin}\\[-1pt]{\footnotesize loop extrusion factor (LEF)}};
+  \draw[leader,cohesin] (8.7,2.9)--(7.4,1.6)--(6.55,0.78) node[fill=cohesin,circle,inner sep=1.2pt] {};
+  \node[lab,align=center] at (6,2.2) {\textbf{loop}};\node[note] at (6,1.75) {length $\ell=n-m$};
+  \node[lab,anchor=east,align=right,text=fwd!85!black] at (3.4,-0.85) {\textbf{CTCF}\\[-1pt]{\footnotesize points right}};
+  \node[lab,anchor=west,align=left,text=rev!85!black] at (8.6,-0.85) {\textbf{CTCF}\\[-1pt]{\footnotesize points left}};
+  \draw[dashed,ink!35] (4.7,-0.3)--(4.7,-1.9);\draw[dashed,ink!35] (7.3,-0.3)--(7.3,-1.9);
+  \node[lab] at (4.7,-2.15) {$m$};\node[lab] at (7.3,-2.15) {$n$};
+  \node[note] at (6,-2.15) {left and right leg};
+\end{tikzpicture}
+\end{document}

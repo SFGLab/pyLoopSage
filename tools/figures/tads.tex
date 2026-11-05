@@ -1,0 +1,29 @@
+\input{preamble.tex}
+\begin{document}
+\pgfmathsetmacro{\W}{8}                 % map side (cm); 120 bins, TADs split at bin 60
+\pgfmathsetmacro{\u}{\W/120}
+\newcommand{\archx}[3]{\pgfmathsetmacro{\hh}{0.55*(#2-#1)*\u+0.3}\draw[#3] ({#1*\u},0.2) .. controls ({#1*\u},\hh) and ({#2*\u},\hh) .. ({#2*\u},0.2);}
+\tikzset{lp/.style={line width=2.6pt,cohesin,line cap=round},lp2/.style={line width=2pt,cohesin!55,line cap=round}}
+\begin{tikzpicture}
+  % map first (below the fibre)
+  \node[anchor=north west,inner sep=0] (map) at (0,-1.2) {\includegraphics[width=\W cm]{tad_map.png}};
+  \draw[ink!50,line width=0.7pt] (0,-1.2) rectangle (\W,{-1.2-\W});
+  \draw[dashed,ink!45,line width=0.7pt] ({60*\u},0) --({60*\u},{-1.2-\W});
+  % fibre with loops and CTCF
+  \draw[fiber] (0,0)--(\W,0);
+  \archx{3}{54}{lp}\archx{12}{40}{lp2}\archx{66}{117}{lp}\archx{74}{102}{lp2}
+  \foreach \b/\o in {3/f,54/r,66/f,117/r}{\pgfmathsetmacro{\xx}{\b*\u}\prot{\xx}{0}{\o}}
+  \node[note,anchor=east] at (-0.2,0) {fibre};
+  \node[note,anchor=east] at (-0.2,-1.2) {contact map};
+  % TAD tags on the map
+  \node[font=\bfseries\small,text=ink] at ({24*\u},{-1.2-52*\u}) {TAD 1};
+  \node[font=\bfseries\small,text=ink] at ({86*\u},{-1.2-113*\u}) {TAD 2};
+  % call-outs on the right
+  \pgfmathsetmacro{\xr}{\W+0.5}
+  \node[lab,anchor=west,align=left] at (\xr,{-1.2-0.12*\W}) {\textbf{loop dot}\\[-1pt]{\footnotesize a stable loop holds its two}\\{\footnotesize anchors close together}};
+  \draw[leader] (\xr-0.05,{-1.2-0.12*\W})--({40*\u+0.1},{-1.2-12*\u}) node[fill=ink,circle,inner sep=1.2pt] {};
+  \node[lab,anchor=west,align=left] at (\xr,{-1.2-0.5*\W}) {\textbf{TAD boundary}\\[-1pt]{\footnotesize two CTCF sites facing apart:}\\{\footnotesize contacts stop here}};
+  \draw[leader] (\xr-0.05,{-1.2-0.5*\W})--({60*\u},{-1.2-0.5*\W}) node[fill=ink,circle,inner sep=1.2pt] {};
+  \node[lab,anchor=west,align=left] at (\xr,{-1.2-0.86*\W}) {\textbf{darker = more contacts}\\[-1pt]{\footnotesize nearby loci touch most often}};
+\end{tikzpicture}
+\end{document}

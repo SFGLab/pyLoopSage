@@ -61,6 +61,10 @@
 .md-footer, .md-footer-meta { background: var(--ls-ink); }
 img[alt^="GPL"], img[src*="shields.io"] { margin: 2px; vertical-align: middle; }
 
-/* home page: the logo banner fills the text width; the header logo is hidden there so the logo shows once */
+/* home page: the logo banner fills the text width (the small header logo stays on every page) */
 .home-banner { display: block; width: 100%; height: auto; margin: 0 0 0.6rem; }
-body:has(.home-banner) .md-header__button.md-logo { display: none; }
+
+/* theory figures: centred, white card, short caption */
+.md-typeset figure { margin: 1.4rem 0; text-align: center; }
+.md-typeset figure img { max-width: 100%; height: auto; }
+.md-typeset figcaption { font-size: 0.68rem; color: #5a5668; max-width: 46rem; margin: 0.5rem auto 0; text-align: left; }
