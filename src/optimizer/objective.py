@@ -1,36 +1,58 @@
 """Loss of one parameter set (K, f, b): how well the MC loop map reproduces the experimental loop map.
 
-loss = 1.0 (1 - r_OE) + 0.5 decay mismatch + 1.5 (1 - r_ins), each term 0 for a perfect match (WEIGHTS):
+loss = 1.0 (1 - r_OE) + 0.5 decay mismatch + 1.5 (1 - r_ins) + 1.0 loop-size shortfall, each term 0 for a perfect match (WEIGHTS):
 - r_OE: Pearson r of log(O/E + 0.2) (observed / expected = each diagonal divided by its mean, so the decay drops out);
 - decay mismatch: variance of log P(s) differences (shape of the decay, scale free);
-- r_ins: Pearson r of the insulation scores.
+- r_ins: Pearson r of the insulation scores;
+- loop-size shortfall: log2(median input loop / median simulated loop) when the simulated loops are shorter (see size_shortfall).
 The decay is easy to reproduce and the insulation (domain boundaries) is not, so the insulation counts three times the decay.
 """
 import copy
 
 import numpy as np
 
-from analysis.maps import fill_masked, insulation_score, loop_map, loop_map_from_counts, ps_curve
+from analysis.maps import denoise_map, fill_masked, insulation_score, loop_map, loop_map_from_counts, ps_curve
 from monte_carlo.simulation import run_mc
 from preproc.readers import read_region_table
 from validation.compare import loop_matrix
 
 
-WEIGHTS = (1.0, 0.5, 1.5)          # O/E map, decay, insulation
+WEIGHTS = (1.0, 0.5, 1.5, 1.0)      # O/E map, decay, insulation, loop-size shortfall
+COMMUNICATION = dict(depth=6, hop=0.6)   # longer, stronger chains of communicating loops (target and simulated map alike): long-range structure shows up in sparse loops
 
 
 def weighted(parts) -> float:
-    """Loss from the three terms of loss_parts."""
-    return float(np.dot(WEIGHTS, parts))
+    """Weighted loss from the terms (loss_parts, plus the loop-size shortfall when present)."""
+    return float(np.dot(WEIGHTS[:len(parts)], parts))
 
 
-def target_map(cfg, inputs, geom, path, hic=None) -> np.ndarray:
-    """Target map: the Hi-C map when given (NaN = masked beads), else the input loops drawn like the simulated ones, scaled to the default number of LEFs."""
+def target_map(cfg, inputs, geom, path, hic=None, smooth=True) -> np.ndarray:
+    """Target contact map (NaN = masked beads).
+
+    From Hi-C: the map denoised over `hic_denoise` beads. From loops: the loops drawn exactly like the simulated ones (dots, domains,
+    communication between loops, over longer chains than in the MC map to reveal long-range patterns) and lightly smoothed over `target_smooth` beads, so that the sparse loops look like a Hi-C map.
+    """
     if hic is not None:
-        return np.array(hic, float)
+        return denoise_map(hic, cfg.hic_denoise if smooth else 0)
     c = loop_matrix(read_region_table(path, geom, paired=True), geom)
     k_ref = max(inputs.loops.n_sites // 2, 1)
-    return loop_map_from_counts(c * (2 * k_ref / max(c.sum(), 1e-12)), geom.n_beads)
+    m = loop_map_from_counts(c * (2 * k_ref / max(c.sum(), 1e-12)), geom.n_beads, **COMMUNICATION)
+    return denoise_map(m, cfg.target_smooth if smooth else 0)
+
+
+def size_shortfall(mc, loops) -> float:
+    """0 when the simulated loops are at least as long as the median input loop; log2 of the ratio when shorter.
+
+    Sparse loop data hardly constrain the loop size, so the search can drift to microscopic loops; this one-sided
+    term keeps the simulated loops from being much shorter than the measured ones (it never pushes them longer).
+    """
+    ref = np.asarray(getattr(loops, "loop_lengths", []), float)
+    if ref.size == 0:
+        return 0.0
+    ms, ns = mc.production(mc.Ms), mc.production(mc.Ns)
+    sim = np.abs(ns - ms).ravel()
+    sim = sim[sim > 0]
+    return float(max(0.0, np.log2(np.median(ref) / max(np.median(sim), 1.0)))) if sim.size else 0.0
 
 
 def _oe(m, sep):
@@ -76,5 +98,5 @@ class Objective:
         c.seed = self.seed + 7919 * self.calls
         self.calls += 1
         mc = run_mc(c, self.inputs, self.geom, quiet=True)
-        self.parts = loss_parts(loop_map(mc, self.geom.n_beads), self.target)
+        self.parts = (*loss_parts(loop_map(mc, self.geom.n_beads, **COMMUNICATION), self.target), size_shortfall(mc, self.inputs.loops))
         return weighted(self.parts)

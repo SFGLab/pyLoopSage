@@ -63,7 +63,7 @@ PARAMS = (
     Param("run_number", "output", "int", None, "Run number in the folder name (empty = next free; standalone stages reuse the latest)", flag="--run"),
     Param("verbosity", "output", "int", 0, "Console detail: 0 main steps + progress bars, 1 + tables, 2 + info messages, 3 + debug (CLI: -v, -vv, -vvv)"),
     Param("quiet", "output", "bool", False, "Print nothing to the console (the log file and the report are still written)", flag="--quiet", short="-q"),
-    Param("seed", "output", "int", None, "Random seed (empty = random)", flag="--seed"),
+    Param("seed", "output", "int", None, "Random seed (empty = a random one, saved in the resolved config); the same seed repeats the run exactly, MD included only with --threads 1", flag="--seed"),
     Param("report", "output", "bool", True, "Write report.html", flag="--report"),
     Param("save_metadata", "output", "bool", True, "Save map matrices (MC and MD heatmaps, distances, strengths) as .npy in data/metadata", flag="--metadata"),
     Param("save_ensemble", "output", "bool", True, "Save every MD frame as .cif", flag="--save-ensemble"),
@@ -141,6 +141,8 @@ PARAMS = (
     Param("optimize", "optimizer", "bool", False, "Before the run, fit the number of LEFs, folding and binding coefficients with Nelder-Mead on short Monte Carlo runs (n_lef of the first family, f, b and the temperature schedule), then run with them", flag="--optimize"),
     Param("opt_evals", "optimizer", "int", 60, "Maximum number of short Monte Carlo evaluations of the optimizer", "evaluations", flag="--opt-evals"),
     Param("opt_steps", "optimizer", "int", 20000, "Monte Carlo steps of one evaluation (the final candidate check runs 3x longer)", "MC steps", flag="--opt-steps"),
+    Param("target_smooth", "optimizer", "float", 0.8, "Smoothing of the optimizer target built from the input loops, so that the sparse loops look like a Hi-C map (0 = none)", "beads", flag="--target-smooth"),
+    Param("hic_denoise", "optimizer", "float", 1.0, "Denoising of the Hi-C target of the optimizer, to bring out the TAD pattern (0 = none); validation always uses the raw map", "beads", flag="--hic-denoise"),
 )
 
 BY_NAME = {p.name: p for p in PARAMS}

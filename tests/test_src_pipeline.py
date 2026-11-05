@@ -114,3 +114,21 @@ def test_quiet_flag_mutes_console(tiny_args, capfd):
 def test_default_is_not_quiet(tiny_args, capfd):
     ctx = run_pipeline(load_config(tiny_args))
     assert "Run folder" in capfd.readouterr().out
+
+
+def test_same_seed_gives_the_same_run_and_random_runs_record_their_seed(tiny_args, tmp_path):
+    """Same --seed: identical MC and MD results; without --seed a seed is drawn and written to the resolved config."""
+    pytest.importorskip("openmm")
+    import numpy as np
+    base = [a for a in tiny_args if a != "--no-run-MD"] + ["--run-MD", "--md-steps", "50", "--n-lef", "6", "--no-knots", "--threads", "1"]
+    runs = []
+    for k in range(2):
+        a = [x if x != str(tmp_path / "results") else str(tmp_path / f"r{k}") for x in base]
+        runs.append(run_pipeline(load_config(a)))
+    a, b = runs
+    assert np.array_equal(a.mc_map, b.mc_map) and np.array_equal(a.mc.chains[0].Ms, b.mc.chains[0].Ms)
+    assert np.allclose(a.md.coords, b.md.coords, atol=1e-4)
+    k = base.index("--seed")
+    free = base[:k] + base[k + 2:]                                     # same run without a seed
+    ctx = run_pipeline(load_config(free + ["--no-run-MD"]))
+    assert ctx.cfg.seed is not None and f"seed = {ctx.cfg.seed}" in ctx.dirs.config.read_text()

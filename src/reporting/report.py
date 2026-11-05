@@ -158,7 +158,7 @@ def _overview() -> str:
 
 
 def _parameters(cfg) -> str:
-    values, tags = cfg.as_dict(), {"default": "", "ini": "ini", "cli": "cli", "optimizer": "opt"}
+    values, tags = cfg.as_dict(), {"default": "", "ini": "ini", "cli": "cli", "optimizer": "opt", "random": "rnd"}
     cards = []
     for sec, title in PARAM_SECTIONS.items():
         rows = "".join(

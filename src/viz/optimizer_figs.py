@@ -43,3 +43,16 @@ def landscape_figure(res):
         ax.legend(fontsize=8)
     save_figure(fig, "optimizer_landscape", title=EXPLAIN["optimizer_landscape"]["title"], caption=EXPLAIN["optimizer_landscape"]["caption"],
                 explain=EXPLAIN["optimizer_landscape"]["explain"], section="optimizer")
+
+
+def target_figure(raw, used, geom, source):
+    """The optimizer target before and after smoothing (loops) or denoising (Hi-C)."""
+    from analysis.maps import fill_masked
+    from viz.theme import heatmap
+    fig, ax = make_fig(1, 2, cell=(5.4, 4.6))
+    for a, m, name in ((ax[0], raw, "raw"), (ax[1], used, "used by the optimizer")):
+        m = fill_masked(m)
+        np.fill_diagonal(m, 0)
+        v = np.percentile(m[m > 0], 99) if (m > 0).any() else 1.0
+        heatmap(fig, a, np.clip(m / v, 0, 1), geom, f"{source}: {name}", "Contacts / 99th percentile", gamma=0.4)
+    save_figure(fig, "optimizer_target")

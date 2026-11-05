@@ -1,10 +1,11 @@
 """Optional Hi-C reference: .hic reader, mask-aware loss, validation scores, report figures and the optimizer target."""
 import json
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
 
-from analysis.maps import fill_masked
+from analysis.maps import denoise_map, fill_masked, ps_curve
 from common.genome import Geometry
 from optimizer.objective import loss_parts, target_map
 from pipeline.runner import run_pipeline
@@ -48,7 +49,7 @@ def test_masked_beads_are_neutral_in_the_loss():
     assert np.isfinite(fill_masked(masked)).all()
     parts = loss_parts(m, masked)
     assert np.isfinite(parts).all() and abs(sum(parts) - sum(loss_parts(m, t))) < 0.3
-    assert target_map(None, None, None, None, hic=masked).shape == t.shape
+    assert target_map(SimpleNamespace(hic_denoise=0), None, None, None, hic=masked).shape == t.shape
 
 
 def test_hic_scores_are_high_for_the_same_map_and_lower_for_a_different_one():
@@ -104,4 +105,25 @@ def test_no_hic_means_no_hic_output(tiny_args):
 def test_optimizer_uses_the_hic_map_as_target(tiny_args, fake_hic):
     ctx = run_pipeline(load_config(tiny_args + ["--hic", fake_hic, "--optimize", "--opt-evals", "5", "--opt-steps", "500"]))
     html = (ctx.dirs.root / "report" / "report.html").read_text()
-    assert ctx.optimization is not None and "Hi-C map (decay, insulation and O/E taken from it)" in html
+    assert ctx.optimization is not None and "Hi-C map denoised over" in html
+
+
+def test_denoising_keeps_the_decay_and_the_mask_and_lowers_the_noise():
+    clean, noisy = _hic_like(noise=0.0), _hic_like(noise=0.6, seed=2)
+    noisy[20:23, :] = noisy[:, 20:23] = np.nan
+    den = denoise_map(noisy, 1.5)
+    assert np.array_equal(np.isnan(den), np.isnan(noisy))                                 # masked beads stay masked
+    ok = np.isfinite(den) & (np.abs(np.subtract.outer(np.arange(120), np.arange(120))) > 1)
+    err = lambda a: np.mean((np.log(a[ok]) - np.log(clean[ok])) ** 2)
+    assert err(den) < err(noisy) / 2                                                       # closer to the clean map
+    ps, ps0 = ps_curve(fill_masked(den))[1:60], ps_curve(fill_masked(noisy))[1:60]
+    assert np.allclose(ps / ps.sum(), ps0 / ps0.sum(), rtol=0.15)                          # decay preserved
+    assert np.allclose(denoise_map(noisy, 0), noisy, equal_nan=True)
+
+
+def test_loop_target_is_smoothed_like_a_hic_map(tiny_args):
+    ctx = run_pipeline(load_config(tiny_args + ["--optimize", "--opt-evals", "5", "--opt-steps", "500"]))
+    raw = target_map(ctx.cfg, ctx.inputs, ctx.geom, ctx.loops_file, smooth=False)
+    used = target_map(ctx.cfg, ctx.inputs, ctx.geom, ctx.loops_file)
+    rough = lambda m: np.abs(np.diff(m, axis=1)).mean() / m.mean()
+    assert rough(used) < rough(raw) and (ctx.dirs.figures / "optimizer_target.png").exists()

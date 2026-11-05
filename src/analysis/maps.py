@@ -39,6 +39,26 @@ def fill_masked(mat) -> np.ndarray:
     return m
 
 
+def denoise_map(mat, sigma: float) -> np.ndarray:
+    """Gaussian denoising of the observed/expected pattern, keeping the decay and the masked beads (NaN).
+
+    Each diagonal is divided by its mean, the ratio is blurred over `sigma` beads (masked pairs ignored), and the decay is put back.
+    """
+    m = np.array(mat, float)
+    if sigma <= 0:
+        return m
+    seen = np.isfinite(m)
+    n, f = len(m), fill_masked(m)
+    exp = np.array([np.diagonal(f, k).mean() for k in range(n)])
+    sep = np.abs(np.subtract.outer(np.arange(n), np.arange(n)))
+    e = np.where(exp[sep] > 0, exp[sep], 1.0)
+    num, den = gaussian_filter(f / e, sigma), gaussian_filter(np.ones_like(f), sigma)
+    out = num / den * e
+    out = (out + out.T) / 2
+    out[~seen] = np.nan
+    return out
+
+
 def insulation_score(mat, window: int = 5) -> np.ndarray:
     """Diamond insulation score: mean contact across each bead."""
     n = mat.shape[0]

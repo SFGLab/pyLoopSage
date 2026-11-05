@@ -1,3 +1,5 @@
+![LoopSage](../assets/logo.svg){ .home-banner }
+
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
   <img alt="OpenMM" src="https://img.shields.io/badge/OpenMM-8.5%2B-6a3de8">

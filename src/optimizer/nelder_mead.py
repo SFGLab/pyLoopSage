@@ -20,6 +20,7 @@ class OptResult:
     trace: list = field(default_factory=list)        # one [seconds, loss, K, f, b, T scale] per search evaluation
     seconds: float = 0.0
     evaluations: int = 0
+    bounds: dict = field(default_factory=dict)       # search range of K, f, b and T scale
     converged: bool = False      # simplex shrank below the tolerance before the evaluation budget ran out
 
 
@@ -65,4 +66,4 @@ def optimize(objective, K0: int, f0: float, b0: float, n_beads: int, max_evals: 
     pack = lambda l, c, parts: dict(K=int(c[0]), f=float(c[1]), b=float(c[2]), T=float(c[3]), loss=float(l), parts=[float(v) for v in parts])
     l_s, c_s, p_s = [r for r in checked if r[1] == start][0]
     l_b, c_b, p_b = min(checked, key=lambda r: r[0])
-    return OptResult(pack(l_s, c_s, p_s), pack(l_b, c_b, p_b), trace, seconds, len(trace), bool(res.success))
+    return OptResult(pack(l_s, c_s, p_s), pack(l_b, c_b, p_b), trace, seconds, len(trace), dict(K=list(kb), f=[float(np.exp(v)) for v in LF], b=[float(np.exp(v)) for v in LB], T=[float(np.exp(v)) for v in LT]), bool(res.success))

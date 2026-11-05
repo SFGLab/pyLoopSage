@@ -64,7 +64,9 @@ def verdict(res: OptResult) -> str:
         return f"Optimizer {how}; no candidate beat the starting parameters on the long check, so they are kept (it gave up)."
     gain = 100 * (1 - b["loss"] / s["loss"]) if s["loss"] > 0 else 0.0
     tail = "this is the optimum found" if res.converged else "just the best found so far, more evaluations (--opt-evals) may improve it"
-    return f"Optimizer {how}; loss {s['loss']:.3f} -> {b['loss']:.3f} ({gain:.0f}% lower): {tail}."
+    edge = [k for k, (lo, hi) in res.bounds.items() if b[k] <= lo * 1.001 or b[k] >= hi * 0.999]
+    warn = f" Warning: {', '.join(edge)} sit at the edge of the search range, the optimum may lie beyond." if edge else ""
+    return f"Optimizer {how}; loss {s['loss']:.3f} -> {b['loss']:.3f} ({gain:.0f}% lower): {tail}.{warn}"
 
 
 def apply(ctx, res: OptResult) -> None:
@@ -91,12 +93,14 @@ def describe(ctx):
                 ["Binding coefficient b", s["b"], b["b"], ""], ["Initial temperature", s["t_init"], b["t_init"], "a.u."],
                 ["Final temperature", s["t_final"], b["t_final"], "a.u. (Annealing)"], ["Loss (long check run)", s["loss"], b["loss"], "0 = perfect"],
                 ["Evaluations", "", res.evaluations, "short MC runs"], ["Converged", "", "yes" if res.converged else "no (budget reached)", ""], ["Search time", "", res.seconds, "s"]],
-               "Loss = (1 - r of O/E maps) + 0.5 x decay mismatch + 1.5 x (1 - r of insulation scores) against the " + ("Hi-C map (decay, insulation and O/E taken from it). " if ctx.hic is not None else "experimental loop map. ")
+               "Loss = (1 - r of O/E maps) + 0.5 x decay mismatch + 1.5 x (1 - r of insulation scores) against the " + (f"Hi-C map denoised over {ctx.cfg.hic_denoise:g} beads (decay, insulation and O/E taken from it). " if ctx.hic is not None
+                                                                                                          else f"input loops drawn like the simulated ones (with communication between loops) and smoothed over {ctx.cfg.target_smooth:g} beads. ")
                + verdict(res) + " The Monte Carlo stage then runs all its steps with the optimized values.", "optimizer")
     emit_table("Optimizer loss terms (long check run)", ["Term", "Weight", "Start", "Optimized", "Meaning"],
                [["1 - r of O/E maps", WEIGHTS[0], s["parts"][0], b["parts"][0], "pattern beyond the decay"], ["Decay mismatch", WEIGHTS[1], s["parts"][1], b["parts"][1], "shape of P(s)"],
-                ["1 - r of insulation", WEIGHTS[2], s["parts"][2], b["parts"][2], "domain boundaries"], ["Total (weighted)", "", s["loss"], b["loss"], ""]],
-               "Each term is 0 for a perfect match. The insulation counts more than the decay because the decay is easy to reproduce and the domain boundaries are not.", "optimizer")
+                ["1 - r of insulation", WEIGHTS[2], s["parts"][2], b["parts"][2], "domain boundaries"],
+                ["Loop-size shortfall", WEIGHTS[3], s["parts"][3], b["parts"][3], "simulated loops shorter than the input loops (log2)"], ["Total (weighted)", "", s["loss"], b["loss"], ""]],
+               "Each term is 0 for a perfect match. The insulation counts more than the decay because the decay is easy to reproduce and the domain boundaries are not. The loop-size term keeps the loops from collapsing to microscopic sizes when the input loops are sparse.", "optimizer")
     top = tr[np.argsort(tr[:, 1])[:8]]
     hit = [r[1] for r in tr if (int(r[2]), r[3], r[4], r[5]) == (b["K"], b["f"], b["b"], b["T"])]
     emit_table("Best optimizer evaluations", ["Evaluation", "K", "f", "b", "T scale", "Loss (short run)"],
@@ -107,6 +111,9 @@ def describe(ctx):
     from viz import optimizer_figs
     optimizer_figs.convergence_figure(res)
     optimizer_figs.landscape_figure(res)
+    hic = ctx.hic
+    args = (ctx.cfg, ctx.inputs, ctx.geom, ctx.loops_file, None if hic is None else hic[0])
+    optimizer_figs.target_figure(target_map(*args, smooth=False), target_map(*args), ctx.geom, "Hi-C" if hic is not None else "Input loops")
 
 
 if __name__ == "__main__":

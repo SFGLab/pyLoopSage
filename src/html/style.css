@@ -38,7 +38,7 @@ tr:nth-child(even) td{background:#faf9fc}
 .stat small{display:block;color:var(--muted);font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em}
 .stat span{font-size:1.25rem;font-weight:800;color:#111111}
 .tag{display:inline-block;border-radius:999px;padding:1px 10px;font-size:.78rem;font-weight:800;background:var(--soft);color:var(--accent)}
-.tag.cli{background:#111;color:#fff}.tag.opt{background:#1baf7a;color:#fff}.tag.ini{background:#6a3de8;color:#fff}
+.tag.cli{background:#111;color:#fff}.tag.opt{background:#1baf7a;color:#fff}.tag.rnd{background:#a98df0;color:#fff}.tag.ini{background:#6a3de8;color:#fff}
 dl{display:grid;grid-template-columns:200px 1fr;gap:8px 18px;margin:0}
 dt{font-weight:800;color:#111111}dd{margin:0}
 code{background:var(--soft);border-radius:6px;padding:1px 6px;font-size:.88em}

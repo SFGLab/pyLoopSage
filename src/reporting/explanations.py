@@ -117,9 +117,15 @@ EXPLAIN = {
         explain="The optimizer (Nelder-Mead) proposes the number of LEFs <b>K</b>, the folding coefficient <b>f</b> and the binding "
                 "coefficient <b>b</b>, runs a short Monte Carlo for each, and scores the simulated loop map against the experimental "
                 "loops (<b>loss</b> = 1 - correlation of the observed/expected maps + 0.5 x mismatch of the contact decay + 1.5 x (1 - correlation of the "
-                "insulation scores); 0 is perfect, and the insulation weighs most because the decay is easy to reproduce and the domain boundaries are not). Every short run is a noisy estimate, so the best few candidates and the start are "
+                "insulation scores) + a loop-size term; 0 is perfect, and the insulation weighs most because the decay is easy to reproduce and the domain boundaries are not. The <b>loop-size term</b> is zero unless the simulated loops are shorter than the input loops (median); it stops the search from drifting to microscopic loops when the loop data are sparse). Every short run is a noisy estimate, so the best few candidates and the start are "
                 "re-scored on longer runs with new seeds, and the winner is used for the production run. Dots: single evaluations; "
                 "line: best so far; dashed and dotted lines: the long-run loss of the start and of the chosen parameters."),
+    "optimizer_target": dict(
+        section="optimizer", title="Target of the optimizer",
+        caption="The map the optimizer tries to reproduce, before (left) and after (right) smoothing or denoising.",
+        explain="<b>From input loops:</b> loops are sparse, so they are drawn exactly like the simulated loops (a dot for each loop, enrichment inside it, and communication between loops that share or neighbour an anchor), "
+                "then smoothed over a few beads so that they look like a Hi-C map. <b>From Hi-C:</b> the map is denoised: each diagonal is divided by its mean, the ratio is blurred over a few beads and the decay is put back, "
+                "so the noise drops and the domain (TAD) pattern stands out. The validation against Hi-C always uses the raw map; only the optimizer sees the denoised one."),
     "optimizer_landscape": dict(
         section="optimizer", title="What the optimizer explored",
         caption="Loss against K (left), f (middle) and b (right) for every evaluation; later evaluations are darker, bigger dots mean a hotter temperature.",

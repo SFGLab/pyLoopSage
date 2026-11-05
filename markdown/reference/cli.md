@@ -62,7 +62,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | `-o`, `--out` | text | *(empty)* | Results folder (empty = <project>/results); each run gets its own subfolder |
 | `--run` | integer | *(empty)* | Run number in the folder name (empty = next free; standalone stages reuse the latest) |
 | `-q`, `--quiet` / `--no-quiet` | true / false | `False` | Print nothing to the console (the log file and the report are still written) |
-| `--seed` | integer | *(empty)* | Random seed (empty = random) |
+| `--seed` | integer | *(empty)* | Random seed (empty = a random one, saved in the resolved config); the same seed repeats the run exactly, MD included only with --threads 1 |
 | `--report` / `--no-report` | true / false | `True` | Write report.html |
 | `--metadata` / `--no-metadata` | true / false | `True` | Save map matrices (MC and MD heatmaps, distances, strengths) as .npy in data/metadata |
 | `--save-ensemble` / `--no-save-ensemble` | true / false | `True` | Save every MD frame as .cif |
@@ -121,6 +121,8 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | `--optimize` / `--no-optimize` | true / false | `False` | Before the run, fit the number of LEFs, folding and binding coefficients with Nelder-Mead on short Monte Carlo runs (n_lef of the first family, f, b and the temperature schedule), then run with them |
 | `--opt-evals` | integer (evaluations) | `60` | Maximum number of short Monte Carlo evaluations of the optimizer |
 | `--opt-steps` | integer (MC steps) | `20000` | Monte Carlo steps of one evaluation (the final candidate check runs 3x longer) |
+| `--target-smooth` | number (beads) | `0.8` | Smoothing of the optimizer target built from the input loops, so that the sparse loops look like a Hi-C map (0 = none) |
+| `--hic-denoise` | number (beads) | `1.0` | Denoising of the Hi-C target of the optimizer, to bring out the TAD pattern (0 = none); validation always uses the raw map |
 
 ## Output
 

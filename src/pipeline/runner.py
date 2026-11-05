@@ -2,8 +2,11 @@
 
 - Chain the stages; each one computes (or loads a cached result) and describes it.
 """
+import random
 from dataclasses import dataclass
 from typing import Any
+
+import numpy as np
 
 from common.genome import fmt_duration, Geometry
 from common.runtime import apply_threads, create_run_dirs, OutputDirs
@@ -78,12 +81,16 @@ def make_context(cfg, reuse_latest=False) -> RunContext:
     """Create the run folder, logging and the shared state."""
     set_quiet(cfg.quiet)
     print_banner()
+    if cfg.seed is None:                                           # random run: draw a seed and record it, so the run can be repeated
+        cfg.seed = random.randrange(2 ** 31 - 1000)
+        cfg.source["seed"] = "random"
+    np.random.seed(cfg.seed)                                       # numpy state of the main process (MD start structure, forces)
     geom = build_geometry(cfg)
     dirs = create_run_dirs(cfg.out_path, geom, cfg.run_number, reuse_latest)
     setup_logging(cfg.verbosity, dirs.log_file)
     REGISTRY.reset(dirs.figures)
     log.step("Run folder: %s", dirs.root)
-    log.step("Region %s, %d threads, %d replica(s)", geom.label, apply_threads(cfg), cfg.replicas)
+    log.step("Region %s, %d threads, %d replica(s), seed %d", geom.label, apply_threads(cfg), cfg.replicas, cfg.seed)
     for note in cfg.notes:
         log.warning(note)
     write_ini(dirs.config, cfg.as_dict(), cfg.source)

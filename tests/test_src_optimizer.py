@@ -1,5 +1,7 @@
 """Parameter optimizer: loss, search and the --optimize pipeline stage."""
 import json
+
+import pytest
 import numpy as np
 
 from optimizer.nelder_mead import _clip, optimize
@@ -21,8 +23,8 @@ def test_loss_is_zero_for_identical_maps_and_positive_for_different_ones():
     assert sum(loss_parts(m, _map(seed=5))) > 0.1
 
 
-def test_insulation_weighs_more_than_the_decay():
-    assert WEIGHTS[2] > WEIGHTS[1] and weighted([0, 1, 0]) < weighted([0, 0, 1])
+def test_insulation_weighs_more_than_the_decay_and_short_loops_cost():
+    assert WEIGHTS[2] > WEIGHTS[1] and weighted([0, 1, 0]) < weighted([0, 0, 1]) and weighted([0, 0, 0, 1]) > 0
 
 
 def test_clip_respects_bounds():
@@ -54,3 +56,21 @@ def test_optimize_flag_changes_the_production_parameters(tiny_args):
     assert (ctx.dirs.figures / "optimizer.png").exists()
     assert "Parameter optimizer" in (ctx.dirs.root / "report" / "report.html").read_text()
     assert "optimizer" in (ctx.dirs.config).read_text() and "What the optimizer explored" in (ctx.dirs.root / "report" / "report.html").read_text()
+
+
+@pytest.mark.parametrize("mode", ["contrastive", "2D loop map", "preferential loading"])
+def test_optimizer_works_with_every_binding_mode(tiny_args, tmp_path, mode):
+    """Contrastive binding, the 2D loop map and preferential LEF loading all run through --optimize and never worsen the start."""
+    extra = {"contrastive": ["--set", "contrastive_binding=true"], "2D loop map": ["--set", "data_loss_mode=1"]}.get(mode)
+    if extra is None:
+        pyBigWig = pytest.importorskip("pyBigWig")
+        bw = str(tmp_path / "lef.bw")
+        f = pyBigWig.open(bw, "w")
+        f.addHeader([("chr1", 249250621)])
+        f.addEntries("chr1", 77_000_000, values=[1 + np.sin(i / 5) for i in range(1800)], span=10_000, step=10_000)
+        f.close()
+        extra = ["--set", f"lef_track_file={bw}"]
+    ctx = run_pipeline(load_config(tiny_args + ["--optimize", "--opt-evals", "6", "--opt-steps", "500"] + extra))
+    r = ctx.optimization
+    assert len(r.best["parts"]) == 4 and np.isfinite(r.best["loss"]) and r.best["loss"] <= r.start["loss"] + 1e-9
+    assert ctx.mc.meta["n_lef"] == r.best["K"]
