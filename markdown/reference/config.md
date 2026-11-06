@@ -148,9 +148,9 @@ Rules:
 | `le_ff_strength` | number (kJ/mol/nm^2) | `60000.0` | *ini only* | Loop-anchor spring constant |
 | `ev_ff_strength` | number (kJ/mol) | `100.0` | *ini only* | Excluded-volume strength |
 | `ev_ff_power` | number | `3.0` | *ini only* | Excluded-volume exponent |
-| `ev_p` | number | `0.0` | *ini only* | Topoisomerase: probability/fraction with excluded volume off |
-| `continuous_top` | true / false | `False` | *ini only* | Topoisomerase acts on one continuous stretch |
 | `do_compartments` | true / false | `False` | *ini only* | Add block-copolymer compartment force (needs epi_coeff > 0) |
+| `comp_strength` | number | `0.25` | *ini only* | Block-copolymer compartment attraction: scale of the interaction table (1 = the original strength; lower = softer, compartments stay open instead of collapsing) |
+| `comp_range` | number | `0.03` | *ini only* | Block-copolymer attraction range in units of sqrt(N) nm (the original value was 0.05; smaller = shorter range) |
 | `md_skip_burnin` | true / false | `False` | *ini only* | Simulate only post-burn-in MC snapshots (original LoopSage uses every snapshot) |
 | `forcefield_path` | text | `/mnt/attach/outputs/pyLoopSage/src/molecular_dynamics/forcefields/classic_sm_ff.xml` | *ini only* | OpenMM force-field XML |
 
@@ -173,10 +173,8 @@ Rules:
 |---|---|---|---|---|
 | `corr_smooth` | number (beads) | `1.5` | *ini only* | Gaussian smoothing (beads) applied to per-position signals before the extra validation correlations (0 = off) |
 | `contact_radius` | number (nm) | `1.0` | *ini only* | Contact distance for MD contact maps |
-| `detect_knots` | true / false | `False` | `--knots` | Optional linking analysis of loops in 3D (slow; off by default) |
 | `zoom_snapshots` | integer (snapshots) | `120` | *ini only* | Snapshots shown in the zoomed kymograph (window near equilibrium) |
 | `zoom_start` | integer (snapshot) | *(empty)* | *ini only* | First snapshot of the zoom window (empty = middle of production) |
-| `knots_stride` | integer (frames) | `10` | *ini only* | Use every n-th MD frame for linking numbers |
 
 ## `[optimizer]`: Parameter optimizer (--optimize)
 
@@ -184,6 +182,27 @@ Rules:
 |---|---|---|---|---|
 | `optimize` | true / false | `False` | `--optimize` | Before the run, fit the number of LEFs, folding and binding coefficients with Nelder-Mead on short Monte Carlo runs (n_lef of the first family, f, b and the temperature schedule), then run with them |
 | `opt_evals` | integer (evaluations) | `60` | `--opt-evals` | Maximum number of short Monte Carlo evaluations of the optimizer |
+| `opt_early_stop` | true / false | `True` | `--opt-early-stop` | Stop the optimizer early when the loss no longer improves |
+| `opt_patience` | integer (evaluations) | `20` | `--opt-patience` | Early stopping: evaluations without a real improvement (see opt_min_gain) before the optimizer stops |
+| `opt_min_gain` | number | `0.01` | *ini only* | Early stopping: smallest drop of the best loss that counts as an improvement (the loss is about 1-4 at the start) |
 | `opt_steps` | integer (MC steps) | `20000` | `--opt-steps` | Monte Carlo steps of one evaluation (the final candidate check runs 3x longer) |
 | `target_smooth` | number (beads) | `0.8` | `--target-smooth` | Smoothing of the optimizer target built from the input loops, so that the sparse loops look like a Hi-C map (0 = none) |
 | `hic_denoise` | number (beads) | `1.0` | `--hic-denoise` | Denoising of the Hi-C target of the optimizer, to bring out the TAD pattern (0 = none); validation always uses the raw map |
+
+## `[topology]`: Topology: topoisomerase, chain crossings and linking (optional, advanced)
+
+| Key | Type (unit) | Default | CLI option | What it does |
+|---|---|---|---|---|
+| `detect_knots` | true / false | `False` | `--knots` | Optional linking analysis of loops in 3D (slow; off by default) |
+| `knots_stride` | integer (frames) | `10` | *ini only* | Use every n-th MD frame for linking numbers |
+| `ev_p` | number | `0.0` | *ini only* | Topoisomerase ('random' mode): probability/fraction of beads with excluded volume off during a frame |
+| `continuous_top` | true / false | `False` | *ini only* | Topoisomerase ('random' mode) acts on one continuous stretch |
+| `topo_mode` | text | `random` | *ini only* | Topoisomerase model: 'random' (beads with EV off for a whole frame, set by ev_p) or 'local' (short strand-passage events at close contacts) |
+| `topo_rate` | number (events) | `5.0` | *ini only* | 'local' mode: strand-passage attempts per MD frame per 1000 beads |
+| `topo_radius` | number (bond lengths) | `2.0` | *ini only* | 'local' mode: strands closer than this can pass through each other |
+| `topo_width` | integer (beads) | `3` | *ini only* | 'local' mode: beads of the passing strand that lose their excluded volume |
+| `topo_window` | number (fraction) | `0.05` | *ini only* | 'local' mode: share of the frame's MD steps with excluded volume off, per attempt |
+| `topo_keep` | number | `1.0` | *ini only* | 'local' mode: probability to keep a passage that creates a new link between loops (1 = no bias; below 1 the topoisomerase simplifies the topology) |
+| `track_crossings` | true / false | `False` | *ini only* | Count chain crossings during the MD (checks whether the excluded volume leaks); also on with --knots |
+| `track_every` | integer (MD steps) | `100` | *ini only* | MD steps between crossing checks |
+| `ev_barrier_target` | number (kT) | `10.0` | *ini only* | Strand-crossing barrier used for the suggested ev_ff_strength in the topology report |

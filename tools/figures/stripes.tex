@@ -1,0 +1,34 @@
+\input{preamble.tex}
+\begin{document}
+\pgfmathsetmacro{\W}{8}                 % map side (cm); 120 bins
+\pgfmathsetmacro{\u}{\W/120}
+\pgfmathsetmacro{\yM}{-1.7}             % top of the map
+\pgfmathsetmacro{\ry}{\yM-12.5*\u}      % row of the fixed anchor (bin 12)
+\newcommand{\sw}[3]{% sweeping loop: moving leg at bin #1, line style #2, label #3
+  \pgfmathsetmacro{\xb}{#1*\u}\pgfmathsetmacro{\xa}{12*\u}\pgfmathsetmacro{\hh}{0.36*(#1-12)*\u+0.2}%
+  \draw[#2,line cap=round] (\xa,0.08) .. controls (\xa,\hh) and (\xb,\hh) .. (\xb,0.08);}
+\begin{tikzpicture}
+  % contact map
+  \node[anchor=north west,inner sep=0] at (0,\yM) {\includegraphics[width=\W cm]{stripe_map.png}};
+  \draw[ink!50,line width=0.7pt] (0,\yM) rectangle (\W,{\yM-\W});
+  % fibre, CTCF sites and the three snapshots of one loop (older = paler)
+  \draw[fiber] (0,0)--(\W,0);
+  \pgfmathsetmacro{\pa}{6*\u}\pgfmathsetmacro{\pb}{106*\u}\prot{\pa}{0}{f}\prot{\pb}{0}{r}
+  \sw{34}{line width=2pt,cohesin!30}{1}\sw{62}{line width=2.2pt,cohesin!60}{2}\sw{88}{line width=2.6pt,cohesin}{3}
+  \legdot{{12*\u}}{0}{cohesin}
+  \foreach \b/\k/\c in {34/1/30,62/2/60,88/3/100}{\pgfmathsetmacro{\xx}{\b*\u}%
+    \legdot{\xx}{0}{cohesin!\c!white}\node[note,anchor=north] at (\xx,-0.28) {$t_\k$};
+    \draw[dashed,ink!30,line width=0.6pt] (\xx,-1.0)--(\xx,{\ry+0.14});
+    \fill[white] (\xx,\ry) circle (0.15);\fill[cohesin!\c!white] (\xx,\ry) circle (0.1);}
+  \draw[cohesin,line width=1.6pt,-{Stealth[length=5pt,width=6pt]}] ({40*\u},-0.7)--({84*\u},-0.7);
+  \node[note,anchor=east] at (-0.2,0) {fibre};
+  \node[note,anchor=east] at (-0.2,\yM) {contact map};
+  % call-outs
+  \pgfmathsetmacro{\xr}{\W+0.5}
+  \node[lab,anchor=west,align=left] at (\xr,{\yM+0.2}) {\textbf{stripe}\\[-1pt]{\footnotesize one leg rests at the CTCF,}\\{\footnotesize the other sweeps along the row}};
+  \draw[leader] (\xr-0.05,{\yM+0.2})--({70*\u},\ry) node[fill=ink,circle,inner sep=1.2pt] {};
+  \node[lab,anchor=west,align=left] at (\xr,{\yM-2.4}) {\textbf{end of the stripe}\\[-1pt]{\footnotesize the leg stalls at the}\\{\footnotesize opposite CTCF}};
+  \draw[leader] (\xr-0.05,{\yM-2.4})--({100*\u},\ry) node[fill=ink,circle,inner sep=1.2pt] {};
+  \node[lab,anchor=west,align=left] at (\xr,{\yM-5.6}) {\textbf{a snapshot is not enough}\\[-1pt]{\footnotesize the stripe is the sum of}\\{\footnotesize $t_1, t_2, t_3, \dots$}};
+\end{tikzpicture}
+\end{document}

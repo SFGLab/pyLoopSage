@@ -26,6 +26,7 @@ class InputData:
     bw_names: list = field(default_factory=list)
     lef_track: np.ndarray = None     # LEF loading preference per bead
     comp: np.ndarray = None          # compartment signal in [-1, 1] per bead
+    comp_source: str = ""            # where it came from: bigwig, bed or hic
 
     def save(self, path) -> None:
         lo = self.loops
@@ -33,7 +34,7 @@ class InputData:
         for name in ("lef_track", "comp"):
             if getattr(self, name) is not None:
                 arrays[name] = getattr(self, name)
-        meta = json.dumps(dict(n_sites=int(lo.n_sites), stats=lo.stats, fmt=lo.fmt, bw_names=self.bw_names))
+        meta = json.dumps(dict(n_sites=int(lo.n_sites), stats=lo.stats, fmt=lo.fmt, bw_names=self.bw_names, comp_source=self.comp_source))
         np.savez_compressed(path, meta=np.array(meta), **arrays)
 
     @classmethod
@@ -42,7 +43,7 @@ class InputData:
         meta = json.loads(str(z["meta"]))
         loops = LoopData(z["L"], z["R"], z["J"], z["J_loss"], meta["n_sites"], z["lengths"], meta["stats"], meta["fmt"])
         return cls(loops, z["BWs"], meta["bw_names"],
-                   z["lef_track"] if "lef_track" in z else None, z["comp"] if "comp" in z else None)
+                   z["lef_track"] if "lef_track" in z else None, z["comp"] if "comp" in z else None, meta.get("comp_source", ""))
 
 
 # ---- Resolve the modelled genomic region and bead count --------------------
@@ -122,10 +123,10 @@ _READERS = {".bedpe": vectors_from_bedpe, ".bed": vectors_from_bed, ".narrowpeak
 
 def _compartments(cfg, geom):
     if cfg.comp_bw_file:
-        return bigwig_to_beads(cfg.comp_bw_file, geom, scale_pm1=True)
+        return bigwig_to_beads(cfg.comp_bw_file, geom, scale_pm1=True), "bigwig"
     if cfg.comp_bed_file:
-        return load_compartments_bed(cfg.comp_bed_file, geom, spline_s=geom.n_beads / 100)
-    return None
+        return load_compartments_bed(cfg.comp_bed_file, geom, spline_s=geom.n_beads / 100), "bed"
+    return None, ""
 
 
 def load_inputs(cfg, geom, path=None) -> InputData:
@@ -143,5 +144,6 @@ def load_inputs(cfg, geom, path=None) -> InputData:
         lef = np.clip(bigwig_to_beads(cfg.lef_track_file, geom, roll=True), 0, None)
     log.info("Loaded %d extra track(s), LEF track: %s, compartments: %s",
              len(bws), lef is not None, bool(cfg.comp_bw_file or cfg.comp_bed_file))
+    comp, source = _compartments(cfg, geom)
     return InputData(loops, np.array(bws).reshape(len(bws), geom.n_beads),
-                     [Path(f).name for f in cfg.bw_files], lef, _compartments(cfg, geom))
+                     [Path(f).name for f in cfg.bw_files], lef, comp, source)

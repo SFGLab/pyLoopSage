@@ -12,9 +12,9 @@ d = np.abs(i - j) + 1.0
 same = (i < T) == (j < T)
 M = np.where(same, 1.0, 0.22) * d ** -0.75
 M = M / M.max()
-for a, b in [(3, 54), (66, 117), (12, 40), (74, 102)]:   # loop dots (symmetric)
+for a, b in [(9, 48), (72, 110), (15, 40), (78, 102)]:   # loop dots (symmetric)
     for p, q in ((a, b), (b, a)):
-        M += 0.30 * np.exp(-((i - p) ** 2 + (j - q) ** 2) / 6)
+        M += 0.45 * np.exp(-((i - p) ** 2 + (j - q) ** 2) / 3)
 M[:T, 0] += 0.03; M[0, :T] += 0.03                      # a faint stripe along the first anchor
 M = gaussian_filter(M, 0.8)
 cmap = LinearSegmentedColormap.from_list("ls", ["#ffffff", "#e6defc", "#8f6cf0", "#4a24c4"])

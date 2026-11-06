@@ -1,0 +1,28 @@
+\input{preamble.tex}
+\tikzset{cA/.style={line width=2.6pt,cohesin,line cap=round},cB/.style={line width=2.6pt,ink,line cap=round},h/.style={line width=7pt,white,line cap=butt}}
+\newcommand{\tre}[2]{\draw[#1,samples=60,domain=#2,variable=\t] plot ({sin(\t r)+2*sin(2*\t r)},{cos(\t r)-2*cos(2*\t r)});}
+\newcommand{\ovr}[1]{\pgfmathsetmacro{\lo}{#1-0.32}\pgfmathsetmacro{\hi}{#1+0.32}\tre{h}{\lo:\hi}\tre{cA}{\lo:\hi}}
+\begin{document}
+\begin{tikzpicture}
+  \foreach \x/\l/\t/\s in {0/a/{Knot}/{one closed curve},7.2/b/{Link}/{two closed curves, interlocked},14.4/c/{Unlink}/{two closed curves, separable}}{
+    \panelbg{\x}{-3.2}{\x+6.4}{3.6}\badge{\x+0.45}{3.1}{\l}\node[hd] at (\x+0.85,3.1) {\t};\node[note,anchor=north west] at (\x+0.85,2.75) {\s};}
+  % a: trefoil (x = sin t + 2 sin 2t, y = cos t - 2 cos 2t, z = - sin 3t); the strand that passes over is redrawn at each crossing
+  \begin{scope}[shift={(3.2,-0.05)},scale=0.62]
+    \tre{cA}{0:6.2832}
+    \ovr{3.917}\ovr{1.823}\ovr{6.012}
+  \end{scope}
+  % b: Hopf link, two crossings
+  \begin{scope}[shift={(10.4,-0.1)},scale=1.2]
+    \draw[cA] (-0.55,0) circle (1);\draw[cB] (0.55,0) circle (1);
+    \draw[h] ([shift={(-0.55,0)}]34.6:1) arc (34.6:78.6:1);\draw[cA] ([shift={(-0.55,0)}]34.6:1) arc (34.6:78.6:1);
+    \draw[h] ([shift={(0.55,0)}]214.6:1) arc (214.6:258.6:1);\draw[cB] ([shift={(0.55,0)}]214.6:1) arc (214.6:258.6:1);
+  \end{scope}
+  % c: unlink
+  \begin{scope}[shift={(17.6,-0.1)},scale=1.2]
+    \draw[cA] (-0.95,0) circle (0.8);\draw[cB] (0.95,0) circle (0.8);
+  \end{scope}
+  \node[note] at (3.2,-2.75) {cannot be untied without cutting};
+  \node[note] at (10.4,-2.75) {cannot be pulled apart without cutting};
+  \node[note] at (17.6,-2.75) {can be pulled apart freely};
+\end{tikzpicture}
+\end{document}

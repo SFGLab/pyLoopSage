@@ -1,35 +1,41 @@
 \input{preamble.tex}
 \begin{document}
-\newcommand{\arcl}[3]{\pgfmathsetmacro{\hh}{0.36*(#2-#1)+0.4}\draw[#3] (#1,0.1) .. controls (#1,\hh) and (#2,\hh) .. (#2,0.1);}
-\newcommand{\fibre}{\draw[fiber] plot[smooth] coordinates {(0.2,0.04) (1.8,-0.05) (3.6,0.04) (5.4,-0.05) (7.0,0.04)};}
-\newcommand{\ok}[2]{\fill[ink] (#1,#2) circle (0.2);\draw[white,line width=1.6pt,line cap=round,line join=round] (#1-0.09,#2) -- (#1-0.02,#2-0.08) -- (#1+0.1,#2+0.1);}
-\newcommand{\no}[2]{\fill[ink!55] (#1,#2) circle (0.2);\draw[white,line width=1.6pt,line cap=round] (#1-0.08,#2-0.08)--(#1+0.08,#2+0.08);\draw[white,line width=1.6pt,line cap=round] (#1-0.08,#2+0.08)--(#1+0.08,#2-0.08);}
+\newcommand{\arch}[3]{\pgfmathsetmacro{\hh}{0.42*(#2-#1)+0.5}\draw[halo] (#1,0.08) .. controls (#1,\hh) and (#2,\hh) .. (#2,0.08);\draw[#3] (#1,0.08) .. controls (#1,\hh) and (#2,\hh) .. (#2,0.08);}
+\newcommand{\arcl}[3]{\pgfmathsetmacro{\hh}{0.42*(#2-#1)+0.5}\draw[#3] (#1,0.08) .. controls (#1,\hh) and (#2,\hh) .. (#2,0.08);}
+\newcommand{\fibre}{\draw[fiber] (0.2,0)--(7.0,0);}
+\newcommand{\ok}[2]{\fill[ok] (#1,#2) circle (0.21);\draw[white,line width=1.8pt,line cap=round,line join=round] (#1-0.09,#2) -- (#1-0.02,#2-0.08) -- (#1+0.1,#2+0.1);}
+\newcommand{\no}[2]{\fill[no] (#1,#2) circle (0.21);\draw[white,line width=1.6pt,line cap=round] (#1-0.08,#2-0.08)--(#1+0.08,#2+0.08);\draw[white,line width=1.6pt,line cap=round] (#1-0.08,#2+0.08)--(#1+0.08,#2-0.08);}
 \newcommand{\cring}[2]{\ringback{#1}{#2}{condensin}\ringfront{#1}{#2}{condensin}}
 \tikzset{li/.style={line width=3pt,cohesin,line cap=round},lg/.style={line width=3pt,condensin,line cap=round},lgl/.style={line width=2.4pt,condensin,line cap=round}}
 \begin{tikzpicture}
   \foreach \x/\y in {0/0,9/0}{\panelbg{\x}{\y-1.2}{\x+8}{\y+3.6}}
-  \foreach \x/\y in {0/-6.6,9/-6.6}{\panelbg{\x}{\y-1.2}{\x+8}{\y+4.6}}
+  \foreach \x/\y in {0/-6.4,9/-6.4}{\panelbg{\x}{\y-1.4}{\x+8}{\y+4.4}}
   % a, b: crossing of two extruders
-  \begin{scope}[shift={(0.5,0)}]\fibre\arcl{0.5}{4.0}{li}\draw[halo] (2.9,0.1) .. controls (2.9,1.8) and (6.5,1.8) .. (6.5,0.1);\arcl{2.9}{6.5}{li}\end{scope}
-  \begin{scope}[shift={(9.5,0)}]\fibre\arcl{0.5}{4.0}{li}\draw[halo] (2.9,0.1) .. controls (2.9,1.8) and (6.5,1.8) .. (6.5,0.1);\arcl{2.9}{6.5}{lg}\end{scope}
+  \begin{scope}[shift={(0.5,0)}]\fibre\arcl{0.5}{4.0}{li}\arch{2.9}{6.5}{li}\legdot{0.5}{0}{cohesin}\legdot{4.0}{0}{cohesin}\legdot{2.9}{0}{cohesin}\legdot{6.5}{0}{cohesin}\end{scope}
+  \begin{scope}[shift={(9.5,0)}]\fibre\arcl{0.5}{4.0}{li}\arch{2.9}{6.5}{lg}\legdot{0.5}{0}{cohesin}\legdot{4.0}{0}{cohesin}\legdot{2.9}{0}{condensin}\legdot{6.5}{0}{condensin}\end{scope}
+  \foreach \x/\col in {0.5/cohesin,0.5/cohesin}{}
+  \node[font=\footnotesize\bfseries,text=cohesin] at (2.3,2.0) {cohesin};\node[font=\footnotesize\bfseries,text=cohesin] at (6.0,2.0) {cohesin};
+  \node[font=\footnotesize\bfseries,text=cohesin] at (11.3,2.0) {cohesin};\node[font=\footnotesize\bfseries,text=condensin!85!black] at (15.0,2.0) {condensin};
   \badge{0.5}{3.0}{a}\badge{9.5}{3.0}{b}
   \node[hd] at (0.9,3.0) {Cohesin and cohesin};\node[note,anchor=west] at (0.9,2.55) {cannot pass each other};
   \node[hd] at (9.9,3.0) {Cohesin and condensin};\node[note,anchor=west] at (9.9,2.55) {can pass through each other};
   \no{7.5}{3.0}\ok{16.5}{3.0}
   % c: interphase (CTCF stops cohesin loops)
-  \begin{scope}[shift={(0.5,-6.6)}]
-    \fibre
-    \draw[li] (1.2,0.24) .. controls (1.2,1.6) and (3.2,1.6) .. (3.2,0.24);
-    \draw[li] (4.2,0.24) .. controls (4.2,1.9) and (6.5,1.9) .. (6.5,0.24);
-    \prot{1.2}{0}{f}\prot{3.2}{0}{r}\prot{4.2}{0}{f}\prot{6.5}{0}{r}
+  \begin{scope}[shift={(0.5,-6.4)}]
+    \draw[fiber] (0.2,0)--(7.0,0);
+    \draw[li] (1.5,0.08) .. controls (1.5,1.9) and (2.6,1.9) .. (2.6,0.08);\legdot{1.5}{0}{cohesin}\legdot{2.6}{0}{cohesin}
+    \draw[li] (4.6,0.08) .. controls (4.6,2.4) and (6.1,2.4) .. (6.1,0.08);\legdot{4.6}{0}{cohesin}\legdot{6.1}{0}{cohesin}
+    \prot{1.0}{0}{f}\prot{3.1}{0}{r}\prot{4.1}{0}{f}\prot{6.6}{0}{r}
   \end{scope}
   % d: mitosis (condensin loops around an axis)
-  \begin{scope}[shift={(13,-6.6)}]
-    \draw[line width=10pt,ink!13,line cap=round] (0,-0.5)--(0,3.0);
-    \draw[line width=2pt,ink!55,line cap=round] (0,-0.5)--(0,3.0);
-    \foreach \y/\w/\s in {2.6/1.9/-1,2.0/1.5/1,1.4/2.0/-1,0.8/1.6/1,0.2/1.9/-1}{
-      \draw[lgl] (0,\y) .. controls (\s*\w*1.25,\y+0.6) and (\s*\w*1.25,\y-0.6) .. (0,\y-0.2);
-      \draw[condensin,line width=2pt,fill=white] (0,\y-0.1) ellipse (0.2 and 0.08);}
+  \begin{scope}[shift={(13,-6.4)}]
+    \draw[line width=11pt,ink!12,line cap=round] (0,-0.5)--(0,2.35);
+    \draw[line width=2pt,ink!55,line cap=round] (0,-0.5)--(0,2.35);
+    \foreach \y/\wl/\wr in {2.0/1.9/1.5,1.4/1.5/1.9,0.8/2.0/1.5,0.2/1.6/1.9}{
+      \draw[lgl] (0,\y) .. controls (-\wl*0.9,\y+0.5) and (-\wl*1.1,\y-0.35) .. (0,\y-0.2);
+      \draw[lgl] (0,\y-0.05) .. controls (\wr*0.9,\y+0.4) and (\wr*1.1,\y-0.45) .. (0,\y-0.25);
+      \draw[condensin,line width=2pt,fill=white] (0,\y-0.12) ellipse (0.2 and 0.08);}
+    \node[note] at (0,-0.95) {central axis};
   \end{scope}
   \badge{0.5}{-2.6}{c}\badge{9.5}{-2.6}{d}
   \node[hd] at (0.9,-2.6) {Interphase};\node[note,anchor=west] at (0.9,-3.05) {cohesin loops end at CTCF sites};

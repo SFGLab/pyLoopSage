@@ -1,27 +1,28 @@
 \input{preamble.tex}
 \begin{document}
 % arch between legs a and b (above the fibre); legs are small rings
-\newcommand{\arch}[3]{\pgfmathsetmacro{\hh}{0.36*(#2-#1)+0.45}\draw[#3] (#1,0.24) .. controls (#1,\hh) and (#2,\hh) .. (#2,0.24);}
-\newcommand{\leg}[1]{\fill[white] (#1,0.34) circle (0.15);\draw[cohesin!80!black,line width=1.3pt,fill=cohesin!70] (#1,0.34) circle (0.11);}
-\newcommand{\fibre}{\draw[fiber] plot[smooth] coordinates {(0.2,0.04) (1.8,-0.05) (3.6,0.04) (5.4,-0.05) (7.0,0.04)};}
+\newcommand{\arch}[3]{\pgfmathsetmacro{\hh}{0.42*(#2-#1)+0.55}\draw[#3] (#1,0.08) .. controls (#1,\hh) and (#2,\hh) .. (#2,0.08);}
+\newcommand{\leg}[1]{\legdot{#1}{0}{cohesin}}
+\newcommand{\fibre}{\draw[fiber] (0.2,0)--(7.0,0);}
+% motion of a leg (it sits on the fibre; the arrow hovers above it): free = arrowhead, stopped = blunt bar in the colour of the CTCF
+\newcommand{\blkL}[2]{\draw[cohesin,line width=1.8pt,line cap=round] (#1,-0.85)--(#1-0.45,-0.85);\draw[#2,line width=3.4pt,line cap=round] (#1-0.52,-1.05)--(#1-0.52,-0.65);}
+\newcommand{\blkR}[2]{\draw[cohesin,line width=1.8pt,line cap=round] (#1,-0.85)--(#1+0.45,-0.85);\draw[#2,line width=3.4pt,line cap=round] (#1+0.52,-1.05)--(#1+0.52,-0.65);}
+\newcommand{\goL}[1]{\draw[cohesin,line width=1.8pt,-{Stealth[length=7pt,width=8pt]},line cap=round] (#1,-0.85)--(#1-0.8,-0.85);}
+\newcommand{\goR}[1]{\draw[cohesin,line width=1.8pt,-{Stealth[length=7pt,width=8pt]},line cap=round] (#1,-0.85)--(#1+0.8,-0.85);}
 \tikzset{loop/.style={line width=3pt,cohesin,line cap=round},old/.style={line width=2pt,cohesin!30,dash pattern=on 4pt off 3pt,line cap=round}}
 \begin{tikzpicture}
   \foreach \x/\y in {0/0,9/0,0/-6.4,9/-6.4}{\panelbg{\x}{\y-1.4}{\x+8}{\y+3.9}}
   \begin{scope}[shift={(0.5,0)}]
-    \fibre \arch{1.6}{5.4}{loop}\prot{1.6}{0}{f}\prot{5.4}{0}{r}\leg{1.6}\leg{5.4}
-    \stopbar{1.15}{0.34}{fwd}\stopbar{5.85}{0.34}{rev}
+    \fibre \arch{2.1}{4.9}{loop}\prot{1.6}{0}{f}\prot{5.4}{0}{r}\leg{2.1}\leg{4.9}\blkL{2.1}{fwd}\blkR{4.9}{rev}
   \end{scope}
   \begin{scope}[shift={(9.5,0)}]
-    \fibre \arch{2.4}{4.6}{old}\arch{0.9}{6.1}{loop}\prot{2.4}{0}{r}\prot{4.6}{0}{f}\leg{0.9}\leg{6.1}
-    \legarrow{0.7}{0.2}{-0.75}\legarrow{6.3}{6.8}{-0.75}
+    \fibre \arch{3.0}{4.0}{old}\arch{0.9}{6.1}{loop}\prot{2.4}{0}{r}\prot{4.6}{0}{f}\leg{0.9}\leg{6.1}\goL{0.9}\goR{6.1}
   \end{scope}
   \begin{scope}[shift={(0.5,-6.4)}]
-    \fibre \arch{1.6}{5.0}{old}\arch{1.6}{6.1}{loop}\prot{1.6}{0}{f}\prot{5.0}{0}{f}\leg{1.6}\leg{6.1}
-    \stopbar{1.15}{0.34}{fwd}\legarrow{6.3}{6.8}{-0.75}
+    \fibre \arch{2.1}{3.9}{old}\arch{2.1}{6.1}{loop}\prot{1.6}{0}{f}\prot{5.0}{0}{f}\leg{2.1}\leg{6.1}\blkL{2.1}{fwd}\goR{6.1}
   \end{scope}
   \begin{scope}[shift={(9.5,-6.4)}]
-    \fibre \arch{2.0}{5.4}{old}\arch{0.9}{5.4}{loop}\prot{2.0}{0}{r}\prot{5.4}{0}{r}\leg{0.9}\leg{5.4}
-    \stopbar{5.85}{0.34}{rev}\legarrow{0.7}{0.2}{-0.75}
+    \fibre \arch{3.1}{4.9}{old}\arch{0.9}{4.9}{loop}\prot{2.0}{0}{r}\prot{5.4}{0}{r}\leg{0.9}\leg{4.9}\blkR{4.9}{rev}\goL{0.9}
   \end{scope}
   \badge{0.5}{3.4}{a}\badge{9.5}{3.4}{b}\badge{0.5}{-3.0}{c}\badge{9.5}{-3.0}{d}
   \node[hd] at (0.9,3.4) {Convergent};\node[note,anchor=west] at (0.9,2.95) {both legs stop: a stable loop};
@@ -29,6 +30,5 @@
   \node[hd] at (0.9,-3.0) {Tandem, both forward};\node[note,anchor=west] at (0.9,-3.45) {one leg stops, the other runs on};
   \node[hd] at (9.9,-3.0) {Tandem, both reverse};\node[note,anchor=west] at (9.9,-3.45) {one leg stops, the other runs on};
   % rule
-  \node[note,anchor=north west] at (0,-8.0) {\textcolor{fwd}{\textbf{red}}: a forward CTCF stops a leg moving left\hspace{1.2em}\textcolor{rev}{\textbf{blue}}: a reverse CTCF stops a leg moving right\hspace{1.2em}\textcolor{cohesin}{\textbf{purple}}: LEF legs and loop};
 \end{tikzpicture}
 \end{document}

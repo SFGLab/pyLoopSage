@@ -1,0 +1,25 @@
+\input{preamble.tex}
+\tikzset{bx/.style={rounded corners=6pt,draw=panelline,fill=panel,line width=0.9pt,minimum width=3.6cm,minimum height=1.35cm,align=center,font=\small,text=ink},
+  sbx/.style={bx,draw=cohesin!70,fill=cohesin!8},tbx/.style={bx,draw=ink!60,fill=white},
+  ar/.style={line width=1.4pt,ink!70,-{Stealth[length=6pt,width=7pt]}},lar/.style={line width=1.6pt,cohesin,-{Stealth[length=6pt,width=7pt]}}}
+\begin{document}
+\begin{tikzpicture}
+  % search loop
+  \node[sbx] (th) at (1.9,0) {parameters\\$\theta=(K,\ln f,\ln b,\ln T)$};
+  \node[sbx] (mc) at (6.3,0) {short Monte Carlo\\{\footnotesize \texttt{opt\_steps} steps}};
+  \node[sbx] (mp) at (10.7,0) {simulated\\loop map};
+  \node[sbx] (ls) at (15.1,0) {loss $L(\theta)$\\{\footnotesize 4 terms, smaller is better}};
+  \node[sbx] (nm) at (19.5,0) {Nelder--Mead\\next simplex};
+  \draw[ar] (th)--(mc);\draw[ar] (mc)--(mp);\draw[ar] (mp)--(ls);\draw[ar] (ls)--(nm);
+  \draw[lar,rounded corners=8pt] (nm.north)--++(0,1.1)-|(th.north) node[pos=0.25,above,font=\footnotesize,text=cohesin] {repeat up to \texttt{opt\_evals} times, or until early stopping};
+  % target
+  \node[tbx] (tg) at (15.1,-2.6) {target map\\{\footnotesize Hi-C or input loops}};
+  \draw[ar] (tg)--(ls);
+  % final stage
+  \node[tbx] (st) at (19.5,-5.0) {stop\\{\footnotesize budget or early stop}};
+  \node[tbx] (rs) at (15.1,-5.0) {re-score best 3 and\\the start, 3$\times$ longer};
+  \node[tbx] (ch) at (10.7,-5.0) {lowest long-run\\loss wins};
+  \node[tbx] (pr) at (6.3,-5.0) {$\theta^\ast\to$ production\\Monte Carlo};
+  \draw[ar] (nm)--(st);\draw[ar] (st)--(rs);\draw[ar] (rs)--(ch);\draw[ar] (ch)--(pr);
+\end{tikzpicture}
+\end{document}

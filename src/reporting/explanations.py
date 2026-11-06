@@ -116,8 +116,8 @@ EXPLAIN = {
         caption="Loss of every short Monte Carlo evaluation (left) and how K, f, b and the temperature scale moved (right).",
         explain="The optimizer (Nelder-Mead) proposes the number of LEFs <b>K</b>, the folding coefficient <b>f</b> and the binding "
                 "coefficient <b>b</b>, runs a short Monte Carlo for each, and scores the simulated loop map against the experimental "
-                "loops (<b>loss</b> = 1 - correlation of the observed/expected maps + 0.5 x mismatch of the contact decay + 1.5 x (1 - correlation of the "
-                "insulation scores) + a loop-size term; 0 is perfect, and the insulation weighs most because the decay is easy to reproduce and the domain boundaries are not. The <b>loop-size term</b> is zero unless the simulated loops are shorter than the input loops (median); it stops the search from drifting to microscopic loops when the loop data are sparse). Every short run is a noisy estimate, so the best few candidates and the start are "
+                "loops (<b>loss</b> = distance of the leading eigenvectors of the observed/expected maps + 0.5 x mismatch of the contact decay + 1.5 x distance of the "
+                "insulation profiles + a loop-size term; 0 is perfect, and the insulation weighs most because the decay is easy to reproduce and the domain boundaries are not. The <b>loop-size term</b> is zero unless the simulated loops are shorter than the input loops (mean length); it stops the search from drifting to microscopic loops when the loop data are sparse). Every short run is a noisy estimate, so the best few candidates and the start are "
                 "re-scored on longer runs with new seeds, and the winner is used for the production run. Dots: single evaluations; "
                 "line: best so far; dashed and dotted lines: the long-run loss of the start and of the chosen parameters."),
     "optimizer_target": dict(
@@ -446,17 +446,17 @@ EXPLAIN = {
     "validation_insulation": dict(
         section="validation", title="Validation: insulation score",
         caption="Insulation score of the experimental loop map versus the simulated contact map, with domain boundaries.",
-        explain="The <b>insulation score</b> of a bead is the mean contact between the 5 beads on its left and the 5 on its right: low values mean "
+        explain="The <b>insulation score</b> of a bead is the mean contact between the beads spanning 100 kb on its left and on its right: low values mean "
                 "little contact crosses that bead, i.e. a domain (TAD-like) <b>boundary</b>. It is computed in the same way on the experimental loop "
-                "map (input loops, exactly as given, no inference) and on the simulated map. <b>Top:</b> both scores as z-scores; triangles mark "
+                "map (the input loops drawn exactly like the simulated ones, with the same total weight) and on the simulated map. <b>Top:</b> both scores as z-scores; triangles mark "
                 "boundaries (local minima). <b>Bottom:</b> where the simulation is above or below the experiment. <b>Right:</b> correlation, and "
                 "the share of experimental boundaries that also appear in the simulation within 2 beads. A high correlation means the model puts "
                 "domain boundaries where the data do."),
     "validation_insulation_anchor": dict(
-        section="validation", title="Validation: insulation vs anchor density",
-        caption="Experimental anchor density versus the simulated insulation score.",
-        explain="Anchors often sit at domain boundaries, so the simulated insulation score is compared with the density of input anchors per bead. "
-                "A negative correlation is expected (more anchors, lower insulation). It is a looser check than the insulation score of the experimental loop map."),
+        section="validation", title="Validation: boundary strength vs loops",
+        caption="Experimental loop strength per bead versus the simulated boundary strength (minus the insulation score): loop anchors sit at domain boundaries, so a good model gives a positive correlation.",
+        explain="Anchors often sit at domain boundaries, so the simulated <b>boundary strength</b> (minus the insulation score, high at a boundary) is compared with the experimental loop strength per bead. "
+                "A positive correlation is expected. It is a looser check than the insulation score of the experimental loop map."),
     "validation_pc1": dict(
         section="validation", title="Validation: compartments",
         caption="Input compartment track versus the simulated compartment signal: average epigenetic state (MC) or PC1 of the contact map (MD).",

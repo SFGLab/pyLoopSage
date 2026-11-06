@@ -122,12 +122,18 @@ def validate(cfg) -> None:
         raise ValueError("need 1 <= sample-every <= mc-steps")
     if cfg.burnin >= cfg.n_steps:
         raise ValueError(f"burn-in ({cfg.burnin}) must be smaller than mc-steps ({cfg.n_steps})")
+    if not 0.0 <= cfg.topo_keep <= 1.0:
+        raise ValueError("topo_keep is a probability: use a value between 0 and 1")
+    if not 0.0 < cfg.topo_window <= 0.5:
+        raise ValueError("topo_window is a share of the frame's MD steps: use a value in (0, 0.5]")
     if cfg.comp_bw_file and cfg.comp_bed_file:
         raise ValueError("give only one compartment file (BigWig or BED)")
     if not 0 <= cfg.verbosity <= 3:
         raise ValueError("verbosity must be between 0 and 3")
     if cfg.motif_pad < 0:
         raise ValueError("motif_pad must be >= 0")
+    if cfg.opt_patience < 1 or cfg.opt_min_gain < 0:
+        raise ValueError("opt_patience must be >= 1 and opt_min_gain >= 0")
     if cfg.corr_smooth < 0:
         raise ValueError("corr_smooth must be >= 0")
     if cfg.min_pet < 0:

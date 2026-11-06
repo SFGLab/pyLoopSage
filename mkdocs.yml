@@ -1,0 +1,67 @@
+site_name: LoopSage
+site_description: Energy-based stochastic modelling of chromatin loop extrusion and 3D genome structure
+site_url: https://sfglab.github.io/pyLoopSage/
+repo_url: https://github.com/SFGLab/pyLoopSage
+repo_name: SFGLab/pyLoopSage
+docs_dir: markdown
+exclude_docs: |
+  README.md
+
+theme:
+  name: material
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  palette:
+    scheme: default
+    primary: custom
+    accent: custom
+  font:
+    text: Inter
+    code: JetBrains Mono
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - content.code.copy
+    - search.highlight
+
+extra_css:
+  - stylesheets/loopsage.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3.2.2/es5/tex-mml-chtml.js
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - pymdownx.arithmatex:
+      generic: true
+
+nav:
+  - Intro:
+      - Home: intro/index.md
+      - Installation: intro/installation.md
+  - Theory:
+      - Overview: theory/index.md
+      - Loop extrusion: theory/loop-extrusion.md
+      - Topology: theory/topology.md
+  - Implementation:
+      - Overview: implementation/index.md
+      - Motif Finder: implementation/motif-finder.md
+      - The Optimizer: implementation/optimizer.md
+  - Reference:
+      - Overview: reference/index.md
+      - Command-line interface: reference/cli.md
+      - Config files: reference/config.md
+  - Acknowledgments:
+      - acknowledgments/index.md

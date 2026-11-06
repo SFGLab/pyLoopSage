@@ -2,7 +2,7 @@
 \begin{document}
 \pgfmathsetmacro{\W}{8}                 % map side (cm); 120 bins, TADs split at bin 60
 \pgfmathsetmacro{\u}{\W/120}
-\newcommand{\archx}[3]{\pgfmathsetmacro{\hh}{0.55*(#2-#1)*\u+0.3}\draw[#3] ({#1*\u},0.2) .. controls ({#1*\u},\hh) and ({#2*\u},\hh) .. ({#2*\u},0.2);}
+\newcommand{\archx}[3]{\pgfmathsetmacro{\xa}{#1*\u}\pgfmathsetmacro{\xb}{#2*\u}\pgfmathsetmacro{\hh}{0.55*(#2-#1)*\u+0.3}\draw[#3] (\xa,0.08) .. controls (\xa,\hh) and (\xb,\hh) .. (\xb,0.08);\legdot{\xa}{0}{cohesin}\legdot{\xb}{0}{cohesin}}
 \tikzset{lp/.style={line width=2.6pt,cohesin,line cap=round},lp2/.style={line width=2pt,cohesin!55,line cap=round}}
 \begin{tikzpicture}
   % map first (below the fibre)
@@ -11,7 +11,7 @@
   \draw[dashed,ink!45,line width=0.7pt] ({60*\u},0) --({60*\u},{-1.2-\W});
   % fibre with loops and CTCF
   \draw[fiber] (0,0)--(\W,0);
-  \archx{3}{54}{lp}\archx{12}{40}{lp2}\archx{66}{117}{lp}\archx{74}{102}{lp2}
+  \archx{9}{48}{lp}\archx{15}{40}{lp2}\archx{72}{110}{lp}\archx{78}{102}{lp2}
   \foreach \b/\o in {3/f,54/r,66/f,117/r}{\pgfmathsetmacro{\xx}{\b*\u}\prot{\xx}{0}{\o}}
   \node[note,anchor=east] at (-0.2,0) {fibre};
   \node[note,anchor=east] at (-0.2,-1.2) {contact map};

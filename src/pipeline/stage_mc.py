@@ -109,6 +109,7 @@ from common.genome import fmt_duration
 from common.utils import describe_row, emit_table
 from logger import get_logger
 from monte_carlo.simulation import MCResult
+from optimizer.objective import COMMUNICATION
 from monte_carlo.simulation import run_mc
 from reporting.report import REGISTRY
 from viz import mc_figs
@@ -172,7 +173,7 @@ def describe(ctx):
         ["Rebinding jumps", dyn["rebinding_per_1000"], "per LEF per 1000 steps"], ["LEFs never moving after burn-in", dyn["frozen_lefs"], "fraction"],
     ], "How mobile the loops are: high stability and long dwell times mean loops are locked on anchors.", "monte_carlo")
     REGISTRY.fact("Anchor recall", f"{rec['recall']:.0%}")
-    ctx.mc_map = loop_map(ctx.mc_ens, g.n_beads)       # all replicas pooled
+    ctx.mc_map = loop_map(ctx.mc_ens, g.n_beads, **(COMMUNICATION if ctx.cfg.optimize else {}))       # all replicas pooled; the map the optimizer scored (same communication)
     if ctx.cfg.save_metadata:
         meta = ctx.dirs.data / "metadata"
         meta.mkdir(exist_ok=True)

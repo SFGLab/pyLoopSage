@@ -69,6 +69,11 @@ class LinkResult:
     near: np.ndarray = field(default_factory=lambda: np.zeros((0, 3)))   # frame, |midpoint gap| (beads), closest approach (nm)
     bond: float = 1.0             # mean bond length (nm)
 
+    @classmethod
+    def empty(cls, n_beads: int) -> "LinkResult":
+        """Result of a run without link analysis (only the crossing counter was on)."""
+        return cls(np.zeros(0, int), np.zeros((0, 5), int), np.zeros(0, int), np.zeros(0, int), np.zeros(0, int), n_beads)
+
     @property
     def linked_per_frame(self) -> np.ndarray:
         return np.array([(self.frame == f).sum() for f in self.frames])
@@ -82,6 +87,20 @@ class LinkResult:
     def load(cls, path) -> "LinkResult":
         z = np.load(path, allow_pickle=False)
         return cls(z["frame"], z["pairs"], z["frames"], z["n_pairs"], z["n_loops"], int(z["n_beads"]), json.loads(str(z["meta"])), z["near"], float(z["bond"]))
+
+
+def link_dynamics(res):
+    """(lifetimes, formed, dissolved): lifetimes (analysed frames) of every run of one linked pair seen in consecutive frames;
+    pairs newly linked / no longer linked at each analysed frame (loops can also vanish with the MC loop configuration)."""
+    prev, run, life, formed, dissolved = set(), {}, [], [], []
+    for f in res.frames:
+        cur = {tuple(r[:4]) for r in res.pairs[res.frame == f]}
+        formed.append(len(cur - prev))
+        dissolved.append(len(prev - cur))
+        life += [run[k] for k in prev - cur]                   # runs that just ended
+        run = {k: run.get(k, 0) + 1 for k in cur}
+        prev = cur
+    return np.array(life + list(run.values()), int), np.array(formed, int), np.array(dissolved, int)
 
 
 def link_ensemble(md, mc, stride: int = 1) -> LinkResult:
@@ -145,4 +164,68 @@ def link_stills(coords, res):
         return out
     except Exception as e:                                          # noqa: BLE001 - optional extra
         log.warning("Could not render linked-loop snapshots: %s", e)
+        return []
+
+
+def closest_point(a, b):
+    """Midpoint of the closest bead pair of two curves: the place where the two loops meet."""
+    d = cdist(a, b)
+    i, j = np.unravel_index(np.argmin(d), d.shape)
+    return (a[i] + b[j]) / 2
+
+
+def render_link(pts, pair, size=560):
+    """RGB image of one link: the chain faded, the two loops thick (with the chord that closes each), and a gold marker where they meet."""
+    import pyvista as pv
+    pv.OFF_SCREEN = True
+    m1, n1, m2, n2, _ = pair
+    pts = np.asarray(pts, float)
+    bond = float(np.linalg.norm(np.diff(pts, axis=0), axis=1).mean())
+    loops = [pts[m1:n1 + 1], pts[m2:n2 + 1]]
+    mark = closest_point(*loops)
+    keep = np.vstack(loops)
+    centre, span = keep.mean(0), np.ptp(keep, axis=0).max()
+    pl = pv.Plotter(off_screen=True, window_size=(size, size))
+    pl.set_background("white")
+    pl.add_mesh(pv.Spline(pts, 4 * len(pts)).tube(radius=0.05 * bond), color="#cfcbdc", opacity=0.6, smooth_shading=True)
+    for k, seg in enumerate(loops):
+        col = "#6a3de8" if k == 0 else "#1a1a1f"
+        pl.add_mesh(pv.Spline(seg, 4 * len(seg)).tube(radius=0.15 * bond), color=col, specular=0.8, smooth_shading=True)
+        pl.add_mesh(pv.Line(seg[-1], seg[0]).tube(radius=0.04 * bond), color=col, opacity=0.5)      # the chord that closes the loop
+    pl.add_mesh(pv.Sphere(radius=0.55 * bond, center=mark), color="#f2b01e", opacity=0.3, smooth_shading=True)   # halo
+    pl.add_mesh(pv.Sphere(radius=0.25 * bond, center=mark), color="#f2b01e", specular=1.0, smooth_shading=True)
+    d = np.array([1.0, 0.8, 0.7])
+    pl.camera.focal_point = tuple(centre)
+    pl.camera.position = tuple(centre + d / np.linalg.norm(d) * 2.4 * max(span, 10 * bond))
+    pl.camera.up = (0, 0, 1)
+    pl.camera.parallel_projection = True                           # same tube width at every depth
+    pl.camera.parallel_scale = 0.9 * max(span, 10 * bond)
+    pl.reset_camera_clipping_range()
+    img = pl.screenshot(return_img=True)
+    pl.close()
+    return img
+
+
+def link_examples(coords, res, k: int = 3):
+    """[(title, image)] for up to k different linked pairs (largest |Lk| first, in different frames when possible); [] on any failure."""
+    try:
+        if not len(res.pairs):
+            return []
+        size = np.minimum(res.pairs[:, 1] - res.pairs[:, 0], res.pairs[:, 3] - res.pairs[:, 2])
+        big = size >= 8 if (size >= 8).sum() >= k else np.ones(len(size), bool)       # larger loops read better
+        order = np.lexsort((res.frame, -size, -np.abs(res.pairs[:, 4]), ~big))
+        picks, used = [], set()
+        for q in order:
+            if res.frame[q] not in used or len(order) <= k:
+                picks.append(q)
+                used.add(res.frame[q])
+            if len(picks) == k:
+                break
+        out = []
+        for q in picks:
+            f, row = int(res.frame[q]), res.pairs[q]
+            out.append((f"Lk = {int(row[4]):+d}: loops {row[0]}-{row[1]} and {row[2]}-{row[3]} (frame {f})", render_link(coords[f], row)))
+        return out
+    except Exception as e:                                          # noqa: BLE001 - optional extra
+        log.warning("Could not render the linked-loop examples: %s", e)
         return []

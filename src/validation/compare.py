@@ -12,7 +12,7 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.signal import find_peaks
 from scipy.stats import kendalltau, mannwhitneyu, pearsonr, spearmanr
 
-from analysis.maps import insulation_score, map_features, ps_curve
+from analysis.maps import insulation_profile, insulation_window, loop_map_from_counts, map_features, ps_curve
 from common.utils import normalize_signal, pearson_ci, strength_label
 from logger import get_logger
 from preproc.readers import numeric_col, read_region_table, valid_prob
@@ -204,6 +204,13 @@ def loop_matrix(df, geom) -> np.ndarray:
     return m + m.T
 
 
+def experiment_map(df, geom, n_lef=None) -> np.ndarray:
+    """Hi-C-like map of the input loops, drawn exactly like the simulated one (loop_map) with the weights scaled to the same total (2 per LEF)."""
+    c = loop_matrix(df, geom)
+    k = n_lef or max(int((c > 0).sum() // 2), 1)
+    return loop_map_from_counts(c * (2 * k / max(c.sum(), 1e-12)), geom.n_beads)
+
+
 def boundaries(ins, sigma: float = 1.5, prominence: float = 0.5) -> np.ndarray:
     """Beads at local minima of the z-scored insulation score (domain boundaries)."""
     z = normalize_signal(smooth(ins, sigma))
@@ -262,11 +269,12 @@ def validate(mat, cfg, geom, path=None, comp=None, track=None, track_name="PC1 o
         if _add(res, "Per-loop (no aggregation)", "loop strength (O/E)", c):
             res.plots.append(dict(key="pearson_direct", signal="loop strength (O/E)", kind="loop", raw=c, smooth=None, sigma=0.0, exp=e_oe, sim=s_oe))
         _compare(res, "P(s) decay", "contact vs bead separation", "ps_decay", exp_ps(df, geom), ps_curve(mat), "sep", sigma, log=True)
-        ins_sim, ins_exp = insulation_score(mat), insulation_score(loop_matrix(df, geom))
+        w = insulation_window(geom)                                   # same diamond (in bp) on both maps; the raw loop dots are not a map
+        ins_sim, ins_exp = insulation_profile(mat, w), insulation_profile(experiment_map(df, geom, cfg.n_lef), w)
         be, bs = boundaries(ins_exp, max(sigma, 1)), boundaries(ins_sim, max(sigma, 1))
         _compare(res, "Insulation score", "insulation score, experiment (loop map) vs simulation", "insulation", ins_exp, ins_sim, "bead", sigma,
                  b_exp=be, b_sim=bs, overlap=boundary_overlap(be, bs), overlap_rev=boundary_overlap(bs, be))
-        _compare(res, "Insulation score vs anchors", "anchor density vs simulated insulation", "insulation_anchor", exp, ins_sim, "bead", sigma)
+        _compare(res, "Boundary strength vs loops", "loop strength vs simulated boundary strength (minus insulation)", "insulation_anchor", exp, -ins_sim, "bead", sigma)
         res.diagnostics.append(canonical_consistency(mat, df, geom))
     if comp is not None and track is not None and np.std(comp) > 0 and np.std(track) > 0:     # simulated compartment track vs the input A/B track
         _compare(res, "Compartments", f"{track_name} vs input compartment track", "pc1", comp, track, "bead", sigma)

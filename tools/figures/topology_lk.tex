@@ -1,0 +1,42 @@
+\input{preamble.tex}
+\tikzset{cA/.style={line width=2.6pt,cohesin,line cap=round},cB/.style={line width=2.6pt,ink,line cap=round},h/.style={line width=7pt,white,line cap=butt},
+  st/.style={line width=2.6pt,ink,line cap=round,-{Stealth[length=6pt,width=7pt]}}}
+\newcommand{\ccw}[4]{\draw[#1,-{Stealth[length=6pt,width=7pt]}] ([shift={(#2,0)}]#3:1) arc (#3:{#3+4}:1);}% small arrow on a circle (ccw)
+\newcommand{\crossing}[3]{% sign icon at (#1,#2): #3 = p (positive) or n (negative)
+  \begin{scope}[shift={(#1,#2)}]
+  \ifx#3p
+    \draw[st] (0.75,-0.75)--(-0.75,0.75);\draw[h] (-0.5,-0.5)--(0.5,0.5);\draw[st] (-0.75,-0.75)--(0.75,0.75);
+  \else
+    \draw[st] (-0.75,-0.75)--(0.75,0.75);\draw[h] (0.5,-0.5)--(-0.5,0.5);\draw[st] (0.75,-0.75)--(-0.75,0.75);
+  \fi
+  \end{scope}}
+\begin{document}
+\begin{tikzpicture}
+  \foreach \x/\l/\t/\s in {0/a/{Sign of a crossing}/{over strand rotated onto the under strand},7.2/b/{Linked: Lk = +1}/{both crossings are +1},14.4/c/{Not linked: Lk = 0}/{the two crossings cancel}}{
+    \panelbg{\x}{-3.2}{\x+6.4}{3.6}\badge{\x+0.45}{3.1}{\l}\node[hd] at (\x+0.85,3.1) {\t};\node[note,anchor=north west] at (\x+0.85,2.75) {\s};}
+  % a: the two signs
+  \crossing{1.75}{0.3}{p}\crossing{4.65}{0.3}{n}
+  \node[lab] at (1.75,-1.0) {$\varepsilon=+1$};\node[lab] at (4.65,-1.0) {$\varepsilon=-1$};
+  \node[note] at (1.75,-1.55) {right-handed};\node[note] at (4.65,-1.55) {left-handed};
+  \node[note] at (3.2,-2.75) {$\varepsilon=\operatorname{sign}\big((\text{over}\times\text{under})_z\big)$};
+  % b: Hopf link, both curves counter-clockwise
+  \begin{scope}[shift={(10.4,0.15)},scale=1.25]
+    \draw[cA] (-0.55,0) circle (1);\draw[cB] (0.55,0) circle (1);
+    \draw[h] ([shift={(-0.55,0)}]34.6:1) arc (34.6:78.6:1);\draw[cA] ([shift={(-0.55,0)}]34.6:1) arc (34.6:78.6:1);
+    \draw[h] ([shift={(0.55,0)}]214.6:1) arc (214.6:258.6:1);\draw[cB] ([shift={(0.55,0)}]214.6:1) arc (214.6:258.6:1);
+    \draw[cA,-{Stealth[length=6pt,width=7pt]}] ([shift={(-0.55,0)}]182:1) arc (182:188:1);
+    \draw[cB,-{Stealth[length=6pt,width=7pt]}] ([shift={(0.55,0)}]2:1) arc (2:8:1);
+    \node[lab,fill=white,inner sep=1.5pt,circle] at (0,0.99) {$+1$};\node[lab,fill=white,inner sep=1.5pt,circle] at (0,-0.99) {$+1$};
+  \end{scope}
+  \node[lab] at (10.4,-2.75) {$\mathrm{Lk}=\tfrac12\,(+1+1)=+1$};
+  % c: two overlapping circles, the same curve is over at both crossings
+  \begin{scope}[shift={(17.6,0.15)},scale=1.25]
+    \draw[cB] (0.55,0) circle (1);
+    \draw[h] ([shift={(-0.55,0)}]34.6:1) arc (34.6:78.6:1);\draw[h] ([shift={(-0.55,0)}]-78.6:1) arc (-78.6:-34.6:1);\draw[cA] (-0.55,0) circle (1);
+    \draw[cA,-{Stealth[length=6pt,width=7pt]}] ([shift={(-0.55,0)}]182:1) arc (182:188:1);
+    \draw[cB,-{Stealth[length=6pt,width=7pt]}] ([shift={(0.55,0)}]2:1) arc (2:8:1);
+    \node[lab,fill=white,inner sep=1.5pt,circle] at (0,0.99) {$+1$};\node[lab,fill=white,inner sep=1.5pt,circle] at (0,-0.99) {$-1$};
+  \end{scope}
+  \node[lab] at (17.6,-2.75) {$\mathrm{Lk}=\tfrac12\,(+1-1)=0$};
+\end{tikzpicture}
+\end{document}

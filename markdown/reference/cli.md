@@ -108,21 +108,23 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 |---|---|---|---|
 | `--render-3d` / `--no-render-3d` | true / false | `True` | Write 3d_viewer.html and videos of the 3D trajectory |
 
-### Analysis
-
-| Option | Type (unit) | Default | What it does |
-|---|---|---|---|
-| `--knots` / `--no-knots` | true / false | `False` | Optional linking analysis of loops in 3D (slow; off by default) |
-
 ### Parameter optimizer (--optimize)
 
 | Option | Type (unit) | Default | What it does |
 |---|---|---|---|
 | `--optimize` / `--no-optimize` | true / false | `False` | Before the run, fit the number of LEFs, folding and binding coefficients with Nelder-Mead on short Monte Carlo runs (n_lef of the first family, f, b and the temperature schedule), then run with them |
 | `--opt-evals` | integer (evaluations) | `60` | Maximum number of short Monte Carlo evaluations of the optimizer |
+| `--opt-early-stop` / `--no-opt-early-stop` | true / false | `True` | Stop the optimizer early when the loss no longer improves |
+| `--opt-patience` | integer (evaluations) | `20` | Early stopping: evaluations without a real improvement (see opt_min_gain) before the optimizer stops |
 | `--opt-steps` | integer (MC steps) | `20000` | Monte Carlo steps of one evaluation (the final candidate check runs 3x longer) |
 | `--target-smooth` | number (beads) | `0.8` | Smoothing of the optimizer target built from the input loops, so that the sparse loops look like a Hi-C map (0 = none) |
 | `--hic-denoise` | number (beads) | `1.0` | Denoising of the Hi-C target of the optimizer, to bring out the TAD pattern (0 = none); validation always uses the raw map |
+
+### Topology: topoisomerase, chain crossings and linking (optional, advanced)
+
+| Option | Type (unit) | Default | What it does |
+|---|---|---|---|
+| `--knots` / `--no-knots` | true / false | `False` | Optional linking analysis of loops in 3D (slow; off by default) |
 
 ## Output
 

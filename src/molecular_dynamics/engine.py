@@ -17,7 +17,8 @@ from scipy.spatial.distance import pdist, squareform
 from common.runtime import n_threads, stage_bar
 from common.utils import Timer
 from logger import get_logger
-from molecular_dynamics import forces
+from knots.crossing import crossings
+from molecular_dynamics import forces, topology
 from molecular_dynamics.structures import make_structure, write_mmcif, write_psf
 
 
@@ -112,6 +113,11 @@ class LoopMD:
             log.warning("do_compartments needs epi_coeff > 0 in the MC stage: compartments disabled.")
         first = mc.burnin_idx if cfg.md_skip_burnin else 0
         self.frames = np.arange(first, mc.n_samples)
+        self.local = cfg.topo_mode == "local"                                  # optional topoisomerase model
+        self.track = bool(cfg.track_crossings or cfg.detect_knots)             # optional crossing counter
+        self.ghost = np.zeros(self.n, bool)                                    # beads without excluded volume right now
+        self.rng = np.random.default_rng((cfg.seed or 0) + 17)
+        self.topo_log = {k: [] for k in ("events", "passage", "leak", "created", "removed", "rejected")}
 
     def _candidates(self):
         """Platform names to try, best first: the requested one (unless 'auto'), then CUDA, OpenCL, CPU, Reference."""
@@ -174,7 +180,7 @@ class LoopMD:
         forces.add_bonds(self.system, self.n)
         forces.add_angles(self.system, self.n, cfg.angle_ff_strength)
         if self.comps:
-            self.comp = forces.add_compartments(self.system, self.mc.epi[:, self.frames[0]], np.sqrt(self.n) * 0.05)
+            self.comp = forces.add_compartments(self.system, self.mc.epi[:, self.frames[0]], np.sqrt(self.n) * cfg.comp_range, cfg.comp_strength)
         self.loop_force = None
         self._set_loops(self.frames[0])
 
@@ -198,9 +204,77 @@ class LoopMD:
             for b in range(self.n):
                 self.comp.setParticleParameters(b, [int(self.mc.epi[b, i])])
             self.comp.updateParametersInContext(self.sim.context)
-        if cfg.ev_p > 0:
-            forces.set_ev(self.ev, forces.ev_profile(self.n, cfg.ev_ff_strength, cfg.ev_p, cfg.continuous_top))
+        if cfg.ev_p > 0 and not self.local:                                    # 'random' topoisomerase: beads without EV for the whole frame
+            sigma = forces.ev_profile(self.n, cfg.ev_ff_strength, cfg.ev_p, cfg.continuous_top)
+            self.ghost = sigma == 0
+            forces.set_ev(self.ev, sigma)
             self.ev.updateParametersInContext(self.sim.context)
+
+    def _pos(self):
+        """Current bead positions, nm."""
+        return np.asarray(self.sim.context.getState(getPositions=True).getPositions(asNumpy=True).value_in_unit(u.nanometer))
+
+    def _advance(self, n, rec):
+        """Run n MD steps; when tracking, in chunks, counting chain crossings (passage = a ghost bead is involved, else a leak)."""
+        if not self.track:
+            self.sim.step(n)
+            return
+        prev, done = self._pos(), 0
+        while done < n:
+            k = min(self.cfg.track_every, n - done)
+            self.sim.step(k)
+            done += k
+            cur = self._pos()
+            for i, j, _ in crossings(prev, cur):
+                rec["passage" if self.ghost[[i, i + 1, j, j + 1]].any() else "leak"] += 1
+            prev = cur
+
+    def _set_ev_window(self, g0, g1):
+        """EV off for beads g0..g1-1 (None: everything back on)."""
+        self.ghost[:] = False
+        sigma = np.full(self.n, np.sqrt(self.cfg.ev_ff_strength))
+        if g0 is not None:
+            self.ghost[g0:g1] = True
+            sigma[g0:g1] = 0.0
+        forces.set_ev(self.ev, sigma)
+        self.ev.updateParametersInContext(self.sim.context)
+
+    def _passage(self, site, i, n_off, rec):
+        """One strand-passage attempt: EV off on a short strand for n_off steps, then back on; may be undone (topo_keep)."""
+        cfg, ctx = self.cfg, self.sim.context
+        g0, g1, partner = site
+        ms, ns = self.mc.Ms[:, i], self.mc.Ns[:, i]
+        watch = self.track or cfg.topo_keep < 1.0                               # link bookkeeping is only needed then
+        before = topology.pair_links(self._pos(), ms, ns, (g0 + g1) // 2, partner) if watch else {}
+        saved = ctx.getState(getPositions=True, getVelocities=True) if cfg.topo_keep < 1.0 else None
+        self._set_ev_window(g0, g1)
+        self._advance(n_off, rec)
+        self._set_ev_window(None, None)
+        rec["events"] += 1
+        if watch:
+            created, removed = topology.link_change(before, topology.pair_links(self._pos(), ms, ns, (g0 + g1) // 2, partner))
+            if not topology.keep_passage(created, cfg.topo_keep, self.rng):
+                ctx.setPositions(saved.getPositions())
+                ctx.setVelocities(saved.getVelocities())
+                rec["rejected"] += 1
+            else:
+                rec["created"] += created
+                rec["removed"] += removed
+
+    def _frame(self, i):
+        """The MD steps of one frame: plain, or with topoisomerase passage events and/or a crossing counter."""
+        cfg, rec = self.cfg, dict.fromkeys(self.topo_log, 0)
+        left = cfg.sim_step
+        if self.local:
+            n_off = max(1, int(cfg.topo_window * cfg.sim_step))
+            n_ev = int(self.rng.poisson(cfg.topo_rate * self.n / 1000))
+            for site in topology.contact_sites(self._pos(), cfg.topo_radius * forces.BOND_LENGTH, cfg.topo_width, min(n_ev, cfg.sim_step // (2 * n_off)), self.rng):
+                self._passage(site, i, n_off, rec)
+                left -= n_off
+        self._advance(left, rec)
+        if self.local or self.track:
+            for k, v in rec.items():
+                self.topo_log[k].append(int(v))
 
     def run(self) -> MDResult:
         cfg, nf = self.cfg, len(self.frames)
@@ -210,7 +284,7 @@ class LoopMD:
         with Timer() as t, stage_bar("Molecular dynamics", nf) as advance:
             for k, i in enumerate(self.frames):
                 self._update(i)
-                self.sim.step(cfg.sim_step)
+                self._frame(i) if (self.local or self.track) else self.sim.step(cfg.sim_step)
                 state = self.sim.context.getState(getPositions=True, getEnergy=True)
                 xyz = np.asarray(state.getPositions(asNumpy=True).value_in_unit(u.nanometer))
                 coords[k], epot[k] = xyz, state.getPotentialEnergy().value_in_unit(u.kilojoule_per_mole)
@@ -227,6 +301,8 @@ class LoopMD:
         meta = dict(platform=self.platform_name, platform_detail=getattr(self, "platform_detail", ""), runtime_s=t.seconds, n_frames=nf, dt_fs=cfg.integrator_step,
                     steps_per_frame=cfg.sim_step, ps_per_frame=cfg.sim_step * cfg.integrator_step / 1000,
                     temperature_K=cfg.sim_temp, contact_radius_nm=cfg.contact_radius)
+        if self.local or self.track:                                             # optional topology bookkeeping, one number per frame
+            meta["topology"] = dict(self.topo_log, mode=cfg.topo_mode, ev_p=cfg.ev_p, keep=cfg.topo_keep, track_every=cfg.track_every)
         return MDResult(coords, maps.mean, maps.std, rg, epot, self.frames, meta, dists.mean, dists.std)
 
 

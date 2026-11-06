@@ -8,7 +8,7 @@ from reporting.explanations import EXPLAIN
 from validation.compare import smooth
 from viz.theme import EXP_COLOR, make_fig, make_mosaic, MUTED, save_figure, SEQ, SIM_COLOR, VIOLET
 
-TITLES = {"pearson": "Loop strength", "pearson_direct": "Per-loop strength", "ps_decay": "Contact decay P(s)", "insulation": "Insulation score", "insulation_anchor": "Insulation score vs anchors", "pc1": "Compartments"}
+TITLES = {"pearson": "Loop strength", "pearson_direct": "Per-loop strength", "ps_decay": "Contact decay P(s)", "insulation": "Insulation score", "insulation_anchor": "Boundary strength vs loops", "pc1": "Compartments"}
 DENS = LinearSegmentedColormap.from_list("dens", SEQ(np.linspace(0.3, 1, 256)))          # density colours, never white
 
 

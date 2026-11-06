@@ -31,6 +31,7 @@ SECTIONS = {
     "structure_3d": "3D structure analysis and rendering",
     "analysis": "Analysis",
     "optimizer": "Parameter optimizer (--optimize)",
+    "topology": "Topology: topoisomerase, chain crossings and linking (optional, advanced)",
 }
 
 _INIT = ("rw", "confined_rw", "self_avoiding_rw", "circle", "helix", "spiral", "sphere")
@@ -117,9 +118,9 @@ PARAMS = (
     Param("le_ff_strength", "molecular_dynamics", "float", 60000.0, "Loop-anchor spring constant", "kJ/mol/nm^2"),
     Param("ev_ff_strength", "molecular_dynamics", "float", 100.0, "Excluded-volume strength", "kJ/mol"),
     Param("ev_ff_power", "molecular_dynamics", "float", 3.0, "Excluded-volume exponent"),
-    Param("ev_p", "molecular_dynamics", "float", 0.0, "Topoisomerase: probability/fraction with excluded volume off"),
-    Param("continuous_top", "molecular_dynamics", "bool", False, "Topoisomerase acts on one continuous stretch"),
     Param("do_compartments", "molecular_dynamics", "bool", False, "Add block-copolymer compartment force (needs epi_coeff > 0)"),
+    Param("comp_strength", "molecular_dynamics", "float", 0.25, "Block-copolymer compartment attraction: scale of the interaction table (1 = the original strength; lower = softer, compartments stay open instead of collapsing)"),
+    Param("comp_range", "molecular_dynamics", "float", 0.03, "Block-copolymer attraction range in units of sqrt(N) nm (the original value was 0.05; smaller = shorter range)"),
     Param("md_skip_burnin", "molecular_dynamics", "bool", False, "Simulate only post-burn-in MC snapshots (original LoopSage uses every snapshot)"),
     Param("forcefield_path", "molecular_dynamics", "str", DEFAULT_FORCEFIELD, "OpenMM force-field XML"),
     # ---- 3D structure ----
@@ -134,13 +135,29 @@ PARAMS = (
     # ---- analysis ----
     Param("corr_smooth", "analysis", "float", 1.5, "Gaussian smoothing (beads) applied to per-position signals before the extra validation correlations (0 = off)", "beads"),
     Param("contact_radius", "analysis", "float", 1.0, "Contact distance for MD contact maps", "nm"),
-    Param("detect_knots", "analysis", "bool", False, "Optional linking analysis of loops in 3D (slow; off by default)", flag="--knots"),
     Param("zoom_snapshots", "analysis", "int", 120, "Snapshots shown in the zoomed kymograph (window near equilibrium)", "snapshots"),
     Param("zoom_start", "analysis", "int", None, "First snapshot of the zoom window (empty = middle of production)", "snapshot"),
-    Param("knots_stride", "analysis", "int", 10, "Use every n-th MD frame for linking numbers", "frames"),
     Param("optimize", "optimizer", "bool", False, "Before the run, fit the number of LEFs, folding and binding coefficients with Nelder-Mead on short Monte Carlo runs (n_lef of the first family, f, b and the temperature schedule), then run with them", flag="--optimize"),
     Param("opt_evals", "optimizer", "int", 60, "Maximum number of short Monte Carlo evaluations of the optimizer", "evaluations", flag="--opt-evals"),
+    Param("opt_early_stop", "optimizer", "bool", True, "Stop the optimizer early when the loss no longer improves", flag="--opt-early-stop"),
+    Param("opt_patience", "optimizer", "int", 20, "Early stopping: evaluations without a real improvement (see opt_min_gain) before the optimizer stops", "evaluations", flag="--opt-patience"),
+    Param("opt_min_gain", "optimizer", "float", 0.01, "Early stopping: smallest drop of the best loss that counts as an improvement (the loss is about 1-4 at the start)"),
     Param("opt_steps", "optimizer", "int", 20000, "Monte Carlo steps of one evaluation (the final candidate check runs 3x longer)", "MC steps", flag="--opt-steps"),
+
+    # ---- topology (optional, advanced: nothing here runs by default) ----
+    Param("detect_knots", "topology", "bool", False, "Optional linking analysis of loops in 3D (slow; off by default)", flag="--knots"),
+    Param("knots_stride", "topology", "int", 10, "Use every n-th MD frame for linking numbers", "frames"),
+    Param("ev_p", "topology", "float", 0.0, "Topoisomerase ('random' mode): probability/fraction of beads with excluded volume off during a frame"),
+    Param("continuous_top", "topology", "bool", False, "Topoisomerase ('random' mode) acts on one continuous stretch"),
+    Param("topo_mode", "topology", "str", "random", "Topoisomerase model: 'random' (beads with EV off for a whole frame, set by ev_p) or 'local' (short strand-passage events at close contacts)", choices=("random", "local")),
+    Param("topo_rate", "topology", "float", 5.0, "'local' mode: strand-passage attempts per MD frame per 1000 beads", "events"),
+    Param("topo_radius", "topology", "float", 2.0, "'local' mode: strands closer than this can pass through each other", "bond lengths"),
+    Param("topo_width", "topology", "int", 3, "'local' mode: beads of the passing strand that lose their excluded volume", "beads"),
+    Param("topo_window", "topology", "float", 0.05, "'local' mode: share of the frame's MD steps with excluded volume off, per attempt", "fraction"),
+    Param("topo_keep", "topology", "float", 1.0, "'local' mode: probability to keep a passage that creates a new link between loops (1 = no bias; below 1 the topoisomerase simplifies the topology)"),
+    Param("track_crossings", "topology", "bool", False, "Count chain crossings during the MD (checks whether the excluded volume leaks); also on with --knots"),
+    Param("track_every", "topology", "int", 100, "MD steps between crossing checks", "MD steps"),
+    Param("ev_barrier_target", "topology", "float", 10.0, "Strand-crossing barrier used for the suggested ev_ff_strength in the topology report", "kT"),
     Param("target_smooth", "optimizer", "float", 0.8, "Smoothing of the optimizer target built from the input loops, so that the sparse loops look like a Hi-C map (0 = none)", "beads", flag="--target-smooth"),
     Param("hic_denoise", "optimizer", "float", 1.0, "Denoising of the Hi-C target of the optimizer, to bring out the TAD pattern (0 = none); validation always uses the raw map", "beads", flag="--hic-denoise"),
 )

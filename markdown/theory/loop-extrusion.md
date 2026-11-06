@@ -30,7 +30,7 @@ CTCF acts as a **boundary element**: a place where cohesin tends to stop.
 
 <figure markdown>
   ![The loop extrusion players](../assets/theory/players.svg){ width="640" }
-  <figcaption>One chromatin loop held by cohesin. The ring encircles the two strands at the base of the loop. The loop is the piece of fibre between the two legs of the ring, at positions <i>m</i> and <i>n</i>. Two CTCF proteins sit at the base, one pointing right (red) and one pointing left (blue).</figcaption>
+  <figcaption>One chromatin loop held by cohesin. The ring encircles the two strands at the base of the loop. The loop is the piece of fibre between the two legs of the ring, at positions <i>m</i><sub>i</sub> and <i>n</i><sub>i</sub> (ring <i>i</i>). Two CTCF proteins sit at the base, one pointing right (red) and one pointing left (blue).</figcaption>
 </figure>
 
 ## The loop extrusion model
@@ -45,22 +45,40 @@ Instead, a cohesin ring sits on the fibre and **reels it in from both sides**, s
 
 ### How we describe a loop
 
-Let us cut the studied region into small equal pieces, called **beads** (for example 5 000 bases each), and number them $1, 2, \dots, N$.
-A cohesin ring has two legs, so one LEF is described by two bead numbers,
+First we cut the studied region into small equal pieces, called **beads** (for example 5 000 bases each), and number them $1, 2, \dots, N_{\mathrm{beads}}$.
+A bead is simply a position on the fibre, and we write $k$ for a general bead number.
+
+There are usually many rings on the region at once, $N_{\mathrm{lef}}$ of them, and we give every ring its own index $i = 1, 2, \dots, N_{\mathrm{lef}}$.
+A ring has two legs, so ring $i$ is described by two bead numbers,
 
 $$
-(m, n), \qquad m < n ,
+(m_i,\, n_i), \qquad m_i < n_i ,
 $$
 
-the position of its **left leg** $m$ and its **right leg** $n$.
-The loop is everything between the legs, so its size in beads is simply
+where $m_i$ is the position of its **left leg** and $n_i$ the position of its **right leg**.
+The loop of ring $i$ is everything between its legs, so its size in beads is
 
 $$
-\ell = n - m .
+\ell_i = n_i - m_i .
 $$
 
-If there are $N_{\mathrm{lef}}$ rings on the region, the whole system at one moment is just a list of $N_{\mathrm{lef}}$ pairs $(m,n)$.
-This short list is all that the stochastic model of the next sections has to keep track of.
+The whole system at one moment is then just the list of all pairs,
+
+$$
+\{(m_i, n_i)\}_{i=1}^{N_{\mathrm{lef}}} ,
+$$
+
+which is $N_{\mathrm{lef}}$ pairs of numbers. This short list is all that the stochastic model of the next sections has to keep track of, and a change of the system is a change of one of these numbers.
+
+| Symbol | Meaning |
+|---|---|
+| $N_{\mathrm{beads}}$ | number of beads (genomic bins) in the modelled region |
+| $k$ | index of a bead, $k = 1,\dots,N_{\mathrm{beads}}$ |
+| $N_{\mathrm{lef}}$ | number of loop extrusion factors (rings) on the region |
+| $i,\ j$ | index of a ring, $i,j = 1,\dots,N_{\mathrm{lef}}$ |
+| $m_i,\ n_i$ | left and right leg of ring $i$ (bead numbers, $m_i<n_i$) |
+| $\ell_i = n_i - m_i$ | size of the loop of ring $i$, in beads |
+| $L(k),\ R(k)$ | how strongly a CTCF site at bead $k$ stops a left leg, respectively a right leg (introduced below) |
 
 ### What a LEF does
 
@@ -75,7 +93,7 @@ The fuel is **ATP**, the energy currency of the cell. Each step of the ring uses
 We do not follow this chemistry in detail. We only keep its result: legs that keep moving outward.
 
 !!! note "In LoopSage"
-    The number of rings is `n_lef`, and the region is cut into `n_beads` beads.
+    The number of rings $N_{\mathrm{lef}}$ is `n_lef`, and the number of beads $N_{\mathrm{beads}}$ is `n_beads`.
     A Monte Carlo step either slides the legs of one ring or lets the ring unbind and rebind at a new place, so all `n_lef` rings are always on the fibre.
     By default the new place is random; `lef_track_file` (cohesin ChIP-seq signal) makes some places more likely.
 
@@ -102,7 +120,7 @@ So the two CTCFs at the ends of a loop must **face each other** (this is called 
 
 <figure markdown>
   ![CTCF orientation](../assets/theory/orientation.svg){ width="760" }
-  <figcaption>Four arrangements of two CTCF sites. The pale dashed arc is the loop when the ring starts; the solid arc is the final loop. <b>a</b> Facing each other: both legs stop. <b>b</b> Facing away: nothing stops. <b>c, d</b> Same direction: one leg stops, the other keeps going.</figcaption>
+  <figcaption>Four arrangements of two CTCF sites. The pale dashed arc is the loop when the ring starts; the solid arc is the final loop. <b>a</b> Facing each other: both legs stop. <b>b</b> Facing away: nothing stops. <b>c, d</b> Same direction: one leg stops, the other keeps going. Dots are the legs of the ring, a bar marks a stopped leg, and an arrow a leg that is still moving.</figcaption>
 </figure>
 
 This is exactly what is seen in data: loops with CTCF at both ends are mostly convergent (Rao et al. 2014; de Wit et al. 2015; Guo et al. 2015).
@@ -128,7 +146,7 @@ Loop extrusion leaves two clear marks on it.
 - **TADs** (topologically associating domains; Dixon et al. 2012, Nora et al. 2012). These are squares along the diagonal. Inside a TAD, rings keep reeling in the whole region, so every place touches every other one. Across a TAD boundary contacts are rare. A boundary is often a **pair of CTCFs facing away from each other**, because neither lets rings from the other side come through.
 
 <figure markdown>
-  ![Loops and TADs](../assets/theory/tads.svg){ width="640" }
+  ![Loops and TADs](../assets/theory/tads.png){ width="640" }
   <figcaption>Top: the fibre with loops of cohesin (nested loops inside two TADs) and CTCFs at the domain ends. Bottom: the contact map this arrangement would give. The two squares along the diagonal are TADs, and the dots are loops.</figcaption>
 </figure>
 
@@ -138,7 +156,7 @@ Cohesin makes the loops, and CTCF decides where they stop.
 ## Rings do not cross
 
 The fibre passes through the ring, so two rings on the same fibre cannot pass through one another.
-For two loops $(m_i,n_i)$ and $(m_j,n_j)$ this means that they can lie **side by side** or **one inside the other**, but they cannot be **interleaved**, and they cannot share a leg.
+For two different rings $i$ and $j$, with loops $(m_i,n_i)$ and $(m_j,n_j)$, this means that they can lie **side by side** or **one inside the other**, but they cannot be **interleaved**, and they cannot share a leg.
 
 <figure markdown>
   ![Allowed and forbidden arrangements](../assets/theory/crossing.svg){ width="760" }
@@ -169,15 +187,49 @@ Like cohesin, condensin is an ATP-driven ring that extrudes loops (Ganji et al. 
     A second group of extruders is added with `n_lef2`, next to the first group `n_lef`.
     Setting `between_families_penalty = false` lets the two groups pass through each other, while rings of the same group still cannot.
 
+## Stripes and the need for dynamics
+
+Not every pattern of a Hi-C map is a *static* picture of one loop.
+Many maps show **stripes**: thin lines that start at a CTCF site on the diagonal and run along a row (and, because the map is symmetric, along a column) for tens or hundreds of kilobases.
+A stripe means that one locus, the stripe anchor, touches *many different* loci in a row, one after the other.
+
+Loop extrusion explains this naturally, if we allow the extrusion to be **one-sided** (Vian et al. 2018; Barrington et al. 2019).
+A ring is loaded close to a CTCF site that stops one of its legs.
+The other leg keeps running, so the loop grows step by step: at time $t_1$ the loop is short, at $t_2$ it is longer, at $t_3$ longer still, until the moving leg is stopped by the opposite CTCF or the ring falls off.
+At each moment the ring holds *one* contact, $(m_i, n_i)$ with $m_i$ fixed and $n_i$ growing.
+A Hi-C experiment averages over millions of cells and over time, so these contacts add up to a line:
+
+<figure markdown>
+  ![Stripes from one-sided extrusion](../assets/theory/stripes.png){ width="760" }
+  <figcaption>A stripe is a trajectory. The left leg of a ring rests at a forward CTCF while the right leg moves (pale to dark arcs, times <i>t</i><sub>1</sub> &lt; <i>t</i><sub>2</sub> &lt; <i>t</i><sub>3</sub>). Each time point contributes one contact on the row of the fixed anchor, and the average over many rings and times is the stripe on the contact map.</figcaption>
+</figure>
+
+This is an important point for the rest of the documentation.
+A stable, two-sided loop gives a *dot*, and a dot can be explained by a single static picture.
+A stripe cannot: the contact $(m, n)$ changes while the leg moves, and the stripe is the record of this **motion**.
+The same holds for the fuzzy "flames" that start at a loop dot, for domains whose inside is enriched, and for the way the strength of a loop depends on how long rings live on the fibre.
+These features only make sense when we know **how long a ring stays, how fast it moves and how often it is stopped**.
+
+In short, a complete explanation of a Hi-C map needs *dynamics*, not only the positions of the barriers. This is exactly what drove us to build LoopSage: a model in which many rings load, extrude, stall and unload on the fibre, so that the contact map is obtained as an average over a simulated trajectory, and the same trajectory can be turned into 3D structures.
+
+!!! note "In LoopSage"
+    Every leg $m_i$, $n_i$ is moved by its own Monte Carlo step: it slides as a random walk or only outwards (`lef_rw`), with a speed set by `lef_speed`.
+    A leg that sits on a CTCF site is held there, so one-sided extrusion appears by itself when only one leg is at an anchor.
+    Stripes are never drawn by hand in the Hi-C-like map; they come from the simulated trajectory.
+    See the [config reference](../reference/config.md).
+
 ## Summary
 
-- A **LEF** (cohesin) sits on the fibre and reels it in from both sides. Its state is just a pair of legs $(m,n)$, and the loop size is $\ell=n-m$.
+- A **LEF** (cohesin) sits on the fibre and reels it in from both sides. Ring $i$ is just a pair of legs $(m_i,n_i)$, its loop has size $\ell_i=n_i-m_i$, and the whole system is the list of the $N_{\mathrm{lef}}$ pairs.
 - **CTCF** is a one-way barrier: facing sites stop both legs and make stable loops, sites in the same direction make stripes.
+- **Stripes** are the record of a leg that moves while the other rests: they need dynamics, not a single snapshot.
 - **TADs** and **loop dots** in Hi-C maps are the average footprint of many rings stopped at CTCF boundaries.
 - Cohesin rings do not cross each other, but **condensin**, which builds the long nested loops of mitotic chromosomes, can pass through cohesin.
 
 ## References
 
+- Vian L. et al. (2018). The energetics and physiological impact of cohesin extrusion. *Cell* 173, 1165.
+- Barrington C. et al. (2019). Enhancer accessibility and CTCF occupancy underlie asymmetric TAD architecture and cell type specific genome topology. *Nature Communications* 10, 2908.
 - Sanborn A. L. et al. (2015). Chromatin extrusion explains key features of loop and domain formation in wild-type and engineered genomes. *PNAS* 112, E6456.
 - Fudenberg G. et al. (2016). Formation of chromosomal domains by loop extrusion. *Cell Reports* 15, 2038.
 - Goloborodko A., Imakaev M. V., Marko J. F., Mirny L. (2016). Compaction and segregation of sister chromatids via active loop extrusion. *eLife* 5, e14864.

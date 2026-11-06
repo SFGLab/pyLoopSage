@@ -6,7 +6,9 @@
 from dataclasses import dataclass
 
 import numpy as np
-from scipy.ndimage import gaussian_filter
+from scipy import sparse
+from scipy.ndimage import gaussian_filter, gaussian_filter1d
+from scipy.sparse.linalg import eigsh
 from scipy.signal import find_peaks
 
 
@@ -68,6 +70,20 @@ def insulation_score(mat, window: int = 5) -> np.ndarray:
     return ins
 
 
+INSULATION_BP = 100_000      # span of the insulation diamond: TAD scale, whatever the bead size
+
+
+def insulation_window(geom, bp: int = INSULATION_BP) -> int:
+    """Diamond half-width in beads for a span of `bp` (at least 5 beads)."""
+    return max(5, int(round(bp / geom.bp_per_bead)))
+
+
+def insulation_profile(mat, window: int = 5) -> np.ndarray:
+    """Insulation score with its undefined ends (`window` beads each) filled by the nearest value, so they do not look like data."""
+    ins = insulation_score(mat, window)
+    return np.pad(ins[window:-window], window, mode="edge") if len(ins) > 2 * window else ins
+
+
 def pearson_maps(a, b) -> float:
     """Pearson r between the upper triangles (k>=1) of two matrices."""
     iu = np.triu_indices(a.shape[0], k=1)
@@ -100,12 +116,15 @@ def loop_map(res, n_beads: int, dot=1.0, domain=0.1, hop=0.4, depth=3, sigma=0.8
 
 def loop_map_from_counts(c, n_beads: int, dot=1.0, domain=0.1, hop=0.4, depth=3, sigma=0.8, base=0.3) -> np.ndarray:
     """The same map from a symmetric (N, N) loop-count matrix (simulated or experimental)."""
-    link, step = c.copy(), c.copy()
-    near = np.eye(n_beads) + np.eye(n_beads, k=1) + np.eye(n_beads, k=-1)      # anchors on the same or adjacent beads communicate
+    cs = sparse.csr_matrix(c)                                    # loop matrices are sparse: chains of loops are cheap this way
+    near = sparse.identity(n_beads, format="csr") + sparse.eye(n_beads, k=1, format="csr") + sparse.eye(n_beads, k=-1, format="csr")   # anchors on the same or adjacent beads communicate
+    link, step = cs.copy(), cs.copy()
     for _ in range(depth - 1):                                   # i-j-k chains of increasing length
-        step = hop * (step @ near @ c)
-        np.fill_diagonal(step, 0)
-        link += step
+        step = (hop * (step @ near @ cs)).tolil()
+        step.setdiag(0)
+        step = step.tocsr()
+        link = link + step
+    link = link.toarray()
     link = (link + link.T) / 2                                   # zeroed diagonals break exact symmetry
     up = np.triu(c) - np.diag(np.diag(c))                        # loops once, as (left, right)
     cover = np.cumsum(np.cumsum(up[:, ::-1], axis=1)[:, ::-1], axis=0)      # loops with left <= i and right >= j
@@ -120,6 +139,14 @@ def epigenetic_profile(res, n_states: int) -> np.ndarray:
     """Average epigenetic state of every bead over production snapshots, scaled to [-1 (B-like), +1 (A-like)]."""
     half = (n_states - 1) / 2
     return ((res.production(res.epi) - half) / half).mean(axis=1)
+
+
+STATE_SMOOTH = 2.0      # beads: sliding-window smoothing of the average epigenetic state
+
+
+def state_profile(res, n_states: int, sigma: float = STATE_SMOOTH) -> np.ndarray:
+    """Average Potts state <s>_t of every bead over the production snapshots (A-like = +1, B-like = -1), smoothed along the chain."""
+    return gaussian_filter1d(epigenetic_profile(res, n_states), sigma, mode="nearest") if sigma > 0 else epigenetic_profile(res, n_states)
 
 
 def checkerboard(profile) -> np.ndarray:
@@ -169,6 +196,31 @@ def pc1(mat, ref=None):
     if ref is not None and np.std(ref) > 0 and np.corrcoef(v, ref)[0, 1] < 0:
         v = -v
     return v / (np.abs(v).max() or 1.0), float(vals[-1] / max(vals.sum(), 1e-12))
+
+
+def compartment_from_hic(hic, min_sep: int = 2) -> np.ndarray:
+    """A/B track in [-1, 1] from a Hi-C map (NaN = masked beads): the leading eigenvector of the correlation matrix of the O/E map.
+
+    O/E is clipped to [1/8, 8] and the near-diagonal is left out, so a few extreme pixels cannot dominate. The sign is set so that B
+    (negative) is where the short-range contacts are denser; masked beads are interpolated.
+    """
+    n = len(hic)
+    seen = np.isfinite(hic).sum(0) > n / 2
+    h = np.clip(fill_masked(hic)[np.ix_(seen, seen)], 0.0, None)
+    m = len(h)
+    sep = np.abs(np.subtract.outer(np.arange(m), np.arange(m)))
+    oe = observed_over_expected(h)
+    oe[sep < min_sep] = 1.0
+    c = np.nan_to_num(np.corrcoef(np.log2(np.clip(oe, 0.125, 8.0))))
+    v = (np.linalg.eigh(c)[1][:, -1] if m <= 300 else eigsh(c, k=1, which="LA", v0=np.ones(m))[1][:, 0])
+    band = (sep >= min_sep) & (sep <= max(m // 8, 10))
+    dens = np.log((h * band).sum(1) / np.maximum(band.sum(1), 1) + 1e-12)       # short-range contact density of every bead
+    if np.corrcoef(v, dens)[0, 1] > 0:                                          # denser = B = negative
+        v = -v
+    lim = 3 * 1.4826 * np.median(np.abs(v - np.median(v))) or np.abs(v).max()    # robust cap before scaling to [-1, 1]
+    v = np.clip(v, -lim, lim)
+    out = np.interp(np.arange(n), np.flatnonzero(seen), v / (np.abs(v).max() or 1.0))
+    return out
 
 
 def insulation(mat, window: int = 5, prominence: float = 0.5):

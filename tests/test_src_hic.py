@@ -127,3 +127,16 @@ def test_loop_target_is_smoothed_like_a_hic_map(tiny_args):
     used = target_map(ctx.cfg, ctx.inputs, ctx.geom, ctx.loops_file)
     rough = lambda m: np.abs(np.diff(m, axis=1)).mean() / m.mean()
     assert rough(used) < rough(raw) and (ctx.dirs.figures / "optimizer_target.png").exists()
+
+
+def test_hic_compartments_put_the_denser_side_negative():
+    from analysis.maps import compartment_from_hic
+    n, rng = 240, np.random.default_rng(1)
+    t = np.sign(np.sin(np.arange(n) / 20 * np.pi / 2) + 1e-9)
+    sep = np.abs(np.subtract.outer(np.arange(n), np.arange(n)))
+    dens = np.where(t < 0, 1.5, 1.0)                                # B (t < 0) is denser
+    m = (1 + 0.6 * np.outer(t, t)) * np.sqrt(np.outer(dens, dens)) / (1 + sep) ** 0.9 + rng.random((n, n)) * 0.01
+    m = (m + m.T) / 2
+    m[90:94], m[:, 90:94] = np.nan, np.nan                          # masked beads are interpolated
+    v = compartment_from_hic(m)
+    assert v.shape == (n,) and np.isfinite(v).all() and np.abs(v).max() <= 1 and np.corrcoef(v, t)[0, 1] > 0.8

@@ -12,7 +12,8 @@ from common.runtime import fun_bar
 from common.utils import emit_table
 from logger import get_logger
 from optimizer.nelder_mead import optimize, OptResult
-from optimizer.objective import loss_parts, Objective, target_map, WEIGHTS
+from analysis.maps import compartment_from_hic
+from optimizer.objective import loss_parts, loss_weights, Objective, target_map
 from reporting.report import REGISTRY
 from settings.loader import write_ini
 from validation.compare import detect_format
@@ -43,10 +44,13 @@ def compute(ctx):
         log.info("Optimizer target: Hi-C map (%s, %s bp, %s normalisation)", hic[1]["file"], f"{hic[1]['resolution']:,}", hic[1]["norm"])
     k0 = cfg.n_lef or max(ctx.inputs.loops.n_sites // 2, 1)
     log.info("Optimizer start: n_lef=%d f=%.3g b=%.3g, temperature %.3g -> %.3g; %d evaluations of %d MC steps", k0, cfg.folding_coeff, cfg.bind_coeff, cfg.t_init, cfg.t_final, cfg.opt_evals, cfg.opt_steps)
+    log.info("Loss weights (eigenvectors, decay, insulation, loop size) for a %.3g Mb region: %s", g.length_bp / 1e6, ", ".join(f"{w:.2f}" for w in loss_weights(g.length_bp)))
     seed = (cfg.seed if cfg.seed is not None else 0) + 100_000                       # never the seed of the production run
-    obj = Objective(cfg, ctx.inputs, g, target_map(cfg, ctx.inputs, g, ctx.loops_file, None if hic is None else hic[0]), cfg.opt_steps, seed)
+    ref = compartment_from_hic(hic[0]) if hic is not None else ctx.inputs.comp          # A/B reference for the Potts model
+    obj = Objective(cfg, ctx.inputs, g, target_map(cfg, ctx.inputs, g, ctx.loops_file, None if hic is None else hic[0]), cfg.opt_steps, seed, ref, sparse=hic is None)
     with fun_bar("Optimizer", cfg.opt_evals + 4) as tick:                             # search evaluations + 3 candidate checks + the start check
         res = optimize(obj, k0, cfg.folding_coeff, cfg.bind_coeff, g.n_beads, cfg.opt_evals, tick=tick,
+                       patience=cfg.opt_patience if cfg.opt_early_stop else 0, min_gain=cfg.opt_min_gain,
                        log=lambda k, n, loss, best: log.info("evaluation %d/%d: loss %.4f (best %.4f)", k, n, loss, best))
     for d in (res.start, res.best):
         d["t_init"], d["t_final"] = cfg.t_init * d["T"], cfg.t_final * d["T"]
@@ -58,12 +62,14 @@ def verdict(res: OptResult) -> str:
     """One plain sentence: did the search converge, and did it beat the start?"""
     s, b = res.start, res.best
     how = ("converged (the simplex shrank below the tolerance)" if res.converged
+           else f"stopped early after {res.evaluations} evaluations (no real improvement of the loss any more)" if res.stopped_early
            else f"did not converge (stopped at the budget of {res.evaluations} evaluations)")
     same = (s["K"], s["f"], s["b"], s["T"]) == (b["K"], b["f"], b["b"], b["T"])
     if same:
         return f"Optimizer {how}; no candidate beat the starting parameters on the long check, so they are kept (it gave up)."
     gain = 100 * (1 - b["loss"] / s["loss"]) if s["loss"] > 0 else 0.0
-    tail = "this is the optimum found" if res.converged else "just the best found so far, more evaluations (--opt-evals) may improve it"
+    tail = ("this is the optimum found" if res.converged else "the loss stopped improving, so this is a good point to stop (--no-opt-early-stop searches on)" if res.stopped_early
+            else "just the best found so far, more evaluations (--opt-evals) may improve it")
     edge = [k for k, (lo, hi) in res.bounds.items() if b[k] <= lo * 1.001 or b[k] >= hi * 0.999]
     warn = f" Warning: {', '.join(edge)} sit at the edge of the search range, the optimum may lie beyond." if edge else ""
     return f"Optimizer {how}; loss {s['loss']:.3f} -> {b['loss']:.3f} ({gain:.0f}% lower): {tail}.{warn}"
@@ -93,14 +99,15 @@ def describe(ctx):
                 ["Binding coefficient b", s["b"], b["b"], ""], ["Initial temperature", s["t_init"], b["t_init"], "a.u."],
                 ["Final temperature", s["t_final"], b["t_final"], "a.u. (Annealing)"], ["Loss (long check run)", s["loss"], b["loss"], "0 = perfect"],
                 ["Evaluations", "", res.evaluations, "short MC runs"], ["Converged", "", "yes" if res.converged else "no (budget reached)", ""], ["Search time", "", res.seconds, "s"]],
-               "Loss = (1 - r of O/E maps) + 0.5 x decay mismatch + 1.5 x (1 - r of insulation scores) against the " + (f"Hi-C map denoised over {ctx.cfg.hic_denoise:g} beads (decay, insulation and O/E taken from it). " if ctx.hic is not None
+               "Loss = weighted sum of the distance of the leading eigenvectors, the decay mismatch, the distance of the insulation profiles and the loop-size shortfall (weights set by the region size), against the " + (f"Hi-C map denoised over {ctx.cfg.hic_denoise:g} beads (decay, insulation and O/E taken from it). " if ctx.hic is not None
                                                                                                           else f"input loops drawn like the simulated ones (with communication between loops) and smoothed over {ctx.cfg.target_smooth:g} beads. ")
                + verdict(res) + " The Monte Carlo stage then runs all its steps with the optimized values.", "optimizer")
+    W = loss_weights(ctx.geom.length_bp)
     emit_table("Optimizer loss terms (long check run)", ["Term", "Weight", "Start", "Optimized", "Meaning"],
-               [["1 - r of O/E maps", WEIGHTS[0], s["parts"][0], b["parts"][0], "pattern beyond the decay"], ["Decay mismatch", WEIGHTS[1], s["parts"][1], b["parts"][1], "shape of P(s)"],
-                ["1 - r of insulation", WEIGHTS[2], s["parts"][2], b["parts"][2], "domain boundaries"],
-                ["Loop-size shortfall", WEIGHTS[3], s["parts"][3], b["parts"][3], "simulated loops shorter than the input loops (log2)"], ["Total (weighted)", "", s["loss"], b["loss"], ""]],
-               "Each term is 0 for a perfect match. The insulation counts more than the decay because the decay is easy to reproduce and the domain boundaries are not. The loop-size term keeps the loops from collapsing to microscopic sizes when the input loops are sparse.", "optimizer")
+               [["Eigenvector distance", W[0], s["parts"][0], b["parts"][0], "1 - cosine between the absolute values of the leading eigenvectors of the O/E correlation (0-1)"], ["Decay mismatch", W[1], s["parts"][1], b["parts"][1], "shape of P(s)"],
+                ["Insulation distance", W[2], s["parts"][2], b["parts"][2], "mean difference of the insulation profiles scaled to 0-1 (domain boundaries)"],
+                ["Loop-size shortfall", W[3], s["parts"][3], b["parts"][3], "mean simulated loop shorter than the mean input loop (log2)"], ["Total (weighted)", "", s["loss"], b["loss"], ""]],
+               "Each term is 0 for a perfect match. The weights of the eigenvectors and of the insulation depend on the size of the region: the insulation dominates for TAD-scale regions, the eigenvectors for regions that span compartments, and they are equal in between. The loop-size term keeps the loops from collapsing to microscopic sizes when the input loops are sparse.", "optimizer")
     top = tr[np.argsort(tr[:, 1])[:8]]
     hit = [r[1] for r in tr if (int(r[2]), r[3], r[4], r[5]) == (b["K"], b["f"], b["b"], b["T"])]
     emit_table("Best optimizer evaluations", ["Evaluation", "K", "f", "b", "T scale", "Loss (short run)"],

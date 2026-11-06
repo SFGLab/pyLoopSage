@@ -1,0 +1,37 @@
+\input{preamble.tex}
+\tikzset{bead/.style={fill=ink,draw=white,line width=0.5pt},off/.style={draw=cohesin,dash pattern=on 1.6pt off 1.4pt,line width=0.9pt},
+  pass/.style={cohesin,line width=2.2pt,line cap=round,line join=round},thin/.style={line width=1.3pt,ink!70}}
+% chain of beads i=0..n along x (wavy); beads lo..hi have their excluded volume off (dashed)
+\newcommand{\chain}[6]{% x0, dx, y0, n, off-lo, off-hi
+  \foreach \i in {0,...,\numexpr#4-1\relax}{\pgfmathsetmacro{\ax}{#1+\i*#2}\pgfmathsetmacro{\ay}{#3+0.17*sin(\i*55)}\pgfmathsetmacro{\bx}{#1+(\i+1)*#2}\pgfmathsetmacro{\by}{#3+0.17*sin((\i+1)*55)}
+    \draw[thin] (\ax,\ay)--(\bx,\by);}
+  \foreach \i in {0,...,#4}{\pgfmathsetmacro{\ax}{#1+\i*#2}\pgfmathsetmacro{\ay}{#3+0.17*sin(\i*55)}\pgfmathtruncatemacro{\isoff}{(\i>=#5)*(\i<=#6)}
+    \ifnum\isoff=1\draw[off] (\ax,\ay) circle (0.13);\else\draw[bead] (\ax,\ay) circle (0.12);\fi}}
+% B strand: left end, middle at height v above A, right end (smooth)
+\newcommand{\bstrand}[3]{\draw[pass] plot[smooth] coordinates {(#1-1.45,#2+1.0) (#1-0.75,#2+0.45) (#1,#2+#3) (#1+0.75,#2+0.45) (#1+1.45,#2+1.0)};}
+% A strand of 11 beads centred at cx; dashed (EV off) beads 3..7 when off=1
+\newcommand{\astrand}[3]{\foreach \i in {0,...,9}{\pgfmathsetmacro{\ax}{#1+(\i-5)*0.3}\pgfmathsetmacro{\bx}{#1+(\i-4)*0.3}\draw[thin] (\ax,#2)--(\bx,#2);}
+  \foreach \i in {0,...,10}{\pgfmathsetmacro{\ax}{#1+(\i-5)*0.3}\pgfmathtruncatemacro{\isoff}{#3*(\i>=3)*(\i<=7)}
+    \ifnum\isoff=1\draw[off] (\ax,#2) circle (0.11);\else\draw[bead] (\ax,#2) circle (0.1);\fi}}
+\begin{document}
+\begin{tikzpicture}
+  \panelbg{0}{-5.75}{13.4}{0.3}\panelbg{0}{-12.6}{13.4}{-6.05}
+  % a: random mode
+  \badge{0.45}{-0.1}{a}\node[hd] at (0.85,-0.1) {Random mode: in every frame a fraction \texttt{ev\_p} of the beads loses its excluded volume};
+  \node[lab,anchor=west] at (0.6,-2.0) {scattered};\node[lab,anchor=west] at (0.6,-4.3) {one continuous stretch};
+  \draw[pass,-{Stealth[length=6pt,width=7pt]}] (7.33,-0.95)--(7.33,-3.0);      % strand passing through bead 9 of row 1 (x = 4.0 + 9 * 0.36 + ...)
+  \chain{4.0}{0.37}{-2.0}{23}{99}{-1}
+  \foreach \i in {2,5,9,14,16,21}{\pgfmathsetmacro{\ax}{4.0+\i*0.37}\pgfmathsetmacro{\ay}{-2.0+0.17*sin(\i*55)}\draw[off,fill=white] (\ax,\ay) circle (0.13);}
+  \draw[pass,-{Stealth[length=6pt,width=7pt]}] (8.44,-3.35)--(8.44,-5.3);
+  \chain{4.0}{0.37}{-4.3}{23}{9}{15}
+  \node[note,anchor=west] at (7.5,-2.75) {EV off};\node[note,anchor=west] at (8.6,-5.05) {EV off};
+  % b: local mode
+  \badge{0.45}{-6.45}{b}\node[hd] at (0.85,-6.45) {Local mode: short strand-passage events at close contacts};
+  \foreach \cx/\t/\u/\w in {2.3/contact/{closer than \texttt{topo\_radius}}/{attempts at rate \texttt{topo\_rate}},6.7/passage/{\texttt{topo\_width} beads without EV}/{for \texttt{topo\_window} of the frame},11.1/restored/{EV on again,}/{the strands have crossed}}{
+    \node[lab,font=\bfseries\small] at (\cx,-7.1) {\t};\node[note] at (\cx,-7.5) {\u};\node[note] at (\cx,-7.85) {\w};}
+  \astrand{2.3}{-9.7}{0}\bstrand{2.3}{-9.7}{0.3}\astrand{6.7}{-9.7}{1}\bstrand{6.7}{-9.7}{0}\bstrand{11.1}{-9.7}{-0.3}\astrand{11.1}{-9.7}{0}
+  \draw[-{Stealth[length=6pt,width=7pt]},ink!55,line width=1pt] (4.2,-9.7)--(4.9,-9.7);\draw[-{Stealth[length=6pt,width=7pt]},ink!55,line width=1pt] (8.6,-9.7)--(9.3,-9.7);
+  \draw[-{Stealth[length=6pt,width=7pt]},ink!55,line width=1pt,dash pattern=on 3pt off 2pt] (11.1,-10.55) to[out=-90,in=-90,looseness=0.25] (2.3,-10.55);
+  \node[lab,fill=panel,inner sep=2pt] at (6.7,-12.0) {if the passage creates a new link: undone with probability \texttt{topo\_keep}};
+\end{tikzpicture}
+\end{document}

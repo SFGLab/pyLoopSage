@@ -57,14 +57,14 @@ def add_angles(system, n, strength):
     system.addForce(f)
 
 
-def add_compartments(system, states, width):
-    """Block-copolymer force: same-compartment beads attract within `width` nm."""
+def add_compartments(system, states, width, strength=1.0):
+    """Block-copolymer force: same-compartment beads attract within `width` nm; `strength` scales the table."""
     f = mm.CustomNonbondedForce("E(s1,s2)*exp(-(r-r0)^2/(2*sigma^2))")
     f.setForceGroup(1)
     f.addGlobalParameter("sigma", width)
     f.addGlobalParameter("r0", 0.0)
     f.addPerParticleParameter("s")
-    f.addTabulatedFunction("E", mm.Discrete2DFunction(3, 3, _COMP_TABLE))
+    f.addTabulatedFunction("E", mm.Discrete2DFunction(3, 3, [strength * v for v in _COMP_TABLE]))
     for s in states:
         f.addParticle([int(s)])
     system.addForce(f)

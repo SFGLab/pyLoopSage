@@ -1,0 +1,29 @@
+\input{preamble.tex}
+\begin{document}
+\newcommand{\arcl}[3]{\pgfmathsetmacro{\hh}{0.3*(#2-#1)+0.3}\draw[#3] (#1,0.08) .. controls (#1,\hh) and (#2,\hh) .. (#2,0.08);}
+\newcommand{\ok}[2]{\fill[ok] (#1,#2) circle (0.21);\draw[white,line width=1.8pt,line cap=round,line join=round] (#1-0.09,#2) -- (#1-0.02,#2-0.08) -- (#1+0.1,#2+0.1);}
+\newcommand{\no}[2]{\fill[no] (#1,#2) circle (0.21);\draw[white,line width=1.6pt,line cap=round] (#1-0.08,#2-0.08)--(#1+0.08,#2+0.08);\draw[white,line width=1.6pt,line cap=round] (#1-0.08,#2+0.08)--(#1+0.08,#2-0.08);}
+\tikzset{li/.style={line width=2.8pt,cohesin,line cap=round},lj/.style={line width=2.8pt,ink,line cap=round}}
+\begin{tikzpicture}
+  \panelbg{0}{-3.3}{8}{3.6}\panelbg{9}{-3.3}{17}{3.6}
+  \badge{0.5}{3.1}{a}\node[hd] at (0.9,3.1) {A loop becomes a closed curve};\badge{9.5}{3.1}{b}\node[hd] at (9.9,3.1) {Which pairs of loops are tested};
+  % a: chain, loop between legs m_i and n_i, and the chord that closes it
+  \draw[fiber] (0.6,-0.6)--(3.35,-0.6);\draw[fiber] (4.65,-0.6)--(7.4,-0.6);
+  \draw[cohesin,line width=2.8pt,line cap=round] (3.35,-0.6) .. controls (1.6,2.6) and (6.4,2.6) .. (4.65,-0.6);
+  \draw[cohesin,line width=1.6pt,dash pattern=on 3pt off 2.5pt] (3.35,-0.6)--(4.65,-0.6);
+  \legdot{3.35}{-0.6}{cohesin}\legdot{4.65}{-0.6}{cohesin}
+  \node[lab] at (3.35,-1.15) {$m_i$};\node[lab] at (4.65,-1.15) {$n_i$};
+  \node[lab,cohesin] at (4,0.55) {loop $i$};
+  \draw[leader] (4.0,-1.45)--(4.0,-1.95) node[note,below] {chord that closes the loop};
+  \node[note,align=center] at (4,-2.75) {chain from $m_i$ to $n_i$ $+$ chord $=$ one closed curve};
+  % b: three arrangements
+  \begin{scope}[shift={(9.7,1.5)}]\draw[fiber] (0,0)--(5.0,0);\arcl{0.5}{2.1}{li}\arcl{3.0}{4.6}{lj}\legdot{0.5}{0}{cohesin}\legdot{2.1}{0}{cohesin}\legdot{3.0}{0}{ink}\legdot{4.6}{0}{ink}\end{scope}
+  \node[lab,anchor=east] at (16.1,1.5) {tested};\ok{16.55}{1.5}
+  \begin{scope}[shift={(9.7,-0.5)}]\draw[fiber] (0,0)--(5.0,0);\arcl{0.5}{4.6}{li}\arcl{1.6}{3.5}{lj}\legdot{0.5}{0}{cohesin}\legdot{4.6}{0}{cohesin}\legdot{1.6}{0}{ink}\legdot{3.5}{0}{ink}\end{scope}
+  \node[lab,anchor=east] at (16.1,-0.5) {skipped};\no{16.55}{-0.5}
+  \node[note,align=center] at (12.2,-1.2) {nested loops share chain: not two separate curves};
+  \begin{scope}[shift={(9.7,-2.4)}]\draw[fiber] (0,0)--(5.0,0);\arcl{0.5}{1.0}{li}\arcl{3.0}{4.6}{lj}\legdot{0.5}{0}{cohesin}\legdot{1.0}{0}{cohesin}\legdot{3.0}{0}{ink}\legdot{4.6}{0}{ink}\end{scope}
+  \node[lab,anchor=east] at (16.1,-2.4) {skipped};
+  \node[note] at (12.2,-3.0) {fewer than 4 beads: too short to count};\no{16.55}{-2.4}
+\end{tikzpicture}
+\end{document}

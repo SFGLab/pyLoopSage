@@ -1,0 +1,16 @@
+\input{preamble.tex}
+\tikzset{lpA/.style={line width=2.3pt,cohesin,line join=round},lpB/.style={line width=2.3pt,ink,line join=round},halo2/.style={line width=6pt,white,line cap=butt,line join=round},
+  sgn/.style={font=\small\bfseries,text=ink,anchor=south west,inner sep=1.5pt,fill=white,fill opacity=0.85,text opacity=1,circle}}
+\input{link_views.tex}
+\begin{document}
+\begin{tikzpicture}
+  \foreach \x/\l/\t in {0/a/{View 1},7.4/b/{View 2},14.8/c/{View 3}}{
+    \panelbg{\x}{-3.9}{\x+6.6}{3.6}\badge{\x+0.45}{3.1}{\l}\node[hd] at (\x+0.85,3.1) {\t};}
+  \begin{scope}[shift={(3.3,-0.1)}]\viewa\end{scope}
+  \begin{scope}[shift={(10.7,-0.1)}]\viewb\end{scope}
+  \begin{scope}[shift={(18.1,-0.1)}]\viewc\end{scope}
+  \node[note] at (3.3,-3.4) {\capa};
+  \node[note] at (10.7,-3.4) {\capb};
+  \node[note,align=center] at (18.1,-3.4) {nearly edge-on: crossings almost overlap};
+\end{tikzpicture}
+\end{document}

@@ -87,6 +87,8 @@ from analysis.inputs import anchor_table, config_summary, orientation_summary
 from common.genome import fmt_bp
 from common.runtime import stage_bar
 from common.utils import describe_row, emit_table
+from analysis.maps import compartment_from_hic
+from logger import get_logger
 from preproc.loader import load_inputs
 from preproc.loader import InputData
 from reporting.report import REGISTRY
@@ -94,6 +96,8 @@ from analysis.inputs import compartment_summary
 from viz import input_figs
 from viz.input_figs import compartment_figure
 from viz.input_figs import binding_profiles, loop_matrices, track_figures, track_rho
+
+log = get_logger(__name__)
 
 NAME, ATTR, CACHE = "preproc", "inputs", "inputs.npz"
 
@@ -148,7 +152,11 @@ def compute(ctx):
         res.save(ctx.dirs.data)
         ctx.motif, path = res, str(res.path)
     ctx.input_file = path
-    return load_inputs(cfg, g, path)
+    inputs = load_inputs(cfg, g, path)
+    if inputs.comp is None and float(cfg.epi_coeff) > 0 and ctx.hic is not None:      # Potts field h from the Hi-C compartments (B = negative)
+        inputs.comp, inputs.comp_source = compartment_from_hic(ctx.hic[0]), "hic"
+        log.info("No compartment track given: the Potts field h is the leading eigenvector of the Hi-C O/E correlation (B = denser = negative).")
+    return inputs
 
 
 def load(path):
