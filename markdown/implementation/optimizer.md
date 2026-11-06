@@ -176,6 +176,7 @@ loopsage -c config.ini --optimize --opt-evals 40 --opt-steps 20000 --hic sample.
 | `opt_evals` (`--opt-evals`) | 60 | maximum number of short Monte Carlo evaluations |
 | `opt_steps` (`--opt-steps`) | 20000 | Monte Carlo steps of one evaluation (the final check runs 3x longer) |
 | `opt_early_stop` (`--opt-early-stop`) | on | stop when the loss no longer improves |
+| `opt_interactive` (`--opt-interactive`) | on | pressing Enter during the search shows the best parameters so far and asks whether to keep them and stop, (Y/n), Enter = yes (terminal only) |
 | `opt_patience` (`--opt-patience`) | 20 | early stopping: evaluations without a real improvement before stopping |
 | `opt_min_gain` | 0.01 | early stopping: smallest drop of the best loss that counts as an improvement |
 | `target_smooth` (`--target-smooth`) | 0.8 | smoothing of the loop-based target, in beads |

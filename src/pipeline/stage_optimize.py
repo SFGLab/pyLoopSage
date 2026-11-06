@@ -16,7 +16,7 @@ if __name__ == "__main__":
 from common.runtime import fun_bar
 from common.utils import emit_table
 from logger import get_logger
-from optimizer.nelder_mead import optimize, optimize_potts, OptResult
+from optimizer.nelder_mead import ask_keep_best, optimize, optimize_potts, OptResult
 from analysis.maps import compartment_from_hic
 from optimizer.objective import loss_parts, loss_weights, Objective, PottsObjective, target_coverage, target_map
 from reporting.report import REGISTRY
@@ -48,6 +48,8 @@ def compute(ctx):
     if hic is not None:
         log.info("Optimizer target: Hi-C map (%s, %s bp, %s normalisation)", hic[1]["file"], f"{hic[1]['resolution']:,}", hic[1]["norm"])
     k0 = cfg.n_lef or max(ctx.inputs.loops.n_sites // 2, 1)
+    if cfg.opt_interactive and sys.stdin.isatty():
+        log.info("Press Enter at any time to see the best parameters so far and choose whether to keep them and stop the search.")
     log.info("Optimizer start: n_lef=%d f=%.3g b=%.3g, temperature %.3g -> %.3g; %d evaluations of %d MC steps", k0, cfg.folding_coeff, cfg.bind_coeff, cfg.t_init, cfg.t_final, cfg.opt_evals, cfg.opt_steps)
     log.info("Loss weights (eigenvectors, decay, insulation, loop size) for a %.3g Mb region: %s", g.length_bp / 1e6, ", ".join(f"{w:.2f}" for w in loss_weights(g.length_bp)))
     seed = (cfg.seed if cfg.seed is not None else 0) + 100_000                       # never the seed of the production run
@@ -64,6 +66,7 @@ def compute(ctx):
     with fun_bar("Optimizer", cfg.opt_evals + 4) as tick:                             # search evaluations + 3 candidate checks + the start check
         res = optimize(obj, k0, cfg.folding_coeff, cfg.bind_coeff, g.n_beads, cfg.opt_evals, tick=tick,
                        patience=cfg.opt_patience if cfg.opt_early_stop else 0, min_gain=cfg.opt_min_gain,
+                       ask=ask_keep_best(["K", "f", "b", "T scale"]) if cfg.opt_interactive else None,
                        log=lambda k, n, loss, best: log.info("evaluation %d/%d: loss %.4f (best %.4f)", k, n, loss, best))
     for d in (res.start, res.best):
         d["t_init"], d["t_final"] = cfg.t_init * d["T"], cfg.t_final * d["T"]
@@ -83,6 +86,7 @@ def potts_stage(ctx, res, make) -> dict:
     with fun_bar("Optimizer (Potts)", evals + 4) as tick:
         out = optimize_potts(make(c), cfg.epi_coeff, cfg.p_epigenetic, evals, tick=tick,
                              patience=cfg.opt_patience if cfg.opt_early_stop else 0, min_gain=cfg.opt_min_gain,
+                             ask=ask_keep_best(["epi_coeff", "p_epigenetic"]) if cfg.opt_interactive else None,
                              log=lambda k, n, loss, best: log.info("Potts evaluation %d/%d: loss %.4f (best %.4f)", k, n, loss, best))
     s, o = out["start"], out["best"]
     log.step(f"Potts stage: epi_coeff {s['epi']:.3g} -> {o['epi']:.3g}, p_epigenetic {s['p']:.3g} -> {o['p']:.3g}; loss {s['loss']:.3f} -> {o['loss']:.3f}.")
@@ -92,7 +96,7 @@ def potts_stage(ctx, res, make) -> dict:
 def verdict(res: OptResult) -> str:
     """One plain sentence: did the search converge, and did it beat the start?"""
     s, b = res.start, res.best
-    how = ("converged (the simplex shrank below the tolerance)" if res.converged
+    how = ("stopped by you (the best parameters so far were kept)" if res.by_user else "converged (the simplex shrank below the tolerance)" if res.converged
            else f"stopped early after {res.evaluations} evaluations (no real improvement of the loss any more)" if res.stopped_early
            else f"did not converge (stopped at the budget of {res.evaluations} evaluations)")
     same = (s["K"], s["f"], s["b"], s["T"]) == (b["K"], b["f"], b["b"], b["T"])

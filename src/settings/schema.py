@@ -142,6 +142,7 @@ PARAMS = (
     Param("optimize", "optimizer", "bool", False, "Before the run, fit the number of LEFs, folding and binding coefficients with Nelder-Mead on short Monte Carlo runs (n_lef of the first family, f, b and the temperature schedule), then run with them", flag="--optimize"),
     Param("opt_evals", "optimizer", "int", 60, "Maximum number of short Monte Carlo evaluations of the optimizer", "evaluations", flag="--opt-evals"),
     Param("opt_early_stop", "optimizer", "bool", True, "Stop the optimizer early when the loss no longer improves", flag="--opt-early-stop"),
+    Param("opt_interactive", "optimizer", "bool", True, "Pressing Enter during the optimizer shows the best parameters so far and asks whether to keep them and stop (only in a terminal)", flag="--opt-interactive"),
     Param("opt_patience", "optimizer", "int", 20, "Early stopping: evaluations without a real improvement (see opt_min_gain) before the optimizer stops", "evaluations", flag="--opt-patience"),
     Param("opt_min_gain", "optimizer", "float", 0.01, "Early stopping: smallest drop of the best loss that counts as an improvement (the loss is about 1-4 at the start)"),
     Param("opt_steps", "optimizer", "int", 20000, "Monte Carlo steps of one evaluation (the final candidate check runs 3x longer)", "MC steps", flag="--opt-steps"),

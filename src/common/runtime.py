@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from rich.live import Live
+from rich.markup import escape
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeElapsedColumn, TimeRemainingColumn
 from rich.progress_bar import ProgressBar
 from rich.table import Table
@@ -112,7 +113,7 @@ class _OptimizerView:
     def __rich_console__(self, console, options):
         tick = int(time.time() * 6)
         loss = Text("loss ...", style="#6b6485") if self.loss is None else Text.assemble(
-            ("loss ", "#6b6485"), (f"{self.loss:.3f}", "bold #111111"), ("  best ", "#6b6485"), (f"{self.best:.3f}", "bold #1baf7a"))
+            ("loss ", "#6b6485"), (f"{self.loss:.3f}", "bold #f08a24"), ("  best ", "#6b6485"), (f"{self.best:.3f}", "bold #1baf7a"))
         head = Table.grid(padding=(0, 1))
         head.add_row(Text(self.desc, style="bold #6250d6"), ProgressBar(total=self.total, completed=self.done, width=24, complete_style="#8e6fd8", finished_style="#6250d6"),
                      Text(f"{100 * self.done / self.total:3.0f}%", style="#6250d6"), Text(time.strftime("%M:%S", time.gmtime(time.time() - self.t0)), style="#6b6485"), loss)
@@ -128,11 +129,20 @@ class _OptimizerView:
 def fun_bar(desc: str, total: float):
     """Optimizer progress (see _OptimizerView); yields tick(n=1, loss=..., best=...)."""
     view = _OptimizerView(desc, total)
-    with Live(view, console=console, refresh_per_second=8, transient=False):
+    with Live(view, console=console, refresh_per_second=8, transient=False) as live:
+        def prompt(text: str) -> str:
+            """Ask a question under the bar: the live display is paused while the user answers."""
+            live.stop()
+            try:
+                return console.input(escape(text))
+            finally:
+                live.start()
+
         def tick(n=1, loss=None, best=None):
             view.done += n
             if loss is not None:
                 view.loss, view.best = loss, best
+        tick.prompt, tick.notice = prompt, (lambda msg: console.print(f"[bold]{msg}[/bold]"))
         yield tick
         view.done = view.total
 

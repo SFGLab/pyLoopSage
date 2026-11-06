@@ -9,8 +9,8 @@ exclude_docs: |
 
 theme:
   name: material
-  logo: assets/logo.svg
-  favicon: assets/logo.svg
+  logo: assets/favicon.svg
+  favicon: assets/favicon.svg
   palette:
     scheme: default
     primary: custom
@@ -71,5 +71,4 @@ nav:
       - Overview: reference/index.md
       - Command-line interface: reference/cli.md
       - Config files: reference/config.md
-  - Acknowledgments:
-      - acknowledgments/index.md
+  - Acknowledgments: acknowledgments/index.md

@@ -184,6 +184,7 @@ Rules:
 | `optimize`<br>`--optimize` | true / false | `False` | Before the run, fit the number of LEFs, folding and binding coefficients with Nelder-Mead on short Monte Carlo runs (n_lef of the first family, f, b and the temperature schedule), then run with them |
 | `opt_evals`<br>`--opt-evals` | integer (evaluations) | `60` | Maximum number of short Monte Carlo evaluations of the optimizer |
 | `opt_early_stop`<br>`--opt-early-stop` | true / false | `True` | Stop the optimizer early when the loss no longer improves |
+| `opt_interactive`<br>`--opt-interactive` | true / false | `True` | Pressing Enter during the optimizer shows the best parameters so far and asks whether to keep them and stop (only in a terminal) |
 | `opt_patience`<br>`--opt-patience` | integer (evaluations) | `20` | Early stopping: evaluations without a real improvement (see opt_min_gain) before the optimizer stops |
 | `opt_min_gain`<br>*ini only* | number | `0.01` | Early stopping: smallest drop of the best loss that counts as an improvement (the loss is about 1-4 at the start) |
 | `opt_steps`<br>`--opt-steps` | integer (MC steps) | `20000` | Monte Carlo steps of one evaluation (the final candidate check runs 3x longer) |

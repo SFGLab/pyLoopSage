@@ -173,3 +173,18 @@ def test_size_mismatch_is_two_sided_and_uses_the_median():
     assert size_mismatch(mc(10), loops) == 0.0 and size_mismatch(mc(18), loops) == 0.0   # within a factor 2
     assert size_mismatch(mc(2), loops) > 1.0                                                # microscopic loops
     assert size_mismatch(mc(80), loops) > 1.0                                               # stacked loops
+
+
+def test_user_can_stop_the_search_and_keep_the_best(monkeypatch):
+    import optimizer.nelder_mead as nm
+
+    class Obj:
+        parts = [0.0, 0.0, 0.0]
+        def __call__(self, K, f, b, T=1.0, longer=1):
+            return (f - 1.0) ** 2 + (b - 1.0) ** 2 + 0.1
+
+    monkeypatch.setattr(nm, "enter_pressed", lambda: True)
+    asked = []
+    res = nm.optimize(Obj(), 10, 0.5, 0.5, 100, max_evals=40, ask=lambda tr, p=None: asked.append(len(tr)) or len(tr) >= 4)
+    assert res.by_user and res.evaluations == 4 and asked == [1, 2, 3, 4]
+    assert res.best["loss"] <= res.start["loss"]
