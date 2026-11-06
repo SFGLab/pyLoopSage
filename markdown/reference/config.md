@@ -44,165 +44,165 @@ Rules:
 
 ## All keys
 
-*Type* tells how to write the value; *CLI option* gives the equivalent command-line option, if there is one.
+**Type** tells how to write the value. Under each key is the equivalent command-line option, or *ini only* when the key has none.
 
 ## `[input]`: Input data and genomic region
 
-| Key | Type (unit) | Default | CLI option | What it does |
-|---|---|---|---|---|
-| `interaction_file` | text | *(empty)* | `--file` | Loops/peaks file: .bedpe, .bed or .narrowPeak (required) |
-| `hic_file` | text | *(empty)* | `--hic` | Optional Hi-C map (.hic, read with hic-straw): reference for the validation and, with --optimize, the target of the optimizer |
-| `hic_norm` | text | `KR` | `--hic-norm` | Hi-C normalisation to read (falls back to SCALE, VC_SQRT, VC, NONE when missing) |
-| `hic_resolution` | integer (bp) | `0` | `--hic-resolution` | Hi-C bin size to read (0 = automatic, closest to the bead size) |
-| `chrom` | text | *(empty)* | *ini only* | Chromosome, e.g. chr1 (CLI: use --region) |
-| `region_start` | integer (bp) | *(empty)* | *ini only* | Region start (empty = chromosome start) |
-| `region_end` | integer (bp) | *(empty)* | *ini only* | Region end (empty = chromosome end) |
-| `genome` | text | `hg38` | `--genome` | Genome assembly for chromosome sizes |
-| `n_beads` | integer (beads) | *(empty)* | `--n-beads` | Number of simulation beads (empty = region / 2 kb) |
-| `smoothing_input` | true / false | `False` | *ini only* | Smooth the anchor/peak signal with a Gaussian |
-| `bw_files` | list of text | *(empty)* | *ini only* | BigWig tracks for extra binding energy (comma-separated) |
-| `bw_strengths` | list of numbers | *(empty)* | *ini only* | Strength r per BigWig track (empty = -N_beads/10 each) |
-| `lef_track_file` | text | *(empty)* | *ini only* | BigWig of LEF loading preference (cohesin/condensin ChIP) |
-| `comp_bw_file` | text | *(empty)* | *ini only* | BigWig of compartments (A/B signal) |
-| `comp_bed_file` | text | *(empty)* | *ini only* | BED of compartments / subcompartments |
-| `min_pet` | integer (PET) | `0` | `--min-pet` | BEDPE: keep only loops with at least this many PET counts / score (0 = keep all) |
-| `motif_genome` | text | *(empty)* | `--motif-genome` | BEDPE: reference genome FASTA; enables the CTCF motif search that sets anchor orientations |
-| `motif_pfm` | text | *(empty)* | `--motif-pfm` | Motif PFM file (empty = bundled JASPAR CTCF MA0139.1) |
-| `motif_pvalue` | number (p-value) | `1e-05` | `--motif-pvalue` | Motif hit cutoff: chance of a hit in random sequence (smaller = stricter) |
-| `motif_pseudocount` | number | `0.8` | *ini only* | Pseudocount added to the PFM counts (avoids impossible bases) |
-| `motif_pad` | integer (bp) | `0` | *ini only* | Extend every anchor by this many bp on both sides before the motif search |
+| Key / CLI option | Type (unit) | Default | What it does |
+|---|---|---|---|
+| `interaction_file`<br>`--file` | text | *(empty)* | Loops/peaks file: .bedpe, .bed or .narrowPeak (required) |
+| `hic_file`<br>`--hic` | text | *(empty)* | Optional Hi-C map (.hic, read with hic-straw): reference for the validation and, with --optimize, the target of the optimizer |
+| `hic_norm`<br>`--hic-norm` | text | `KR` | Hi-C normalisation to read (falls back to SCALE, VC_SQRT, VC, NONE when missing) |
+| `hic_resolution`<br>`--hic-resolution` | integer (bp) | `0` | Hi-C bin size to read (0 = automatic, closest to the bead size) |
+| `chrom`<br>*ini only* | text | *(empty)* | Chromosome, e.g. chr1 (CLI: use --region) |
+| `region_start`<br>*ini only* | integer (bp) | *(empty)* | Region start (empty = chromosome start) |
+| `region_end`<br>*ini only* | integer (bp) | *(empty)* | Region end (empty = chromosome end) |
+| `genome`<br>`--genome` | text | `hg38` | Genome assembly for chromosome sizes |
+| `n_beads`<br>`--n-beads` | integer (beads) | *(empty)* | Number of simulation beads (empty = region / 2 kb) |
+| `smoothing_input`<br>*ini only* | true / false | `True` | Smooth the anchor/peak signal with a Gaussian (sigma = n_beads/300 beads, at least 1.5) |
+| `bw_files`<br>*ini only* | list of text | *(empty)* | BigWig tracks for extra binding energy (comma-separated) |
+| `bw_strengths`<br>*ini only* | list of numbers | *(empty)* | Strength r per BigWig track (empty = -N_beads/10 each) |
+| `lef_track_file`<br>`--lef-track` | text | *(empty)* | BigWig of LEF loading preference (cohesin/condensin ChIP) |
+| `comp_bw_file`<br>*ini only* | text | *(empty)* | BigWig of compartments (A/B signal) |
+| `comp_bed_file`<br>*ini only* | text | *(empty)* | BED of compartments / subcompartments |
+| `min_pet`<br>`--min-pet` | integer (PET) | `0` | BEDPE: keep only loops with at least this many PET counts / score (0 = keep all) |
+| `motif_genome`<br>`--motif-genome` | text | *(empty)* | BEDPE: reference genome FASTA; enables the CTCF motif search that sets anchor orientations |
+| `motif_pfm`<br>`--motif-pfm` | text | *(empty)* | Motif PFM file (empty = bundled JASPAR CTCF MA0139.1) |
+| `motif_pvalue`<br>`--motif-pvalue` | number (p-value) | `1e-05` | Motif hit cutoff: chance of a hit in random sequence (smaller = stricter) |
+| `motif_pseudocount`<br>*ini only* | number | `0.8` | Pseudocount added to the PFM counts (avoids impossible bases) |
+| `motif_pad`<br>*ini only* | integer (bp) | `0` | Extend every anchor by this many bp on both sides before the motif search |
 
 ## `[output]`: Output and reproducibility
 
-| Key | Type (unit) | Default | CLI option | What it does |
-|---|---|---|---|---|
-| `out_path` | text | *(empty)* | `--out` | Results folder (empty = <project>/results); each run gets its own subfolder |
-| `run_number` | integer | *(empty)* | `--run` | Run number in the folder name (empty = next free; standalone stages reuse the latest) |
-| `verbosity` | integer | `0` | *ini only* | Console detail: 0 main steps + progress bars, 1 + tables, 2 + info messages, 3 + debug (CLI: -v, -vv, -vvv) |
-| `quiet` | true / false | `False` | `--quiet` | Print nothing to the console (the log file and the report are still written) |
-| `seed` | integer | *(empty)* | `--seed` | Random seed (empty = a random one, saved in the resolved config); the same seed repeats the run exactly, MD included only with --threads 1 |
-| `report` | true / false | `True` | `--report` | Write report.html |
-| `save_metadata` | true / false | `True` | `--metadata` | Save map matrices (MC and MD heatmaps, distances, strengths) as .npy in data/metadata |
-| `save_ensemble` | true / false | `True` | `--save-ensemble` | Save every MD frame as .cif |
+| Key / CLI option | Type (unit) | Default | What it does |
+|---|---|---|---|
+| `out_path`<br>`--out` | text | *(empty)* | Results folder (empty = <project>/results); each run gets its own subfolder |
+| `run_number`<br>`--run` | integer | *(empty)* | Run number in the folder name (empty = next free; standalone stages reuse the latest) |
+| `verbosity`<br>*ini only* | integer | `0` | Console detail: 0 main steps + progress bars, 1 + tables, 2 + info messages, 3 + debug (CLI: -v, -vv, -vvv) |
+| `quiet`<br>`--quiet` | true / false | `False` | Print nothing to the console (the log file and the report are still written) |
+| `seed`<br>`--seed` | integer | *(empty)* | Random seed (empty = a random one, saved in the resolved config); the same seed repeats the run exactly, MD included only with --threads 1 |
+| `report`<br>`--report` | true / false | `True` | Write report.html |
+| `save_metadata`<br>`--metadata` | true / false | `True` | Save map matrices (MC and MD heatmaps, distances, strengths) as .npy in data/metadata |
+| `save_ensemble`<br>`--save-ensemble` | true / false | `True` | Save every MD frame as .cif |
 
 ## `[parallel]`: Parallelism and replicas
 
-| Key | Type (unit) | Default | CLI option | What it does |
-|---|---|---|---|---|
-| `threads` | integer (threads) | `1` | `--threads` | Worker threads for the numba sampler, OpenMM CPU and numba kernels (0 = all cores) |
-| `replicas` | integer (chains) | `1` | `--n-replicas` | Independent Monte Carlo chains (seed, seed+1, ...) run in parallel; the ensemble is pooled |
+| Key / CLI option | Type (unit) | Default | What it does |
+|---|---|---|---|
+| `threads`<br>`--threads` | integer (threads) | `1` | Worker threads for the numba sampler, OpenMM CPU and numba kernels (0 = all cores) |
+| `replicas`<br>`--n-replicas` | integer (chains) | `1` | Independent Monte Carlo chains (seed, seed+1, ...) run in parallel; the ensemble is pooled |
 
 ## `[monte_carlo]`: Monte Carlo (loop extrusion) sampler
 
-| Key | Type (unit) | Default | CLI option | What it does |
-|---|---|---|---|---|
-| `n_steps` | integer (MC steps) | `40000` | `--mc-steps` | Total Monte Carlo steps |
-| `mc_step` | integer (MC steps) | `200` | `--sample-every` | Save one snapshot every this many steps |
-| `burnin` | integer (MC steps) | `1000` | `--burnin` | Burn-in period discarded from statistics |
-| `t_init` | number (a.u.) | `2.0` | `--t-init` | Initial temperature |
-| `t_final` | number (a.u.) | `1.0` | `--t-final` | Final temperature (Annealing only) |
-| `method` | text | `Annealing` | `--method` | Sampling method |
-| `n_lef` | integer (LEFs) | *(empty)* | `--n-lef` | Loop extrusion factors (empty = N_anchors / 2) |
-| `n_lef2` | integer (LEFs) | `0` | *ini only* | Second LEF family (different speed) |
-| `lef_drift` | true / false | `False` | *ini only* | Kept for compatibility with the original LoopSage (has no effect there either) |
-| `lef_rw` | true / false | `True` | `--lef-rw` | LEF legs slide as a random walk (True, original) or only extrude outward (False) |
-| `lef_speed_dist` | text | `constant` | `--lef-speed` | Initial LEF speeds: constant (all equal, original), maxwell (Maxwell-Boltzmann), lognormal, or two_state (slow and fast LEFs); mean speed is always 1 |
-| `lef_speed_spread` | number | `0.5` | `--lef-speed-spread` | lognormal only: width (sigma of ln speed) |
-| `lef_fast_fraction` | number | `0.2` | `--lef-fast-fraction` | two_state only: fraction of fast LEFs |
-| `lef_fast_ratio` | number | `5.0` | `--lef-fast-ratio` | two_state only: speed of fast LEFs relative to slow ones |
-| `variable_sliding_step` | true / false | `False` | *ini only* | Sliding step uniform in [1, shortest loop] beads |
-| `p_epigenetic` | number | `0.5` | *ini only* | Epigenetic model only: probability that a step changes a bead's epigenetic state instead of moving a LEF |
+| Key / CLI option | Type (unit) | Default | What it does |
+|---|---|---|---|
+| `n_steps`<br>`--mc-steps` | integer (MC steps) | `40000` | Total Monte Carlo steps |
+| `mc_step`<br>`--sample-every` | integer (MC steps) | `200` | Save one snapshot every this many steps |
+| `burnin`<br>`--burnin` | integer (MC steps) | `1000` | Burn-in period discarded from statistics |
+| `t_init`<br>`--t-init` | number (a.u.) | `3.0` | Initial temperature |
+| `t_final`<br>`--t-final` | number (a.u.) | `1.0` | Final temperature (Annealing only) |
+| `method`<br>`--method` | text | `Annealing` | Sampling method |
+| `n_lef`<br>`--n-lef` | integer (LEFs) | *(empty)* | Loop extrusion factors (empty = N_anchors / 2) |
+| `n_lef2`<br>*ini only* | integer (LEFs) | `0` | Second LEF family (different speed) |
+| `lef_drift`<br>*ini only* | true / false | `False` | Kept for compatibility with the original LoopSage (has no effect there either) |
+| `lef_rw`<br>`--lef-rw` | true / false | `True` | LEF legs slide as a random walk (True, original) or only extrude outward (False) |
+| `lef_speed_dist`<br>`--lef-speed` | text | `constant` | Initial LEF speeds: constant (all equal, original), maxwell (Maxwell-Boltzmann), lognormal, or two_state (slow and fast LEFs); mean speed is always 1 |
+| `lef_speed_spread`<br>`--lef-speed-spread` | number | `0.5` | lognormal only: width (sigma of ln speed) |
+| `lef_fast_fraction`<br>`--lef-fast-fraction` | number | `0.2` | two_state only: fraction of fast LEFs |
+| `lef_fast_ratio`<br>`--lef-fast-ratio` | number | `5.0` | two_state only: speed of fast LEFs relative to slow ones |
+| `variable_sliding_step`<br>*ini only* | true / false | `False` | Sliding step uniform in [1, shortest loop] beads |
+| `p_epigenetic`<br>*ini only* | number | `0.5` | Epigenetic model only: probability that a step changes a bead's epigenetic state instead of moving a LEF |
 
 ## `[energy]`: Energy model coefficients
 
-| Key | Type (unit) | Default | CLI option | What it does |
-|---|---|---|---|---|
-| `folding_coeff` | number | `1.0` | *ini only* | Folding coefficient f |
-| `folding_coeff2` | number | `0.0` | *ini only* | Folding coefficient f2 of the second family |
-| `bind_coeff` | number | `1.0` | *ini only* | Anchor binding coefficient b |
-| `cross_coeff` | number | `1.0` | *ini only* | LEF crossing coefficient kappa |
-| `epi_coeff` | number | `0.0` | *ini only* | Epigenetic-model coupling strength; 0 = off (default: pure loop-extrusion model) |
-| `n_epi_states` | integer | `3` | *ini only* | Number of epigenetic states |
-| `epigenetic_mode` | text | `dynamic` | *ini only* | Epigenetic coupling J_ij: 'dynamic' = 1 on the backbone and on current LEF loops, else 0 (follows the LEFs); 'static' = fixed map from the loop data (advanced, config.ini only) |
-| `cross_loop` | true / false | `True` | *ini only* | Penalise crossing loops, not only shared anchors |
-| `between_families_penalty` | true / false | `True` | *ini only* | Apply crossing penalty between LEF families |
-| `data_loss_mode` | integer | `0` | *ini only* | 0 = 1D anchor profiles L/R; 1 = 2D loop map |
-| `loss_sigma` | number (beads) | `2.0` | *ini only* | Gaussian width of the 2D loop map J_loss when data_loss_mode = 1, so LEF legs feel a smooth landscape (advanced, config.ini only) |
-| `contrastive_binding` | true / false | `False` | *ini only* | Penalise loop-free regions (tanh-contrast signals) |
+| Key / CLI option | Type (unit) | Default | What it does |
+|---|---|---|---|
+| `folding_coeff`<br>*ini only* | number | `1.0` | Folding coefficient f |
+| `folding_coeff2`<br>*ini only* | number | `0.0` | Folding coefficient f2 of the second family |
+| `bind_coeff`<br>*ini only* | number | `1.0` | Anchor binding coefficient b |
+| `cross_coeff`<br>*ini only* | number | `1.0` | LEF crossing coefficient kappa |
+| `epi_coeff`<br>*ini only* | number | `0.0` | Epigenetic-model coupling strength; 0 = off (default: pure loop-extrusion model) |
+| `n_epi_states`<br>*ini only* | integer | `3` | Number of epigenetic states |
+| `epigenetic_mode`<br>*ini only* | text | `dynamic` | Epigenetic coupling J_ij: 'dynamic' = 1 on the backbone and on current LEF loops, else 0 (follows the LEFs); 'static' = fixed map from the loop data (advanced, config.ini only) |
+| `cross_loop`<br>*ini only* | true / false | `True` | Penalise crossing loops, not only shared anchors |
+| `between_families_penalty`<br>*ini only* | true / false | `True` | Apply crossing penalty between LEF families |
+| `data_loss_mode`<br>*ini only* | integer | `0` | 0 = 1D anchor profiles L/R; 1 = 2D loop map |
+| `loss_sigma`<br>*ini only* | number (beads) | `2.0` | Gaussian width of the 2D loop map J_loss when data_loss_mode = 1, so LEF legs feel a smooth landscape (advanced, config.ini only) |
+| `binding_mode`<br>`--binding-mode` | text | `preferential` | Anchor binding mode: preferential = LEFs are attracted to the anchor profiles (non-negative), loop-free regions cost nothing; contrastive = in addition, loops are penalised for spanning loop-free regions and rewarded for spanning regions the input loops cover (needs loops) |
 
 ## `[molecular_dynamics]`: Molecular dynamics (3D structures)
 
-| Key | Type (unit) | Default | CLI option | What it does |
-|---|---|---|---|---|
-| `device` | text | `` | *ini only* | Device index for CUDA or OpenCL (count from 0; empty = default) |
-| `run_md` | true / false | `True` | `--run-MD` | Run the 3D molecular dynamics stage |
-| `platform` | text | `auto` | `--platform` | OpenMM platform: auto (try CUDA, then OpenCL, then parallel CPU), CUDA, OpenCL, CPU or Reference |
-| `initial_structure_type` | text | `rw` | `--init-structure` | Initial polymer shape |
-| `integrator_step` | number (fs) | `100.0` | `--step-size` | Integrator time step |
-| `sim_step` | integer (MD steps) | `2000` | `--md-steps` | MD steps per MC snapshot (per frame) |
-| `sim_temp` | number (K) | `310.0` | `--temperature` | Simulation temperature |
-| `friction` | number (1/ps) | `0.1` | *ini only* | Langevin friction |
-| `tolerance` | number (kJ/mol/nm) | `0.001` | *ini only* | Energy-minimisation tolerance |
-| `angle_ff_strength` | number (kJ/mol/rad^2) | `100.0` | *ini only* | Chain stiffness (angle force) |
-| `le_ff_length` | number (nm) | `0.1` | *ini only* | Loop-anchor equilibrium distance |
-| `le_ff_strength` | number (kJ/mol/nm^2) | `60000.0` | *ini only* | Loop-anchor spring constant |
-| `ev_ff_strength` | number (kJ/mol) | `100.0` | *ini only* | Excluded-volume strength |
-| `ev_ff_power` | number | `3.0` | *ini only* | Excluded-volume exponent |
-| `do_compartments` | true / false | `False` | *ini only* | Add block-copolymer compartment force (needs epi_coeff > 0) |
-| `comp_strength` | number | `0.25` | *ini only* | Block-copolymer compartment attraction: scale of the interaction table (1 = the original strength; lower = softer, compartments stay open instead of collapsing) |
-| `comp_range` | number | `0.03` | *ini only* | Block-copolymer attraction range in units of sqrt(N) nm (the original value was 0.05; smaller = shorter range) |
-| `md_skip_burnin` | true / false | `False` | *ini only* | Simulate only post-burn-in MC snapshots (original LoopSage uses every snapshot) |
-| `forcefield_path` | text | `/mnt/attach/outputs/pyLoopSage/src/molecular_dynamics/forcefields/classic_sm_ff.xml` | *ini only* | OpenMM force-field XML |
+| Key / CLI option | Type (unit) | Default | What it does |
+|---|---|---|---|
+| `device`<br>*ini only* | text | `` | Device index for CUDA or OpenCL (count from 0; empty = default) |
+| `run_md`<br>`--run-MD` | true / false | `True` | Run the 3D molecular dynamics stage |
+| `platform`<br>`--platform` | text | `auto` | OpenMM platform: auto (try CUDA, then OpenCL, then parallel CPU), CUDA, OpenCL, CPU or Reference |
+| `initial_structure_type`<br>`--init-structure` | text | `rw` | Initial polymer shape |
+| `integrator_step`<br>`--step-size` | number (fs) | `100.0` | Integrator time step |
+| `sim_step`<br>`--md-steps` | integer (MD steps) | `5000` | MD steps per MC snapshot (per frame) |
+| `sim_temp`<br>`--temperature` | number (K) | `310.0` | Simulation temperature |
+| `friction`<br>*ini only* | number (1/ps) | `0.1` | Langevin friction |
+| `tolerance`<br>*ini only* | number (kJ/mol/nm) | `0.001` | Energy-minimisation tolerance |
+| `angle_ff_strength`<br>*ini only* | number (kJ/mol/rad^2) | `50.0` | Chain stiffness (angle force) |
+| `le_ff_length`<br>*ini only* | number (nm) | `0.1` | Loop-anchor equilibrium distance |
+| `le_ff_strength`<br>*ini only* | number (kJ/mol/nm^2) | `60000.0` | Loop-anchor spring constant |
+| `ev_ff_strength`<br>*ini only* | number (kJ/mol) | `100.0` | Excluded-volume strength |
+| `ev_ff_power`<br>*ini only* | number | `3.0` | Excluded-volume exponent |
+| `do_compartments`<br>*ini only* | true / false | `False` | Add block-copolymer compartment force (needs epi_coeff > 0) |
+| `comp_strength`<br>*ini only* | number | `0.25` | Block-copolymer compartment attraction: scale of the interaction table (1 = the original strength; lower = softer, compartments stay open instead of collapsing) |
+| `comp_range`<br>*ini only* | number | `0.03` | Block-copolymer attraction range in units of sqrt(N) nm (the original value was 0.05; smaller = shorter range) |
+| `md_skip_burnin`<br>*ini only* | true / false | `False` | Simulate only post-burn-in MC snapshots (original LoopSage uses every snapshot) |
+| `forcefield_path`<br>*ini only* | text | `src/molecular_dynamics/forcefields/classic_sm_ff.xml` | OpenMM force-field XML |
 
 ## `[structure_3d]`: 3D structure analysis and rendering
 
-| Key | Type (unit) | Default | CLI option | What it does |
-|---|---|---|---|---|
-| `render_3d` | true / false | `True` | `--render-3d` | Write 3d_viewer.html and videos of the 3D trajectory |
-| `make_videos` | true / false | `True` | *ini only* | Render mp4 videos (needs pyvista; ffmpeg via imageio-ffmpeg) |
-| `colorings` | list of text | `purple, rainbow` | *ini only* | Video colourings: purple, rainbow, compartments (added automatically when compartments are loaded) |
-| `representation` | text | `tube` | *ini only* | Video representation: tube (continuous chain) or beads (beads on a string); the viewer offers both |
-| `interp_steps` | integer (frames) | `5` | *ini only* | Interpolated frames between two MD frames (smooth trajectories) |
-| `video_fps` | integer (fps) | `30` | *ini only* | Video frame rate |
-| `video_size` | integer (px) | `640` | *ini only* | Video width and height |
-| `max_video_frames` | integer (frames) | `240` | *ini only* | Maximum frames per video |
+| Key / CLI option | Type (unit) | Default | What it does |
+|---|---|---|---|
+| `render_3d`<br>`--render-3d` | true / false | `True` | Write 3d_viewer.html and videos of the 3D trajectory |
+| `make_videos`<br>*ini only* | true / false | `True` | Render mp4 videos (needs pyvista; ffmpeg via imageio-ffmpeg) |
+| `colorings`<br>*ini only* | list of text | `purple, rainbow` | Video colourings: purple, rainbow, compartments (added automatically when compartments are loaded) |
+| `representation`<br>*ini only* | text | `tube` | Video representation: tube (continuous chain) or beads (beads on a string); the viewer offers both |
+| `interp_steps`<br>*ini only* | integer (frames) | `5` | Interpolated frames between two MD frames (smooth trajectories) |
+| `video_fps`<br>*ini only* | integer (fps) | `30` | Video frame rate |
+| `video_size`<br>*ini only* | integer (px) | `640` | Video width and height |
+| `max_video_frames`<br>*ini only* | integer (frames) | `240` | Maximum frames per video |
 
 ## `[analysis]`: Analysis
 
-| Key | Type (unit) | Default | CLI option | What it does |
-|---|---|---|---|---|
-| `corr_smooth` | number (beads) | `1.5` | *ini only* | Gaussian smoothing (beads) applied to per-position signals before the extra validation correlations (0 = off) |
-| `contact_radius` | number (nm) | `1.0` | *ini only* | Contact distance for MD contact maps |
-| `zoom_snapshots` | integer (snapshots) | `120` | *ini only* | Snapshots shown in the zoomed kymograph (window near equilibrium) |
-| `zoom_start` | integer (snapshot) | *(empty)* | *ini only* | First snapshot of the zoom window (empty = middle of production) |
+| Key / CLI option | Type (unit) | Default | What it does |
+|---|---|---|---|
+| `corr_smooth`<br>*ini only* | number (beads) | `1.5` | Gaussian smoothing (beads) applied to per-position signals before the extra validation correlations (0 = off) |
+| `contact_radius`<br>*ini only* | number (nm) | `1.0` | Contact distance for MD contact maps |
+| `zoom_snapshots`<br>*ini only* | integer (snapshots) | `120` | Snapshots shown in the zoomed kymograph (window near equilibrium) |
+| `zoom_start`<br>*ini only* | integer (snapshot) | *(empty)* | First snapshot of the zoom window (empty = middle of production) |
 
 ## `[optimizer]`: Parameter optimizer (--optimize)
 
-| Key | Type (unit) | Default | CLI option | What it does |
-|---|---|---|---|---|
-| `optimize` | true / false | `False` | `--optimize` | Before the run, fit the number of LEFs, folding and binding coefficients with Nelder-Mead on short Monte Carlo runs (n_lef of the first family, f, b and the temperature schedule), then run with them |
-| `opt_evals` | integer (evaluations) | `60` | `--opt-evals` | Maximum number of short Monte Carlo evaluations of the optimizer |
-| `opt_early_stop` | true / false | `True` | `--opt-early-stop` | Stop the optimizer early when the loss no longer improves |
-| `opt_patience` | integer (evaluations) | `20` | `--opt-patience` | Early stopping: evaluations without a real improvement (see opt_min_gain) before the optimizer stops |
-| `opt_min_gain` | number | `0.01` | *ini only* | Early stopping: smallest drop of the best loss that counts as an improvement (the loss is about 1-4 at the start) |
-| `opt_steps` | integer (MC steps) | `20000` | `--opt-steps` | Monte Carlo steps of one evaluation (the final candidate check runs 3x longer) |
-| `target_smooth` | number (beads) | `0.8` | `--target-smooth` | Smoothing of the optimizer target built from the input loops, so that the sparse loops look like a Hi-C map (0 = none) |
-| `hic_denoise` | number (beads) | `1.0` | `--hic-denoise` | Denoising of the Hi-C target of the optimizer, to bring out the TAD pattern (0 = none); validation always uses the raw map |
+| Key / CLI option | Type (unit) | Default | What it does |
+|---|---|---|---|
+| `optimize`<br>`--optimize` | true / false | `False` | Before the run, fit the number of LEFs, folding and binding coefficients with Nelder-Mead on short Monte Carlo runs (n_lef of the first family, f, b and the temperature schedule), then run with them |
+| `opt_evals`<br>`--opt-evals` | integer (evaluations) | `60` | Maximum number of short Monte Carlo evaluations of the optimizer |
+| `opt_early_stop`<br>`--opt-early-stop` | true / false | `True` | Stop the optimizer early when the loss no longer improves |
+| `opt_patience`<br>`--opt-patience` | integer (evaluations) | `20` | Early stopping: evaluations without a real improvement (see opt_min_gain) before the optimizer stops |
+| `opt_min_gain`<br>*ini only* | number | `0.01` | Early stopping: smallest drop of the best loss that counts as an improvement (the loss is about 1-4 at the start) |
+| `opt_steps`<br>`--opt-steps` | integer (MC steps) | `20000` | Monte Carlo steps of one evaluation (the final candidate check runs 3x longer) |
+| `target_smooth`<br>`--target-smooth` | number (beads) | `0.8` | Smoothing of the optimizer target built from the input loops, so that the sparse loops look like a Hi-C map (0 = none) |
+| `hic_denoise`<br>`--hic-denoise` | number (beads) | `1.0` | Denoising of the Hi-C target of the optimizer, to bring out the TAD pattern (0 = none); validation always uses the raw map |
 
 ## `[topology]`: Topology: topoisomerase, chain crossings and linking (optional, advanced)
 
-| Key | Type (unit) | Default | CLI option | What it does |
-|---|---|---|---|---|
-| `detect_knots` | true / false | `False` | `--knots` | Optional linking analysis of loops in 3D (slow; off by default) |
-| `knots_stride` | integer (frames) | `10` | *ini only* | Use every n-th MD frame for linking numbers |
-| `ev_p` | number | `0.0` | *ini only* | Topoisomerase ('random' mode): probability/fraction of beads with excluded volume off during a frame |
-| `continuous_top` | true / false | `False` | *ini only* | Topoisomerase ('random' mode) acts on one continuous stretch |
-| `topo_mode` | text | `random` | *ini only* | Topoisomerase model: 'random' (beads with EV off for a whole frame, set by ev_p) or 'local' (short strand-passage events at close contacts) |
-| `topo_rate` | number (events) | `5.0` | *ini only* | 'local' mode: strand-passage attempts per MD frame per 1000 beads |
-| `topo_radius` | number (bond lengths) | `2.0` | *ini only* | 'local' mode: strands closer than this can pass through each other |
-| `topo_width` | integer (beads) | `3` | *ini only* | 'local' mode: beads of the passing strand that lose their excluded volume |
-| `topo_window` | number (fraction) | `0.05` | *ini only* | 'local' mode: share of the frame's MD steps with excluded volume off, per attempt |
-| `topo_keep` | number | `1.0` | *ini only* | 'local' mode: probability to keep a passage that creates a new link between loops (1 = no bias; below 1 the topoisomerase simplifies the topology) |
-| `track_crossings` | true / false | `False` | *ini only* | Count chain crossings during the MD (checks whether the excluded volume leaks); also on with --knots |
-| `track_every` | integer (MD steps) | `100` | *ini only* | MD steps between crossing checks |
-| `ev_barrier_target` | number (kT) | `10.0` | *ini only* | Strand-crossing barrier used for the suggested ev_ff_strength in the topology report |
+| Key / CLI option | Type (unit) | Default | What it does |
+|---|---|---|---|
+| `detect_knots`<br>`--knots` | true / false | `False` | Optional linking analysis of loops in 3D (slow; off by default) |
+| `knots_stride`<br>*ini only* | integer (frames) | `10` | Use every n-th MD frame for linking numbers |
+| `ev_p`<br>*ini only* | number | `0.0` | Topoisomerase ('random' mode): probability/fraction of beads with excluded volume off during a frame |
+| `continuous_top`<br>*ini only* | true / false | `False` | Topoisomerase ('random' mode) acts on one continuous stretch |
+| `topo_mode`<br>*ini only* | text | `random` | Topoisomerase model: 'random' (beads with EV off for a whole frame, set by ev_p) or 'local' (short strand-passage events at close contacts) |
+| `topo_rate`<br>*ini only* | number (events) | `5.0` | 'local' mode: strand-passage attempts per MD frame per 1000 beads |
+| `topo_radius`<br>*ini only* | number (bond lengths) | `2.0` | 'local' mode: strands closer than this can pass through each other |
+| `topo_width`<br>*ini only* | integer (beads) | `3` | 'local' mode: beads of the passing strand that lose their excluded volume |
+| `topo_window`<br>*ini only* | number (fraction) | `0.05` | 'local' mode: share of the frame's MD steps with excluded volume off, per attempt |
+| `topo_keep`<br>*ini only* | number | `1.0` | 'local' mode: probability to keep a passage that creates a new link between loops (1 = no bias; below 1 the topoisomerase simplifies the topology) |
+| `track_crossings`<br>*ini only* | true / false | `False` | Count chain crossings during the MD (checks whether the excluded volume leaks); also on with --knots |
+| `track_every`<br>*ini only* | integer (MD steps) | `100` | MD steps between crossing checks |
+| `ev_barrier_target`<br>*ini only* | number (kT) | `10.0` | Strand-crossing barrier used for the suggested ev_ff_strength in the topology report |

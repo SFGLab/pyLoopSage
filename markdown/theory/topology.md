@@ -21,7 +21,7 @@ For closed threads there are two basic objects.
 
 <figure markdown>
   ![Knot, link and unlink](../assets/theory/topology_dims.svg){ width="760" }
-  <figcaption>A knot is one closed curve (here the trefoil), a link is several closed curves (here the Hopf link), and in the unlink the curves can be separated. At every crossing the strand that is cut by a gap passes *under* the other one.</figcaption>
+  <figcaption markdown="span">A knot is one closed curve (here the trefoil), a link is several closed curves (here the Hopf link), and in the unlink the curves can be separated. At every crossing the strand that is cut by a gap passes *under* the other one.</figcaption>
 </figure>
 
 ### In which dimensions do they exist?
@@ -66,7 +66,7 @@ Crossings of a curve with itself are not counted. Every crossing between the two
 
 <figure markdown>
   ![Linking number](../assets/theory/topology_lk.svg){ width="760" }
-  <figcaption><b>a</b> The sign of a crossing. <b>b</b> The Hopf link has two crossings of sign +1, so Lk = +1. <b>c</b> Two circles that overlap in the picture but are not interlocked: the same curve is over at both crossings, the signs cancel and Lk = 0. Counting crossings alone would be misleading.</figcaption>
+  <figcaption markdown="span"><b>a</b> The sign of a crossing. <b>b</b> The Hopf link has two crossings of sign +1, so Lk = +1. <b>c</b> Two circles that overlap in the picture but are not interlocked: the same curve is over at both crossings, the signs cancel and Lk = 0. Counting crossings alone would be misleading.</figcaption>
 </figure>
 
 The most important properties are the following.
@@ -99,7 +99,7 @@ The drawing recipe needs a *projection* of the 3D curves onto a plane. For a com
 
 <figure markdown>
   ![Three views of one pair of loops](../assets/theory/topology_projection.svg){ width="760" }
-  <figcaption>One pair of linked loops, taken from a 3D polymer, seen from three directions. The number of crossings changes (2, 4, and an almost edge-on view in which the crossings pile up), but half the sum of the signs is always +1, which was also computed with the Gauss integral. The pictures are generated from the actual 3D coordinates.</figcaption>
+  <figcaption markdown="span">One pair of linked loops, taken from a 3D polymer, seen from three directions. The number of crossings changes (2, 4, and an almost edge-on view in which the crossings pile up), but half the sum of the signs is always +1, which was also computed with the Gauss integral. The pictures are generated from the actual 3D coordinates.</figcaption>
 </figure>
 
 ### What LoopSage does
@@ -113,7 +113,7 @@ LoopSage avoids projections completely and computes the Gauss integral directly 
 
 <figure markdown>
   ![From loops to closed curves](../assets/theory/topology_loops.svg){ width="760" }
-  <figcaption><b>a</b> A loop becomes a closed curve when its two anchors are joined by a chord. <b>b</b> Only pairs of loops that are separate curves are tested. Nested or overlapping loops and loops shorter than 4 beads are skipped.</figcaption>
+  <figcaption markdown="span"><b>a</b> A loop becomes a closed curve when its two anchors are joined by a chord. <b>b</b> Only pairs of loops that are separate curves are tested. Nested or overlapping loops and loops shorter than 4 beads are skipped.</figcaption>
 </figure>
 
 ## Linking in LoopSage
@@ -142,7 +142,7 @@ LoopSage offers two optional models of a topoisomerase II, both set in the `[top
 
 <figure markdown>
   ![The two topoisomerase models](../assets/theory/topology_topo.svg){ width="700" }
-  <figcaption><b>a</b> Random mode: in every frame some beads have no excluded volume (dashed), scattered or in one stretch, and a strand can pass through them. <b>b</b> Local mode: two strands come close, a short stretch of one loses its excluded volume for a short window, the other strand passes through, and the volume is restored. A passage that creates a new link can be undone.</figcaption>
+  <figcaption markdown="span"><b>a</b> Random mode: in every frame some beads have no excluded volume (dashed), scattered or in one stretch, and a strand can pass through them. <b>b</b> Local mode: two strands come close, a short stretch of one loses its excluded volume for a short window, the other strand passes through, and the volume is restored. A passage that creates a new link can be undone.</figcaption>
 </figure>
 
 The *crossing counter* (`track_crossings`, checked every `track_every` MD steps) detects two bonds that pass through each other between two checks. Crossings that occur with the excluded volume on are *leaks* of the force field, and crossings through a switched-off bead are *passages*.

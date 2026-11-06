@@ -140,3 +140,17 @@ def test_hic_compartments_put_the_denser_side_negative():
     m[90:94], m[:, 90:94] = np.nan, np.nan                          # masked beads are interpolated
     v = compartment_from_hic(m)
     assert v.shape == (n,) and np.isfinite(v).all() and np.abs(v).max() <= 1 and np.corrcoef(v, t)[0, 1] > 0.8
+
+
+def test_correlation_matrix_score_and_figure(tmp_path):
+    from viz.hic_figs import hic_correlation_figure
+    t = _hic_like()
+    same, other = compare_hic(t * 2.0, t), compare_hic(_hic_like(seed=9, noise=1.5)[::-1, ::-1] ** 0.3, t)
+    assert same["r_cm"] > 0.99 and other["r_cm"] < same["r_cm"]
+    assert same["corr_h"].shape == t.shape and np.isfinite(same["row_r"]).all() and np.nanmean(same["row_r"]) > 0.99
+    geom = SimpleNamespace(chrom="chr1", axis_mb=lambda: np.linspace(0, 1, len(t)), extent_mb=lambda: [0, 1, 1, 0], bp_per_bead=1e4)
+    import viz.hic_figs as hf
+    saved = []
+    hf.save_figure = lambda fig, name, **kw: saved.append(name)
+    hic_correlation_figure(same, geom, "test")
+    assert saved == ["hic_correlation"]

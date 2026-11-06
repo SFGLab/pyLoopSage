@@ -9,7 +9,7 @@ Start with the [home page](intro/index.md), or pick a chapter below.
 | **Theory** | [Theory](theory/index.md) | coming soon |
 | **Implementation** | [Implementation](implementation/index.md) | coming soon |
 | **Reference** | [Overview](reference/index.md) · [Command-line interface](reference/cli.md) · [Config files](reference/config.md) | written |
-| **Acknowledgments** | [Acknowledgments](acknowledgments/index.md) | coming soon |
+| **Acknowledgments** | [Acknowledgments](acknowledgments/index.md) | people and software |
 
 ## Read as a website
 

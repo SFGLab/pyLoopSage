@@ -35,8 +35,10 @@
 .md-typeset table:not([class]) tbody tr:nth-child(even) { background: var(--ls-soft); }
 .md-typeset table:not([class]) td { border-top: 1px solid var(--ls-line); vertical-align: top; }
 
-/* table cells keep option names on one line */
-.md-typeset table:not([class]) td code { white-space: nowrap; }
+/* option names (first column) stay on one line; other cells wrap, long defaults break softly, and the description keeps a readable width */
+.md-typeset table:not([class]) td:first-child code { white-space: nowrap; }
+.md-typeset table:not([class]) td:not(:first-child) code { white-space: normal; overflow-wrap: break-word; }
+.md-typeset table:not([class]) td:last-child { min-width: 14rem; }
 
 /* code: dark blocks, violet inline code */
 .md-typeset pre > code { background: #0d0626; color: #ece6fb; border-radius: 4px; }

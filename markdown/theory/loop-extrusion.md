@@ -1,6 +1,6 @@
 # Loop extrusion
 
-This page explains **loop extrusion**, the process that folds chromatin into loops.
+This page explains *loop extrusion*, the process that folds chromatin into loops.
 It is about the biology and the basic ideas only. The energy function and the sampling algorithm of LoopSage come in the next sections.
 The boxes called *In LoopSage* just point to the settings where each idea appears in the program.
 
@@ -8,44 +8,44 @@ The boxes called *In LoopSage* just point to the settings where each idea appear
 
 A human cell has about two metres of DNA that must fit into a nucleus a few micrometres wide.
 The DNA is therefore folded, and the folding is not random: places that are far apart along the DNA are often brought next to each other, and this controls which genes talk to which regulatory elements.
-One of the main folding mechanisms is **loop extrusion**.
+One of the main folding mechanisms is *loop extrusion*.
 Imagine a ring that is threaded onto a rope and starts to slide along it while pulling the rope through itself: a loop of rope grows on one side of the ring.
 In the cell the ring is a protein complex, and the rope is the chromatin fibre.
 
 ## The players
 
 **The chromatin fibre** is the DNA together with the proteins it is wrapped around.
-Over distances of thousands of bases it behaves like a long flexible rope. In all figures it is the **black line**.
+Over distances of thousands of bases it behaves like a long flexible rope. In all figures it is the *black line*.
 
 **Cohesin** is a ring-shaped protein complex that works as a molecular motor.
 It holds the fibre at two points, and using the energy of ATP it moves these two points apart, pulling more and more fibre through itself.
-We call such a motor a **loop extrusion factor**, or **LEF**.
-In the figures cohesin is the **purple ring**.
+We call such a motor a *loop extrusion factor*, or *LEF*.
+In the figures cohesin is the *purple ring*.
 
 **CTCF** is a protein that sticks to the DNA at places with a specific sequence, the *CTCF motif*.
-The motif has a **direction**, like a one-way arrow written along the DNA: it can point right (**red**) or left (**blue**).
-CTCF acts as a **boundary element**: a place where cohesin tends to stop.
+The motif has a *direction*, like a one-way arrow written along the DNA: it can point right (*red*) or left (*blue*).
+CTCF acts as a *boundary element*: a place where cohesin tends to stop.
 
-**Condensin** is a cohesin relative that works when the cell divides. It is also a ring that extrudes loops, and in the figures it is **green**. We meet it at the end of this page.
+**Condensin** is a cohesin relative that works when the cell divides. It is also a ring that extrudes loops, and in the figures it is *green*. We meet it at the end of this page.
 
 <figure markdown>
   ![The loop extrusion players](../assets/theory/players.svg){ width="640" }
-  <figcaption>One chromatin loop held by cohesin. The ring encircles the two strands at the base of the loop. The loop is the piece of fibre between the two legs of the ring, at positions <i>m</i><sub>i</sub> and <i>n</i><sub>i</sub> (ring <i>i</i>). Two CTCF proteins sit at the base, one pointing right (red) and one pointing left (blue).</figcaption>
+  <figcaption markdown="span">One chromatin loop held by cohesin. The ring encircles the two strands at the base of the loop. The loop is the piece of fibre between the two legs of the ring, at positions <i>m</i><sub>i</sub> and <i>n</i><sub>i</sub> (ring <i>i</i>). Two CTCF proteins sit at the base, one pointing right (red) and one pointing left (blue).</figcaption>
 </figure>
 
 ## The loop extrusion model
 
-The **loop extrusion model** (Sanborn et al. 2015, Fudenberg et al. 2016) proposes that a loop is not made by two faraway places that happen to meet.
-Instead, a cohesin ring sits on the fibre and **reels it in from both sides**, so the loop keeps growing until the ring is stopped by something.
+The *loop extrusion model* (Sanborn et al. 2015, Fudenberg et al. 2016) proposes that a loop is not made by two faraway places that happen to meet.
+Instead, a cohesin ring sits on the fibre and *reels it in from both sides*, so the loop keeps growing until the ring is stopped by something.
 
 <figure markdown>
   ![The extrusion cycle](../assets/theory/extrusion.svg){ width="780" }
-  <figcaption>The life of one loop. <b>1</b> A ring holds a short loop. <b>2</b> Driven by ATP, its two legs move apart and the loop grows. <b>3</b> Two CTCFs that face each other stop the legs. <b>4</b> After some time the ring unloads and binds somewhere else, and the old loop is released.</figcaption>
+  <figcaption markdown="span">The life of one loop. <b>1</b> A ring holds a short loop. <b>2</b> Driven by ATP, its two legs move apart and the loop grows. <b>3</b> Two CTCFs that face each other stop the legs. <b>4</b> After some time the ring unloads and binds somewhere else, and the old loop is released.</figcaption>
 </figure>
 
 ### How we describe a loop
 
-First we cut the studied region into small equal pieces, called **beads** (for example 5 000 bases each), and number them $1, 2, \dots, N_{\mathrm{beads}}$.
+First we cut the studied region into small equal pieces, called *beads* (for example 5 000 bases each), and number them $1, 2, \dots, N_{\mathrm{beads}}$.
 A bead is simply a position on the fibre, and we write $k$ for a general bead number.
 
 There are usually many rings on the region at once, $N_{\mathrm{lef}}$ of them, and we give every ring its own index $i = 1, 2, \dots, N_{\mathrm{lef}}$.
@@ -55,7 +55,7 @@ $$
 (m_i,\, n_i), \qquad m_i < n_i ,
 $$
 
-where $m_i$ is the position of its **left leg** and $n_i$ the position of its **right leg**.
+where $m_i$ is the position of its *left leg* and $n_i$ the position of its *right leg*.
 The loop of ring $i$ is everything between its legs, so its size in beads is
 
 $$
@@ -84,12 +84,12 @@ which is $N_{\mathrm{lef}}$ pairs of numbers. This short list is all that the st
 
 The ring is always on the fibre, and its life is a short cycle.
 
-1. **It holds a small loop.** A freshly placed ring holds a very short piece of fibre, a loop of one or two beads.
-2. **It extrudes.** The legs slide along the fibre: the left leg moves left ($m \to m-1$) and the right leg moves right ($n \to n+1$). The loop grows. In experiments this happens at about one thousand bases per second (Davidson et al. 2019; Kim et al. 2019).
-3. **It stops** when a leg meets a barrier: a CTCF with the right orientation, or another ring. The other leg may still move.
-4. **It unloads and rebinds.** After some time the ring leaves the fibre, the loop is released, and a ring binds again somewhere else. In a living cell the number of rings on the fibre stays roughly constant, so we can think that every ring that leaves is replaced at once.
+1. *It holds a small loop.* A freshly placed ring holds a very short piece of fibre, a loop of one or two beads.
+2. *It extrudes.* The legs slide along the fibre: the left leg moves left ($m \to m-1$) and the right leg moves right ($n \to n+1$). The loop grows. In experiments this happens at about one thousand bases per second (Davidson et al. 2019; Kim et al. 2019).
+3. *It stops* when a leg meets a barrier: a CTCF with the right orientation, or another ring. The other leg may still move.
+4. *It unloads and rebinds.* After some time the ring leaves the fibre, the loop is released, and a ring binds again somewhere else. In a living cell the number of rings on the fibre stays roughly constant, so we can think that every ring that leaves is replaced at once.
 
-The fuel is **ATP**, the energy currency of the cell. Each step of the ring uses a little ATP, and without it no loops are made (Ganji et al. 2018; Davidson et al. 2019).
+The fuel is *ATP*, the energy currency of the cell. Each step of the ring uses a little ATP, and without it no loops are made (Ganji et al. 2018; Davidson et al. 2019).
 We do not follow this chemistry in detail. We only keep its result: legs that keep moving outward.
 
 !!! note "In LoopSage"
@@ -115,16 +115,16 @@ The picture above rests on a few simple assumptions.
 ## How CTCF stops cohesin
 
 CTCF stops cohesin in one direction only.
-A **forward** CTCF (red) stops a leg that is moving *left*, head-on towards the arrow tip, and a **reverse** CTCF (blue) stops a leg that is moving *right*.
-So the two CTCFs at the ends of a loop must **face each other** (this is called *convergent*) to stop both legs.
+A *forward* CTCF (red) stops a leg that is moving *left*, head-on towards the arrow tip, and a *reverse* CTCF (blue) stops a leg that is moving *right*.
+So the two CTCFs at the ends of a loop must *face each other* (this is called *convergent*) to stop both legs.
 
 <figure markdown>
   ![CTCF orientation](../assets/theory/orientation.svg){ width="760" }
-  <figcaption>Four arrangements of two CTCF sites. The pale dashed arc is the loop when the ring starts; the solid arc is the final loop. <b>a</b> Facing each other: both legs stop. <b>b</b> Facing away: nothing stops. <b>c, d</b> Same direction: one leg stops, the other keeps going. Dots are the legs of the ring, a bar marks a stopped leg, and an arrow a leg that is still moving.</figcaption>
+  <figcaption markdown="span">Four arrangements of two CTCF sites. The pale dashed arc is the loop when the ring starts; the solid arc is the final loop. <b>a</b> Facing each other: both legs stop. <b>b</b> Facing away: nothing stops. <b>c, d</b> Same direction: one leg stops, the other keeps going. Dots are the legs of the ring, a bar marks a stopped leg, and an arrow a leg that is still moving.</figcaption>
 </figure>
 
 This is exactly what is seen in data: loops with CTCF at both ends are mostly convergent (Rao et al. 2014; de Wit et al. 2015; Guo et al. 2015).
-If the two sites point in the same direction, one leg is free and keeps extruding, which makes a line of enriched contacts called a **stripe**.
+If the two sites point in the same direction, one leg is free and keeps extruding, which makes a line of enriched contacts called a *stripe*.
 If they face away from each other, no loop is kept.
 
 To use this in a model we only need to say, for every bead $k$, how strongly it stops a left leg, $L(k)$, and how strongly it stops a right leg, $R(k)$.
@@ -139,15 +139,15 @@ The direction of each site is read from the DNA sequence of its motif.
 ## Loops, TADs and contact maps
 
 Hi-C is an experiment that counts how often two places of the genome touch each other.
-The result is a **contact map**: a square picture in which the pixel $(i,j)$ is darker when places $i$ and $j$ touch more often.
+The result is a *contact map*: a square picture in which the pixel $(i,j)$ is darker when places $i$ and $j$ touch more often.
 Loop extrusion leaves two clear marks on it.
 
 - **Loop dots.** The two ends of a stable loop are held together, so they touch more often than expected and make a dark dot, usually at the corner of a square.
-- **TADs** (topologically associating domains; Dixon et al. 2012, Nora et al. 2012). These are squares along the diagonal. Inside a TAD, rings keep reeling in the whole region, so every place touches every other one. Across a TAD boundary contacts are rare. A boundary is often a **pair of CTCFs facing away from each other**, because neither lets rings from the other side come through.
+- **TADs** (topologically associating domains; Dixon et al. 2012, Nora et al. 2012). These are squares along the diagonal. Inside a TAD, rings keep reeling in the whole region, so every place touches every other one. Across a TAD boundary contacts are rare. A boundary is often a *pair of CTCFs facing away from each other*, because neither lets rings from the other side come through.
 
 <figure markdown>
   ![Loops and TADs](../assets/theory/tads.png){ width="640" }
-  <figcaption>Top: the fibre with loops of cohesin (nested loops inside two TADs) and CTCFs at the domain ends. Bottom: the contact map this arrangement would give. The two squares along the diagonal are TADs, and the dots are loops.</figcaption>
+  <figcaption markdown="span">Top: the fibre with loops of cohesin (nested loops inside two TADs) and CTCFs at the domain ends. Bottom: the contact map this arrangement would give. The two squares along the diagonal are TADs, and the dots are loops.</figcaption>
 </figure>
 
 Experiments agree with this picture: when cohesin is removed, loops and TADs disappear, and when CTCF is removed, domains lose their sharp edges (Rao et al. 2017; Nora et al. 2017).
@@ -156,11 +156,11 @@ Cohesin makes the loops, and CTCF decides where they stop.
 ## Rings do not cross
 
 The fibre passes through the ring, so two rings on the same fibre cannot pass through one another.
-For two different rings $i$ and $j$, with loops $(m_i,n_i)$ and $(m_j,n_j)$, this means that they can lie **side by side** or **one inside the other**, but they cannot be **interleaved**, and they cannot share a leg.
+For two different rings $i$ and $j$, with loops $(m_i,n_i)$ and $(m_j,n_j)$, this means that they can lie *side by side* or *one inside the other*, but they cannot be *interleaved*, and they cannot share a leg.
 
 <figure markdown>
   ![Allowed and forbidden arrangements](../assets/theory/crossing.svg){ width="760" }
-  <figcaption>Two cohesin loops. Side by side and nested loops are allowed. Interleaved loops (the legs alternate: <i>m</i><sub>i</sub> &lt; <i>m</i><sub>j</sub> &lt; <i>n</i><sub>i</sub> &lt; <i>n</i><sub>j</sub>) and loops that share a leg are not.</figcaption>
+  <figcaption markdown="span">Two cohesin loops. Side by side and nested loops are allowed. Interleaved loops (the legs alternate: <i>m</i><sub>i</sub> &lt; <i>m</i><sub>j</sub> &lt; <i>n</i><sub>i</sub> &lt; <i>n</i><sub>j</sub>) and loops that share a leg are not.</figcaption>
 </figure>
 
 As a result, rings push against each other and cannot all collapse into the same loop. They form a chain of neighbouring and nested loops, and the outer legs stay pressed against the next barrier.
@@ -171,7 +171,7 @@ As a result, rings push against each other and cannot all collapse into the same
 ## Condensin and mitosis
 
 When a cell divides, each chromosome must become a compact rod that can be moved safely into a daughter cell.
-For this the cell uses **condensin** (two forms, I and II).
+For this the cell uses *condensin* (two forms, I and II).
 Like cohesin, condensin is an ATP-driven ring that extrudes loops (Ganji et al. 2018), but with three differences.
 
 1. **Longer loops.** Condensin makes loops of roughly a hundred thousand to a few hundred thousand bases, arranged in nested arrays along the chromosome (Goloborodko et al. 2016; Gibcus et al. 2018).
@@ -180,7 +180,7 @@ Like cohesin, condensin is an ATP-driven ring that extrudes loops (Ganji et al. 
 
 <figure markdown>
   ![Cohesin and condensin](../assets/theory/condensin.svg){ width="700" }
-  <figcaption><b>a</b> Two cohesins cannot pass each other. <b>b</b> A cohesin (purple) and a condensin (green) can. <b>c</b> In interphase, cohesin loops end at CTCF sites. <b>d</b> In mitosis, condensin loops sit around a central axis and do not depend on CTCF.</figcaption>
+  <figcaption markdown="span"><b>a</b> Two cohesins cannot pass each other. <b>b</b> A cohesin (purple) and a condensin (green) can. <b>c</b> In interphase, cohesin loops end at CTCF sites. <b>d</b> In mitosis, condensin loops sit around a central axis and do not depend on CTCF.</figcaption>
 </figure>
 
 !!! note "In LoopSage"
@@ -190,10 +190,10 @@ Like cohesin, condensin is an ATP-driven ring that extrudes loops (Ganji et al. 
 ## Stripes and the need for dynamics
 
 Not every pattern of a Hi-C map is a *static* picture of one loop.
-Many maps show **stripes**: thin lines that start at a CTCF site on the diagonal and run along a row (and, because the map is symmetric, along a column) for tens or hundreds of kilobases.
+Many maps show *stripes*: thin lines that start at a CTCF site on the diagonal and run along a row (and, because the map is symmetric, along a column) for tens or hundreds of kilobases.
 A stripe means that one locus, the stripe anchor, touches *many different* loci in a row, one after the other.
 
-Loop extrusion explains this naturally, if we allow the extrusion to be **one-sided** (Vian et al. 2018; Barrington et al. 2019).
+Loop extrusion explains this naturally, if we allow the extrusion to be *one-sided* (Vian et al. 2018; Barrington et al. 2019).
 A ring is loaded close to a CTCF site that stops one of its legs.
 The other leg keeps running, so the loop grows step by step: at time $t_1$ the loop is short, at $t_2$ it is longer, at $t_3$ longer still, until the moving leg is stopped by the opposite CTCF or the ring falls off.
 At each moment the ring holds *one* contact, $(m_i, n_i)$ with $m_i$ fixed and $n_i$ growing.
@@ -201,14 +201,14 @@ A Hi-C experiment averages over millions of cells and over time, so these contac
 
 <figure markdown>
   ![Stripes from one-sided extrusion](../assets/theory/stripes.png){ width="760" }
-  <figcaption>A stripe is a trajectory. The left leg of a ring rests at a forward CTCF while the right leg moves (pale to dark arcs, times <i>t</i><sub>1</sub> &lt; <i>t</i><sub>2</sub> &lt; <i>t</i><sub>3</sub>). Each time point contributes one contact on the row of the fixed anchor, and the average over many rings and times is the stripe on the contact map.</figcaption>
+  <figcaption markdown="span">A stripe is a trajectory. The left leg of a ring rests at a forward CTCF while the right leg moves (pale to dark arcs, times <i>t</i><sub>1</sub> &lt; <i>t</i><sub>2</sub> &lt; <i>t</i><sub>3</sub>). Each time point contributes one contact on the row of the fixed anchor, and the average over many rings and times is the stripe on the contact map.</figcaption>
 </figure>
 
 This is an important point for the rest of the documentation.
 A stable, two-sided loop gives a *dot*, and a dot can be explained by a single static picture.
-A stripe cannot: the contact $(m, n)$ changes while the leg moves, and the stripe is the record of this **motion**.
+A stripe cannot: the contact $(m, n)$ changes while the leg moves, and the stripe is the record of this *motion*.
 The same holds for the fuzzy "flames" that start at a loop dot, for domains whose inside is enriched, and for the way the strength of a loop depends on how long rings live on the fibre.
-These features only make sense when we know **how long a ring stays, how fast it moves and how often it is stopped**.
+These features only make sense when we know *how long a ring stays, how fast it moves and how often it is stopped*.
 
 In short, a complete explanation of a Hi-C map needs *dynamics*, not only the positions of the barriers. This is exactly what drove us to build LoopSage: a model in which many rings load, extrude, stall and unload on the fibre, so that the contact map is obtained as an average over a simulated trajectory, and the same trajectory can be turned into 3D structures.
 
@@ -220,11 +220,11 @@ In short, a complete explanation of a Hi-C map needs *dynamics*, not only the po
 
 ## Summary
 
-- A **LEF** (cohesin) sits on the fibre and reels it in from both sides. Ring $i$ is just a pair of legs $(m_i,n_i)$, its loop has size $\ell_i=n_i-m_i$, and the whole system is the list of the $N_{\mathrm{lef}}$ pairs.
-- **CTCF** is a one-way barrier: facing sites stop both legs and make stable loops, sites in the same direction make stripes.
-- **Stripes** are the record of a leg that moves while the other rests: they need dynamics, not a single snapshot.
-- **TADs** and **loop dots** in Hi-C maps are the average footprint of many rings stopped at CTCF boundaries.
-- Cohesin rings do not cross each other, but **condensin**, which builds the long nested loops of mitotic chromosomes, can pass through cohesin.
+- A *LEF* (cohesin) sits on the fibre and reels it in from both sides. Ring $i$ is just a pair of legs $(m_i,n_i)$, its loop has size $\ell_i=n_i-m_i$, and the whole system is the list of the $N_{\mathrm{lef}}$ pairs.
+- *CTCF* is a one-way barrier: facing sites stop both legs and make stable loops, sites in the same direction make stripes.
+- *Stripes* are the record of a leg that moves while the other rests: they need dynamics, not a single snapshot.
+- *TADs* and *loop dots* in Hi-C maps are the average footprint of many rings stopped at CTCF boundaries.
+- Cohesin rings do not cross each other, but *condensin*, which builds the long nested loops of mitotic chromosomes, can pass through cohesin.
 
 ## References
 

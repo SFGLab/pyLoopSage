@@ -185,7 +185,7 @@ def describe(ctx):
     mc_figs.kymograph(mc, g, ctx.inputs)
     mc_figs.kymograph_zoom(mc, g, ctx.cfg.zoom_snapshots, ctx.cfg.zoom_start)
     mc_figs.occupancy_lengths(mc, g, ctx.inputs)
-    mc_figs.loop_joint(mc, g)
+    mc_figs.loop_landscape(mc, g, ctx.inputs)
     mc_figs.mc_heatmap(ctx.mc_map, g)
     map_feature_report(ctx, "mc", ctx.mc_map, "Loop ensemble (MC)")
     _speed(ctx, mc, g)

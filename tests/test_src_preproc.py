@@ -54,6 +54,15 @@ def test_region_fallback_to_whole_chromosome(demo_bedpe):
 
 
 def test_loss_map_is_smooth_only_in_2d_mode(tiny_args):
-    raw = _inputs(tiny_args + ["-s", "contrastive_binding=False"])[2].loops.J_loss
-    two_d = _inputs(tiny_args + ["-s", "data_loss_mode=1", "-s", "contrastive_binding=False"])[2].loops.J_loss
+    raw = _inputs(tiny_args + ["-s", "binding_mode=preferential", "-s", "smoothing_input=False"])[2].loops.J_loss
+    two_d = _inputs(tiny_args + ["-s", "data_loss_mode=1", "-s", "binding_mode=preferential", "-s", "smoothing_input=False"])[2].loops.J_loss
     assert (two_d > 0).sum() > 3 * (raw > 0).sum()        # sparse dots become a continuous field
+
+
+def test_contrastive_adds_loop_coverage(tiny_args):
+    pref = _inputs(tiny_args + ["--binding-mode", "preferential"])[2].loops
+    cont = _inputs(tiny_args + ["--binding-mode", "contrastive"])[2].loops
+    assert pref.cover is None and cont.cover is not None
+    assert cont.cover.min() >= -1 and cont.cover.max() <= 1
+    assert cont.cover.min() < 0 < cont.cover.max()          # loop-free beads negative, covered beads positive
+    assert np.allclose(pref.L, cont.L)                      # the anchor profiles are the same in both modes

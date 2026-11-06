@@ -1,18 +1,25 @@
 """Validation figures: simulation against experiment (traces, correlation, binned trends) and a summary of all correlations."""
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
-from scipy.stats import gaussian_kde, t as student_t
+from scipy.stats import gaussian_kde, rankdata, t as student_t
 
 from common.utils import normalize_signal
 from reporting.explanations import EXPLAIN
 from validation.compare import smooth
-from viz.theme import EXP_COLOR, make_fig, make_mosaic, MUTED, save_figure, SEQ, SIM_COLOR, VIOLET
+from viz.theme import EXP_COLOR, INK as INK_LINE, make_fig, make_mosaic, MUTED, save_figure, SEQ, SIM_COLOR, VIOLET
 
 TITLES = {"pearson": "Loop strength", "pearson_direct": "Per-loop strength", "ps_decay": "Contact decay P(s)", "insulation": "Insulation score", "insulation_anchor": "Boundary strength vs loops", "pc1": "Compartments"}
 DENS = LinearSegmentedColormap.from_list("dens", SEQ(np.linspace(0.3, 1, 256)))          # density colours, never white
 
 
 # ---- Building blocks -------------------------------------------------------
+
+def scaled(v):
+    """Signal rescaled to [0, 1] (lowest = 0, highest = 1): a readable axis, and the correlation does not change."""
+    v = np.asarray(v, float)
+    span = np.nanmax(v) - np.nanmin(v)
+    return (v - np.nanmin(v)) / span if span > 0 else np.zeros_like(v)
+
 
 def _fit(ax, x, y):
     """Least-squares line with its 95% confidence band."""
@@ -53,10 +60,12 @@ def _stats_box(ax, p):
             bbox=dict(boxstyle="round,pad=0.35", fc="white", ec=MUTED, alpha=0.9, lw=0.6))
 
 
-def _scatter_panel(ax, p, color=None, xlabel="Experiment (z-score)", ylabel="Simulation (z-score)"):
+def _scatter_panel(ax, p, color=None, xlabel="Experiment (scaled 0-1)", ylabel="Simulation (scaled 0-1)"):
     c = p["smooth"] or p["raw"]
-    _dots(ax, c["exp"], c["sim"], color)
-    _fit(ax, c["exp"], c["sim"])
+    x, y = scaled(c["exp"]), scaled(c["sim"])
+    _dots(ax, x, y, color)
+    ax.plot([0, 1], [0, 1], color=MUTED, lw=0.9, ls=":")                  # perfect agreement
+    _fit(ax, x, y)
     _stats_box(ax, p)
     ax.set(title="Correlation", xlabel=xlabel, ylabel=ylabel)
 
@@ -68,69 +77,89 @@ def _bead_figure(p, geom):
     fig, ax = make_mosaic([["ov", "sc"], ["res", "sc"]], size=(12, 6.6), width_ratios=[2, 1.1], height_ratios=[1.5, 1])
     x = (geom.start + (np.arange(len(p["exp"])) + 0.5) * geom.bp_per_bead) / 1e6
     sig = p["sigma"] if p["smooth"] else 0
-    ze, zs = normalize_signal(smooth(p["exp"], sig)), normalize_signal(smooth(p["sim"], sig))
-    ax["ov"].plot(x, normalize_signal(p["exp"]), color=EXP_COLOR, lw=0.7, alpha=0.25)
-    ax["ov"].plot(x, normalize_signal(p["sim"]), color=SIM_COLOR, lw=0.7, alpha=0.3)
+    ze, zs = scaled(normalize_signal(smooth(p["exp"], sig))), scaled(normalize_signal(smooth(p["sim"], sig)))
+    ax["ov"].plot(x, scaled(normalize_signal(smooth(p["exp"], 0))), color=EXP_COLOR, lw=0.7, alpha=0.25)
+    ax["ov"].plot(x, scaled(normalize_signal(smooth(p["sim"], 0))), color=SIM_COLOR, lw=0.7, alpha=0.3)
     ax["ov"].fill_between(x, ze, zs, color=SIM_COLOR, alpha=0.10, lw=0)
     ax["ov"].plot(x, ze, color=EXP_COLOR, lw=2.2, label="Experiment")
     ax["ov"].plot(x, zs, color=SIM_COLOR, lw=2.2, label="Simulation")
     if "b_exp" in p:                                                   # domain boundaries (insulation minima)
-        lo = min(ze.min(), zs.min()) - 0.35
+        lo = -0.08
         ax["ov"].plot(x[p["b_exp"]], np.full(len(p["b_exp"]), lo), "v", color=EXP_COLOR, ms=7, label=f"boundaries, experiment ({len(p['b_exp'])})")
-        ax["ov"].plot(x[p["b_sim"]], np.full(len(p["b_sim"]), lo - 0.35), "v", color=SIM_COLOR, ms=7, label=f"boundaries, simulation ({len(p['b_sim'])})")
-    ax["ov"].set(ylabel="z-score", xlim=(x[0], x[-1]), title=f"{TITLES[p['key']]}: experiment vs simulation" + (f" (smoothed {sig:g} beads)" if sig else ""))
+        ax["ov"].plot(x[p["b_sim"]], np.full(len(p["b_sim"]), lo - 0.08), "v", color=SIM_COLOR, ms=7, label=f"boundaries, simulation ({len(p['b_sim'])})")
+    ax["ov"].set(ylabel="Signal (scaled 0-1)", xlim=(x[0], x[-1]), title=f"{TITLES[p['key']]}: experiment vs simulation" + (f" (smoothed {sig:g} beads)" if sig else ""))
     ax["ov"].legend(frameon=False, fontsize=8, loc="upper right", ncol=2)
     ax["ov"].tick_params(labelbottom=False)
     d = zs - ze
     ax["res"].fill_between(x, d, where=d >= 0, color=SIM_COLOR, alpha=0.75, lw=0, label="simulation higher")
     ax["res"].fill_between(x, d, where=d < 0, color="#e0457b", alpha=0.75, lw=0, label="experiment higher")
     ax["res"].axhline(0, color=MUTED, lw=0.8)
-    ax["res"].set(ylabel="Sim - exp (z)", xlabel=f"Position on {geom.chrom} (Mb)", xlim=(x[0], x[-1]), title="Where they differ")
+    ax["res"].set(ylabel="Sim - exp (scaled)", xlabel=f"Position on {geom.chrom} (Mb)", xlim=(x[0], x[-1]), title="Where they differ")
     ax["res"].legend(frameon=False, fontsize=8, loc="upper right", ncol=2)
     _scatter_panel(ax["sc"], p)
+    ax["sc"].text(0.96, 0.04, f"mean |difference| = {np.abs(d).mean():.2f}", transform=ax["sc"].transAxes, ha="right", va="bottom", fontsize=8,
+                  bbox=dict(boxstyle="round,pad=0.35", fc="white", ec=MUTED, alpha=0.9, lw=0.6))
     if "overlap" in p and np.isfinite(p["overlap"]):
-        ax["sc"].text(0.04, 0.04, f"{p['overlap']:.0%} of experimental boundaries\nhave a simulated one within 2 beads", transform=ax["sc"].transAxes, fontsize=8,
-                      va="bottom", bbox=dict(boxstyle="round,pad=0.35", fc="white", ec=MUTED, alpha=0.9, lw=0.6))
+        ax["sc"].text(0.96, 0.12, f"{p['overlap']:.0%} of experimental boundaries\nhave a simulated one within 2 beads", transform=ax["sc"].transAxes, fontsize=8,
+                      va="bottom", ha="right", bbox=dict(boxstyle="round,pad=0.35", fc="white", ec=MUTED, alpha=0.9, lw=0.6))
     return fig
 
 
 def _sep_figure(p, geom):
+    """Left: both decays (log-log, relative to the shortest separation). Right: their ratio, i.e. where the simulated decay is too flat or too steep."""
     fig, axs = make_fig(1, 2, cell=(5.6, 4.4))
     kb = geom.bp_per_bead / 1e3
     s = np.arange(len(p["exp"]))[1:] * kb
+    curves = {}
     for v, col, lab in ((p["exp"], EXP_COLOR, "Experiment"), (p["sim"], SIM_COLOR, "Simulation")):
         v = v[1:] / (v[1:][v[1:] > 0][0] if (v[1:] > 0).any() else 1)
         ok = v > 0
         axs[0].plot(s[ok], v[ok], color=col, lw=0.8, alpha=0.4)
+        sm = smooth(v, p["sigma"], log=True) if p["smooth"] else v
+        curves[lab] = sm
         if p["smooth"]:
-            sm = smooth(v, p["sigma"], log=True)
             axs[0].plot(s[ok], sm[ok], color=col, lw=2.2, label=lab)
         else:
             axs[0].plot([], [], color=col, label=lab)
     axs[0].set(xscale="log", yscale="log", title="Contact decay with separation", xlabel="Separation (kb)", ylabel="Mean contact (relative to the shortest)")
     axs[0].legend(frameon=False, fontsize=8)
-    c = p["smooth"] or p["raw"]
-    _scatter_panel(axs[1], p, color=c["idx"].astype(float))
+    e, m = curves["Experiment"], curves["Simulation"]
+    ok = (e > 0) & (m > 0)
+    r = np.log2(m[ok] / e[ok])
+    lim = max(2.0, 1.3 * np.percentile(np.abs(r), 90))                          # a few noisy points at the longest separations must not set the scale
+    r = np.clip(r, -lim, lim)
+    axs[1].axhline(0, color=MUTED, lw=0.9)
+    axs[1].fill_between(s[ok], r, where=r >= 0, color=SIM_COLOR, alpha=0.5, lw=0, label="simulation higher")
+    axs[1].fill_between(s[ok], r, where=r < 0, color="#e0457b", alpha=0.6, lw=0, label="experiment higher")
+    axs[1].plot(s[ok], r, color=INK_LINE, lw=1.2)
+    axs[1].legend(frameon=False, fontsize=8, loc="lower left")
+    axs[1].set(ylim=(-lim, lim))
+    axs[1].set(xscale="log", title="Where the decays differ", xlabel="Separation (kb)", ylabel="log2 (simulation / experiment)")
+    _stats_box(axs[1], p)
     return fig
 
 
 def _loop_figure(p, geom):
+    """Per-loop strength as percentiles (0 = weakest, 100 = strongest loop): a readable axis that does not depend on the units."""
     fig, axs = make_fig(1, 2, cell=(5.6, 4.4))
-    ze, zs = p["raw"]["exp"], p["raw"]["sim"]
-    hb = axs[0].hexbin(ze, zs, gridsize=28, mincnt=1, cmap=DENS, linewidths=0.2, edgecolors="white")
+    pct = lambda v: 100 * (rankdata(v) - 0.5) / len(v)
+    ze, zs = pct(p["raw"]["exp"]), pct(p["raw"]["sim"])
+    hb = axs[0].hexbin(ze, zs, gridsize=24, mincnt=1, cmap=DENS, linewidths=0.2, edgecolors="white", extent=(0, 100, 0, 100))
+    axs[0].plot([0, 100], [0, 100], color=MUTED, lw=0.9, ls=":")                          # perfect agreement
     _fit(axs[0], ze, zs)
     _stats_box(axs[0], p)
     fig.colorbar(hb, ax=axs[0], shrink=0.8, label="Loops")
-    axs[0].set(title="Every loop: experiment vs simulation", xlabel="Experiment (z-score)", ylabel="Simulation (z-score)")
-    edges = np.unique(np.quantile(ze, np.linspace(0, 1, 11)))
-    b = np.clip(np.digitize(ze, edges[1:-1]), 0, len(edges) - 2)
-    keep = [k for k in range(len(edges) - 1) if (b == k).sum() > 2]
+    axs[0].set(title="Every loop: experiment vs simulation", xlabel="Experiment loop strength (percentile)", ylabel="Simulation loop strength (percentile)")
+    edges = np.linspace(0, 100, 11)
+    b = np.clip(np.digitize(ze, edges[1:-1]), 0, 9)
+    keep = [k for k in range(10) if (b == k).sum() > 2]
     mx = np.array([ze[b == k].mean() for k in keep])
     q = np.array([np.percentile(zs[b == k], [25, 50, 75]) for k in keep])
     axs[1].fill_between(mx, q[:, 0], q[:, 2], color=VIOLET, alpha=0.2, lw=0, label="middle 50%")
     axs[1].plot(mx, q[:, 1], "-o", color=VIOLET, lw=2.2, ms=5, label="median")
+    axs[1].plot([0, 100], [50, 50], color=MUTED, lw=0.9, ls=":")                           # no relation
     axs[1].legend(frameon=False, fontsize=8, loc="upper left")
-    axs[1].set(title="Simulation by experimental strength", xlabel="Experiment (z-score, decile mean)", ylabel="Simulation (z-score)")
+    axs[1].set(title="Simulation by experimental strength", xlabel="Experiment loop strength (percentile, decile mean)", ylabel="Simulation loop strength (percentile)")
     return fig
 
 

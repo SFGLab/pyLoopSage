@@ -14,6 +14,8 @@ def show(v) -> str:
     """Default value as it is written in a config file."""
     if v is None or v == []:
         return "*(empty)*"
+    if isinstance(v, str) and v.endswith("classic_sm_ff.xml"):          # bundled file: show it relative to the repository
+        v = "src/molecular_dynamics/forcefields/classic_sm_ff.xml"
     return f"`{', '.join(map(str, v))}`" if isinstance(v, list) else f"`{v}`"
 
 
@@ -43,9 +45,9 @@ def cli_page() -> str:
 def config_page() -> str:
     parts = [CONFIG_HEAD]
     for sec, title in SECTIONS.items():
-        rows = [[f"`{p.name}`", TYPES[p.kind] + (f" ({p.unit})" if p.unit else ""), show(p.default), f"`{p.flag}`" if p.flag else "*ini only*", p.help]
+        rows = [[f"`{p.name}`<br>" + (f"`{p.flag}`" if p.flag else "*ini only*"), TYPES[p.kind] + (f" ({p.unit})" if p.unit else ""), show(p.default), p.help]
                 for p in PARAMS if p.section == sec]
-        parts.append(f"## `[{sec}]`: {title}\n\n" + table(["Key", "Type (unit)", "Default", "CLI option", "What it does"], rows))
+        parts.append(f"## `[{sec}]`: {title}\n\n" + table(["Key / CLI option", "Type (unit)", "Default", "What it does"], rows))
     return "\n".join(parts)
 
 
@@ -155,7 +157,7 @@ Rules:
 
 ## All keys
 
-*Type* tells how to write the value; *CLI option* gives the equivalent command-line option, if there is one.
+**Type** tells how to write the value. Under each key is the equivalent command-line option, or *ini only* when the key has none.
 """
 
 if __name__ == "__main__":

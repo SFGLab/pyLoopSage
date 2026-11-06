@@ -8,13 +8,13 @@ It is an optional step: it runs when a reference genome is given (`--motif-genom
 
 ## The mathematics
 
-The idea is simple: slide a window along the DNA, give every window a *score* that says how much it looks like a CTCF site, and keep the windows that score high. The rest of this section explains how the score is built, how high it must be, and how the hits become one number per anchor. A tiny made-up motif of length $L=3$ is used as a running example, so every formula can be checked by hand.
+The idea is simple. We slide a small window along the DNA, give every window a *score* that tells us how much it looks like a CTCF site, and keep the windows that score high. In this section we will see how the score is built, how high it has to be, and how the hits end up as one number per anchor. To keep things friendly, we follow a tiny made-up motif of length $L=3$ all the way through, so you can check every formula by hand.
 
 ### From known sites to a score
 
-*Notation.* DNA is a string of four bases $b\in\{A,C,G,T\}$. A *motif* of length $L$ is a short pattern that a protein recognises; positions are numbered $i=1,\dots,L$. A window $x=x_1x_2\dots x_L$ is a piece of DNA of the same length.
+**Notation.** DNA is a string written with four letters (bases) $b\in\{A,C,G,T\}$. A *motif* is a short pattern of length $L$ that a protein likes to bind; we number its positions $i=1,\dots,L$. A *window* $x=x_1x_2\dots x_L$ is a piece of DNA of the same length, which we want to compare with the motif.
 
-*Counts.* We start from a collection of $N$ DNA sites that are known to be bound by the protein. At every position we count how many times each base occurs: $c_{b,i}$ is the number of sites with base $b$ at position $i$. This table is the *position frequency matrix* (PFM). In the toy example, with $N=10$ sites:
+**Counts.** We start from a collection of $N$ DNA sites that are known to be bound by the protein. At every position we simply count how often each base appears: $c_{b,i}$ is the number of sites with base $b$ at position $i$. This table is the *position frequency matrix* (PFM). In the toy example, with $N=10$ sites:
 
 | | $i=1$ | $i=2$ | $i=3$ |
 |---|---|---|---|
@@ -23,17 +23,17 @@ The idea is simple: slide a window along the DNA, give every window a *score* th
 | G | 1 | 0 | 9 |
 | T | 1 | 0 | 0 |
 
-Position 1 is mostly A, position 2 is always C and position 3 is mostly G, so the motif is roughly `ACG`. For CTCF the table has $L=19$ columns (JASPAR MA0139.1).
+Reading the columns: position 1 is mostly A, position 2 is always C, and position 3 is mostly G, so the motif is roughly `ACG`. For CTCF the table has $L=19$ columns (JASPAR MA0139.1).
 
-*Probabilities.* The fraction $c_{b,i}/N$ would be a natural probability of base $b$ at position $i$. But a base that was never seen (for example G at position 2) would get probability $0$, and then any window with a G there would be rejected for ever, however well it matches elsewhere. To avoid this we add a small *pseudocount* $\alpha$ (`motif_pseudocount`, default $0.8$), shared equally among the four bases,
+**Probabilities.** The fraction $c_{b,i}/N$ would be a natural probability of base $b$ at position $i$. There is a catch, though. A base that was never seen (say G at position 2) would get probability $0$, and any window with a G there would be rejected for ever, even if it matches perfectly everywhere else. Absence in a small sample does not mean impossible, so we give every base a tiny benefit of the doubt, a *pseudocount* $\alpha$ (`motif_pseudocount`, default $0.8$), shared equally among the four bases,
 
 $$
 p_{b,i}=\frac{c_{b,i}+\alpha/4}{N+\alpha}.
 $$
 
-Check: the four numbers at one position still add up to 1, because the $\alpha/4$ terms add to $\alpha$. In the toy example, $p_{A,1}=(8+0.2)/10.8=0.76$ and $p_{G,2}=0.2/10.8=0.019$: unlikely, but not impossible.
+A quick check: the four numbers at one position still add up to 1, because the four shares $\alpha/4$ add up to $\alpha$. In the toy example, $p_{A,1}=(8+0.2)/10.8=0.76$ and $p_{G,2}=0.2/10.8=0.019$: unlikely, but not impossible.
 
-*Log-odds.* To decide whether a window is *motif-like* we compare two stories: the window was drawn from the motif, or it is random DNA, in which every base has probability $1/4$ at every position. At one position the ratio of the two probabilities is $p_{b,i}/(1/4)$. Windows have $L$ independent positions, so the ratios multiply. Products of many numbers are awkward, so we take the logarithm (base 2), which turns the product into a sum. The *position weight matrix* (PWM) is
+**Log-odds.** How do we decide whether a window is *motif-like*? We compare two stories: the window was drawn from the motif, or it is random DNA, in which every base has probability $1/4$ at every position. At one position the ratio of the two probabilities is $p_{b,i}/(1/4)$. Windows have $L$ independent positions, so the ratios multiply. Long products of small numbers are awkward, so we take the logarithm (base 2), which turns the product into an easy sum. The *position weight matrix* (PWM) is
 
 $$
 M_{b,i}=\log_2\frac{p_{b,i}}{1/4},
@@ -45,7 +45,7 @@ $$
 S(x)=\sum_{i=1}^{L}M_{x_i,\,i}=\log_2\prod_{i=1}^{L}\frac{p_{x_i,i}}{1/4}.
 $$
 
-The right-hand form says what $S$ means: $2^{S}$ is how many times more likely the window is under the motif than under random DNA. Each point of score is a doubling. A base that is more common than $1/4$ adds a positive number, a base that is rarer subtracts, and a base seen at the motif's favourite level adds close to the maximum.
+The right-hand form says what $S$ means: $2^{S}$ is how many times more likely the window is under the motif than under random DNA. So each point of score is one doubling. A base that is more common than $1/4$ in the motif adds a positive number, and a base that is rarer takes points away.
 
 In the toy example the matrix is
 
@@ -56,11 +56,11 @@ In the toy example the matrix is
 | G | $-1.17$ | $-3.75$ | $+1.77$ |
 | T | $-1.17$ | $-3.75$ | $-3.75$ |
 
-so the consensus window `ACG` scores $1.60+1.92+1.77=5.29$ (it is $2^{5.29}\approx 39$ times more likely under the motif than at random), the window `TCG` scores $-1.17+1.92+1.77=2.52$, and `ACT` scores $1.60+1.92-3.75=-0.23$. The best possible score is the consensus; for CTCF it is $26.1$ (`TGGCCACCAGGGGGCGCTA`). Because every position contributes only a little, a window with one or two mismatches can still score high (panel b below).
+so the consensus window `ACG` scores $1.60+1.92+1.77=5.29$ (it is $2^{5.29}\approx 39$ times more likely under the motif than at random), the window `TCG` scores $-1.17+1.92+1.77=2.52$, and `ACT` scores $1.60+1.92-3.75=-0.23$. The best possible score belongs to the consensus; for CTCF it is $26.1$ (`TGGCCACCAGGGGGCGCTA`). Because every position adds only a little, a window with one or two mismatches can still score high (panel b below).
 
 ### How high must a score be?
 
-A window is a *hit* when $S\ge t$. The cutoff $t$ must be strict enough that random DNA rarely passes, and we say how rare with a *p-value* $\pi$ (`motif_pvalue`, default $10^{-5}$): $t$ is the smallest score for which
+A window is a *hit* when $S\ge t$. But how high should the cutoff $t$ be? Strict enough that random DNA rarely passes. We say how rare with a *p-value* $\pi$ (`motif_pvalue`, default $10^{-5}$): $t$ is the smallest score for which
 
 $$
 P_0(S\ge t)\le\pi ,
@@ -68,7 +68,7 @@ $$
 
 where $P_0$ is the probability for a window of random DNA with independent, equally likely bases. In words: random DNA passes only about once in $1/\pi$ windows. A smaller $\pi$ means a higher $t$ and fewer, more reliable hits.
 
-In the toy example there are $4^3=64$ possible windows, all equally likely at random. Only `ACG` scores above $5$, so $P_0(S\ge5)=1/64$. For CTCF there are $4^{19}\approx 2.7\times10^{11}$ windows, far too many to list, so the distribution of the score is built *position by position* instead. Let $f_i(s)$ be the probability that the first $i$ positions of a random window add up to $s$. We start with $f_0(0)=1$ (an empty window has score $0$). Adding position $i$, each of the four bases appears with probability $1/4$ and shifts the sum by $M_{b,i}$:
+In the toy example there are $4^3=64$ possible windows, all equally likely at random. Only `ACG` scores above $5$, so $P_0(S\ge5)=1/64$. For CTCF there are $4^{19}\approx 2.7\times10^{11}$ windows, far too many to list, so instead we build the distribution of the score *one position at a time*. Let $f_i(s)$ be the probability that the first $i$ positions of a random window add up to $s$. We start with $f_0(0)=1$ (an empty window has score $0$). Adding position $i$, each of the four bases appears with probability $1/4$ and shifts the sum by $M_{b,i}$:
 
 $$
 f_i(s)=\frac14\sum_{b\in\{A,C,G,T\}} f_{i-1}\big(s-M_{b,i}\big).
@@ -80,16 +80,16 @@ $$
 P_0(S\ge t)=\sum_{s\ge t}f_L(s).
 $$
 
-This is *exact* (no simulation) and needs only $L$ steps. To keep the number of distinct sums finite, scores are rounded to $1/100$. For the bundled CTCF matrix this gives $t=8.3$ for $\pi=10^{-4}$, $t=13.1$ for $\pi=10^{-5}$ and $t=17.0$ for $\pi=10^{-6}$ (panel c below).
+The answer is *exact* (no simulation, no luck involved) and takes only $L$ steps. To keep the number of distinct sums finite, scores are rounded to $1/100$. For the bundled CTCF matrix this gives $t=8.3$ for $\pi=10^{-4}$, $t=13.1$ for $\pi=10^{-5}$ and $t=17.0$ for $\pi=10^{-6}$ (panel c below).
 
 <figure markdown>
   ![Motif finder, scoring](../assets/theory/motif_pwm.svg){ width="640" }
-  <figcaption><b>a</b> The CTCF motif (JASPAR MA0139.1) as a logo: the height of a letter is how strongly that base is preferred at that position. <b>b</b> One window of DNA is scored by adding one number per position. <b>c</b> The score of a window of random DNA has a known distribution, which fixes the cutoff <i>t</i>.</figcaption>
+  <figcaption markdown="span"><b>a</b> The CTCF motif (JASPAR MA0139.1) as a logo: the height of a letter is how strongly that base is preferred at that position. <b>b</b> One window of DNA is scored by adding one number per position. <b>c</b> The score of a window of random DNA has a known distribution, which fixes the cutoff <i>t</i>.</figcaption>
 </figure>
 
 ### Two strands
 
-DNA has two strands that run in opposite directions, and a protein can bind a site on either of them. A site on the *reverse* strand reads, along the written strand, as the *reverse complement* of the motif: every base is swapped for its partner ($A\leftrightarrow T$, $C\leftrightarrow G$) and the order is reversed. For the toy motif `ACG` it is `CGT`. Scoring the reverse-strand site therefore uses the matrix
+DNA is a double helix: two strands that run in opposite directions, and a protein can sit on either of them. A site on the *reverse* strand reads, along the written strand, as the *reverse complement* of the motif: every base is swapped for its partner ($A\leftrightarrow T$, $C\leftrightarrow G$) and the order is reversed. For the toy motif `ACG` it is `CGT`. Scoring the reverse-strand site therefore uses the matrix
 
 $$
 M^{-}_{b,i}=M_{\bar b,\;L+1-i},
@@ -107,13 +107,13 @@ The report compares the fraction of anchors with a hit with this number: real CT
 
 ### One probability per anchor
 
-An anchor can contain several hits, on both strands, and they may disagree. We want one number: how likely is the site to be *reversed*? Say the hits $h$ have scores $S_h$ and strands $\sigma_h\in\{+,-\}$. Since $2^{S_h}$ is a likelihood ratio, it measures how strong the evidence is that hit $h$ is the true site. We define
+An anchor can contain several hits, on both strands, and they may disagree. What we want in the end is one number: how likely is the site to be *reversed*? Say the hits $h$ have scores $S_h$ and strands $\sigma_h\in\{+,-\}$. Since $2^{S_h}$ is a likelihood ratio, it measures how strong the evidence is that hit $h$ is the true site. We define
 
 $$
 P(\mathrm{rev})=\frac{\sum_{h:\,\sigma_h=-}2^{S_h}}{\sum_{h}2^{S_h}},
 $$
 
-the *share of the evidence that sits on reverse hits*. It is between $0$ (all evidence forward) and $1$ (all reverse), and a hit that is 3 points stronger counts $2^3=8$ times more. In the code the weights are written $2^{S_h-S_{\max}}$, which gives the same ratio (the common factor $2^{-S_{\max}}$ cancels) but avoids huge numbers. An anchor without any hit gets $P(\mathrm{rev})=-1$, meaning *unknown*.
+the *share of the evidence that sits on reverse hits*. It is $0$ when all the evidence is forward and $1$ when all of it is reverse, and a hit that is 3 points stronger simply counts $2^3=8$ times more. In the code the weights are written $2^{S_h-S_{\max}}$, which gives the same ratio (the common factor $2^{-S_{\max}}$ cancels) but avoids huge numbers. An anchor without any hit gets $P(\mathrm{rev})=-1$, meaning *unknown*.
 
 For example, a $+$ hit with $S=17.4$ and a $-$ hit with $S=14.4$ have weights $1$ and $2^{-3}=0.125$, so $P(\mathrm{rev})=0.125/1.125=0.11$: the site is most probably forward.
 
@@ -129,7 +129,7 @@ A sure forward site ($P_k=0$) feeds only $L$, a sure reverse site only $R$, and 
 
 <figure markdown>
   ![Motif finder, orientation](../assets/theory/motif_strands.svg){ width="640" }
-  <figcaption><b>a</b> Each window of an anchor is scored on both strands. <b>b</b> The hits of an anchor are combined into one probability of being reversed. <b>c</b> This probability divides the weight of the loop between <i>L</i> (red) and <i>R</i> (blue).</figcaption>
+  <figcaption markdown="span"><b>a</b> Each window of an anchor is scored on both strands. <b>b</b> The hits of an anchor are combined into one probability of being reversed. <b>c</b> This probability divides the weight of the loop between <i>L</i> (red) and <i>R</i> (blue).</figcaption>
 </figure>
 
 ## The algorithm

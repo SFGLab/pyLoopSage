@@ -105,12 +105,19 @@ EXPLAIN = {
         caption="Hi-C (upper triangle) against the simulated map (lower triangle), the contact decay of both, and their insulation scores with the TAD boundaries.",
         explain="<b>Map:</b> both triangles are scaled to their own 99th percentile, so the colours compare patterns and not absolute counts. <b>Decay:</b> the mean contact at each genomic distance; "
                 "curves on top of each other mean the polymer loses contacts with distance at the right rate. <b>Insulation:</b> dips mark domain boundaries; the triangles show the boundaries called in the Hi-C map (black) and in the simulation (violet)."),
+    "hic_correlation": dict(
+        section="validation", title="Correlation of contact patterns",
+        caption="Correlation matrices of the Hi-C and simulated maps (upper and lower triangle), and where the contact pattern of each bead agrees.",
+        explain="Each bead has a <i>contact pattern</i>, its row of observed/expected contacts. The <b>correlation matrix</b> shows, for every pair of beads, how similar their patterns are "
+                "(red = similar, blue = opposite). It is the matrix behind the first eigenvector (PC1): compartments appear as a checkerboard and domains as squares along the diagonal. "
+                "It compares maps better than the contact map itself, because it ignores the decay with distance and the overall scale. <b>Right:</b> for every bead, the correlation between "
+                "its row in the Hi-C matrix and in the simulated matrix; high values mean that bead has the same neighbours in both. The dashed line is the mean (the score <b>correlation matrix r</b> uses all pairs together)."),
     "hic_scores": dict(
         section="validation", title="Agreement with Hi-C",
-        caption="Seven agreement scores between each simulated map and the Hi-C map (1 = identical).",
+        caption="Agreement scores between each simulated map and the Hi-C map (1 = identical).",
         explain="<b>log-contact r:</b> correlation of log contacts over all bead pairs (dominated by the decay). <b>O/E r:</b> same after dividing each diagonal by its mean, so only the pattern of loops and domains remains. "
                 "<b>SCC:</b> stratified correlation, the mean of per-diagonal correlations. <b>P(s) r:</b> decay shape. <b>Insulation r:</b> domain boundaries. <b>Boundary F1:</b> TAD boundaries found in both maps (within 2 beads). "
-                "<b>Compartment |r|:</b> leading eigenvector of the observed/expected correlation map, sign free."),
+                "<b>Correlation matrix r:</b> correlation between the two O/E correlation matrices (shared contact patterns). <b>Compartment |r|:</b> leading eigenvector of the observed/expected correlation map, sign free."),
     "optimizer": dict(
         section="optimizer", title="Optimizer convergence",
         caption="Loss of every short Monte Carlo evaluation (left) and how K, f, b and the temperature scale moved (right).",
@@ -250,12 +257,14 @@ EXPLAIN = {
                 "standing above the band shows LEFs really stop at the anchors. Right: loop lengths (kb) pooled over LEFs and "
                 "post-burn-in snapshots (filled) against the input loops (black outline); <b>KS</b> is the Kolmogorov-Smirnov "
                 "distance (0 = identical, 1 = disjoint)."),
-    "loop_joint": dict(
-        section="monte_carlo", title="Joint distribution of loop ends",
-        caption="Density of (left leg, right leg) positions of simulated loops.",
-        explain="Each point is one loop (left end on the x axis, right end on the y axis, so everything lies "
-                "above the diagonal). Dark spots are frequent loops between two specific anchors, which "
-                "appear as dots or stripes similar to loop signals in a Hi-C map."),
+    "loop_landscape": dict(
+        section="monte_carlo", title="Loop landscape",
+        caption="Loops of all snapshots against the input loops, and the length of loops along the region.",
+        explain="Top: every loop is an arc between its two legs, as tall as it is long. Violet arcs above the line are the simulated "
+                "loops over all snapshots (darker = present in more snapshots), black arcs below are the input loops (at most 250 of each are drawn). Similar arcs mean the model "
+                "reproduces the input; nested arcs are loops inside loops. Bottom: loop length (kb, log scale) along the region. The violet line is the median "
+                "length of the simulated loops (all production snapshots) whose centre falls in a 0.5 Mb window, the band is their middle 50% (both smoothed along the region). "
+                "Black dots are the input loops. Stretches where the violet line sits above the dots show where the simulated loops are longer than the data."),
     "mc_heatmap": dict(
         section="monte_carlo", title="Contact map from the loop ensemble",
         caption="Average contact frequency predicted from the loops alone (log colour scale).",
@@ -429,7 +438,7 @@ EXPLAIN = {
         caption="Experimental versus simulated loop strength.",
         explain="Per bead, the observed/expected (O/E) loop strength: loop weight divided by what is typical "
                 "for that anchor distance, which removes the trivial fact that close anchors interact more. "
-                "Both signals are log-transformed and z-scored. Top: experiment, bottom: simulation. Right: "
+                "Both signals are log-transformed and scaled to 0-1. Top: experiment and simulation, middle: where they differ. Right: "
                 "scatter on a 0-1 scale with the best-fit line; points on the dotted y = x line would agree "
                 "perfectly. <b>Pearson r</b> measures linear and <b>Spearman &rho;</b> rank agreement."),
     "validation_pearson_direct": dict(
@@ -437,18 +446,21 @@ EXPLAIN = {
         caption="Experimental versus simulated strength of each individual loop (no bead aggregation).",
         explain="Same as the previous comparison but every loop is one point, which avoids averaging "
                 "several loops that share an anchor bead. This is the most direct test of whether strong "
-                "experimental loops are also strong in the model."),
+                "experimental loops are also strong in the model. Strengths are shown as percentiles (0 = the weakest loop, 100 = the strongest), "
+                "so the axes do not depend on units; points near the dotted diagonal agree in rank."),
     "validation_ps_decay": dict(
         section="validation", title="Validation: contact decay P(s)",
         caption="Experimental versus simulated contact strength as a function of bead separation.",
         explain="P(s) is the mean contact at separation s. Real chromatin loses contacts steadily with "
-                "distance; agreement here shows the model produces realistic distance dependence."),
+                "distance; agreement here shows the model produces realistic distance dependence. <b>Left:</b> both curves, each relative to its shortest separation. "
+                "<b>Right:</b> their ratio on a log2 scale: 0 means the same contact level, +1 that the simulation has twice as many contacts at that distance, "
+                "so it shows at which distances the simulated decay is too flat (violet) or too steep (pink)."),
     "validation_insulation": dict(
         section="validation", title="Validation: insulation score",
         caption="Insulation score of the experimental loop map versus the simulated contact map, with domain boundaries.",
         explain="The <b>insulation score</b> of a bead is the mean contact between the beads spanning 100 kb on its left and on its right: low values mean "
                 "little contact crosses that bead, i.e. a domain (TAD-like) <b>boundary</b>. It is computed in the same way on the experimental loop "
-                "map (the input loops drawn exactly like the simulated ones, with the same total weight) and on the simulated map. <b>Top:</b> both scores as z-scores; triangles mark "
+                "map (the input loops drawn exactly like the simulated ones, with the same total weight) and on the simulated map. <b>Top:</b> both scores scaled to 0-1 (the same scaling as in the optimizer loss); triangles mark "
                 "boundaries (local minima). <b>Bottom:</b> where the simulation is above or below the experiment. <b>Right:</b> correlation, and "
                 "the share of experimental boundaries that also appear in the simulation within 2 beads. A high correlation means the model puts "
                 "domain boundaries where the data do."),

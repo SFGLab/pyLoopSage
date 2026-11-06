@@ -6,7 +6,7 @@ It tries many short simulations and keeps the parameters whose simulated contact
 
 <figure markdown>
   ![Optimizer workflow](../assets/theory/optimizer.svg){ width="780" }
-  <figcaption>The optimizer. A short Monte Carlo run turns a parameter set <i>θ</i> into a loop map, the loss compares it with the target, and Nelder&ndash;Mead proposes the next <i>θ</i>. When the search stops, the best candidates are re-scored on longer runs and the winner is used for the production run.</figcaption>
+  <figcaption markdown="span">The optimizer. A short Monte Carlo run turns a parameter set <i>θ</i> into a loop map, the loss compares it with the target, and Nelder&ndash;Mead proposes the next <i>θ</i>. When the search stops, the best candidates are re-scored on longer runs and the winner is used for the production run.</figcaption>
 </figure>
 
 ## The mathematics
@@ -30,38 +30,90 @@ Two quantities are used below. The *decay* $P(s)$ is the mean of the $s$-th diag
 
 ### The loss
 
-The loss measures how far the simulated map is from the target and is $0$ for a perfect match,
+The loss measures how far the simulated map is from the target. It is $0$ for a perfect match and is a weighted sum of four terms,
 
 $$
 L(\theta)=w_{\mathrm{eig}}\,L_{\mathrm{eig}}+0.5\,L_{P}+w_{\mathrm{ins}}\,L_{\mathrm{ins}}+L_{\mathrm{size}} .
 $$
 
-We do not correlate the two heatmaps entry by entry. Instead we compare their *components*, the few numbers that summarise a map: its leading eigenvectors, its decay, its insulation and the loop size.
+We do not correlate the two heatmaps entry by entry. Instead we compare a few numbers that summarise a map, its *components*: the compartment pattern, the decay with distance, the domain boundaries and the loop size. Each term is a distance between $0$ (identical) and about $1$ (completely different).
 
-- $L_{\mathrm{eig}}$ compares the *pattern*. Take the correlation matrix of $\ln(\tilde M+0.2)$, where $\tilde M$ is the observed/expected map. Its *eigenvectors* are the directions along which the map varies most; the first one is the familiar PC1 that separates compartments. Let $u^{\mathrm{sim}}_1,\dots,u^{\mathrm{sim}}_k$ and $u^{\mathrm{tgt}}_1,\dots,u^{\mathrm{tgt}}_k$ be the first $k=3$ eigenvectors of the two maps, paired by the size of their eigenvalues. The sign of an eigenvector is arbitrary, so we take *absolute values* $|u|$ (entry by entry), which are non-negative, and set
+| Term | What it compares | Biological meaning | Weight |
+|---|---|---|---|
+| $L_{\mathrm{eig}}$ | leading eigenvectors (PC1, ...) of the two maps | A/B compartments | $w_{\mathrm{eig}}$, grows with the region |
+| $L_{P}$ | shape of the decay $P(s)$ | how contacts fall with distance, i.e. loop length and folding | $0.5$ |
+| $L_{\mathrm{ins}}$ | insulation profiles | TAD boundaries | $w_{\mathrm{ins}}$, falls with the region |
+| $L_{\mathrm{size}}$ | mean loop length | loops must not collapse | $1$ |
+
+#### Compartments (eigenvector term)
+
+Take the correlation matrix of $\ln(\tilde M+0.2)$, where $\tilde M$ is the observed/expected map (each diagonal divided by its mean, so the decay drops out). Its *eigenvectors* are the directions along which the map varies most, and the first one is the familiar PC1 that separates compartments. Let $u^{\mathrm{sim}}_j$ and $u^{\mathrm{tgt}}_j$ be the first $k=3$ eigenvectors of the two maps, paired by the size of their eigenvalues. The sign of an eigenvector is arbitrary, so we take *absolute values* $|u|$ (entry by entry) and set
+
 $$
 L_{\mathrm{eig}}=1-\frac1k\sum_{j=1}^{k}\frac{|u^{\mathrm{sim}}_j|\cdot|u^{\mathrm{tgt}}_j|}{\big\||u^{\mathrm{sim}}_j|\big\|\,\big\||u^{\mathrm{tgt}}_j|\big\|} .
 $$
-The fraction is the *cosine* of the angle between two vectors, a number between $0$ and $1$ here because all entries are non-negative. So $L_{\mathrm{eig}}$ lies between $0$ (the same profiles along the chromosome) and $1$ (profiles with no overlap).
-- $L_P=\operatorname{Var}_s\big[\ln P^{\mathrm{sim}}(s)-\ln P^{\mathrm{tgt}}(s)\big]$ (with a small offset $0.02$ inside the logarithms). It is $0$ when the decays differ only by a constant factor, so it compares the *shape* of the decay.
-- $L_{\mathrm{ins}}$ compares the *domain boundaries*. The insulation $I_i$ of bead $i$ is the mean contact in the $5\times5$ square across it, so $I_i$ is low at a boundary. Each profile is first rescaled to $[0,1]$ ($\hat I_i=(I_i-\min I)/(\max I-\min I)$), and then $L_{\mathrm{ins}}=\operatorname{mean}_i|\hat I^{\mathrm{sim}}_i-\hat I^{\mathrm{tgt}}_i|$, a distance between $0$ (same profile) and $1$ (opposite).
-- $L_{\mathrm{size}}=\max\!\big(0,\log_2\frac{\bar\ell^{\mathrm{input}}}{\bar\ell^{\mathrm{sim}}}\big)$, with $\bar\ell$ the *mean* loop length. It stops the search from drifting to tiny loops when the data are sparse, and never pushes loops to be longer than the input.
 
-*With the Potts model on* (`epi_coeff` > 0) the compartments live in the *average state* $\langle s\rangle_t$ of every bead (its Potts state averaged over the production snapshots and smoothed with a sliding window along the chain), not in the eigenvectors of the simulated map. Then $L_{\mathrm{eig}}$ compares $\langle s\rangle_t$ with the A/B reference, the leading eigenvector of the Hi-C map when there is one (otherwise the compartment track), with the sign set so that B is negative:
-$$
-L_{\mathrm{eig}}=\frac{1-r}{2},\qquad r=\operatorname{corr}\big(\langle s\rangle_t,\ \mathrm{PC1}^{\mathrm{ref}}\big).
-$$
-The Pearson correlation $r$ lies in $[-1,1]$, so the term runs from $0$ (same A/B pattern) to $1$ (mirror image). Without a reference, or with the Potts model off, the eigenvector comparison above is used.
+The fraction is the *cosine* of the angle between two vectors, between $0$ and $1$ here because all entries are non-negative. So $L_{\mathrm{eig}}$ is $0$ for the same profiles along the chromosome and $1$ for profiles with no overlap.
 
-The weights $w_{\mathrm{eig}}$ and $w_{\mathrm{ins}}$ depend on the *size of the region*, because the two terms describe structures of different size. TADs are domains of about 0.1–1 Mb, so in a region of a few Mb (a handful of TADs) the insulation is the informative term. The eigenvectors describe the A/B compartment pattern, whose blocks are a few Mb long: a region of 5 Mb holds at most one or two of them, so the first eigenvector (PC1) says almost nothing there. It starts to carry information when the region contains 2–3 blocks (about 10 Mb) and becomes statistically dominant when it contains many (30 Mb up to a whole chromosome). The switch is therefore sharp, not linear: with $S$ the length of the modelled region,
+!!! note "With the Potts model on"
+    When `epi_coeff` > 0 the compartments live in the *average state* $\langle s\rangle_t$ of every bead (its Potts state averaged over the production snapshots and smoothed with a sliding window along the chain), not in the eigenvectors of the simulated map. Then $L_{\mathrm{eig}}$ compares $\langle s\rangle_t$ with the A/B reference, which is the leading eigenvector of the Hi-C map when there is one (otherwise the compartment track), with the sign set so that B is negative:
+
+    $$
+    L_{\mathrm{eig}}=\frac{1-r}{2},\qquad r=\operatorname{corr}\big(\langle s\rangle_t,\ \mathrm{PC1}^{\mathrm{ref}}\big).
+    $$
+
+    The Pearson correlation $r$ lies in $[-1,1]$, so the term runs from $0$ (same A/B pattern) to $1$ (mirror image). Without a reference the eigenvector comparison above is used.
+
+#### Decay with distance
+
+$$
+L_P=\operatorname{Var}_s\big[\ln P^{\mathrm{sim}}(s)-\ln P^{\mathrm{tgt}}(s)\big],
+$$
+
+with a small offset $0.02$ inside the logarithms. The variance is $0$ when the two decays differ only by a constant factor, so $L_P$ compares the *shape* of the decay, not its scale.
+
+#### Domain boundaries (insulation term)
+
+The *insulation* $I_i$ of bead $i$ is the mean contact in the diamond across it, with a half-width of 100 kb (at least 5 beads), so it is low at a boundary. Each profile is rescaled to $[0,1]$, $\hat I_i=(I_i-\min I)/(\max I-\min I)$, and
+
+$$
+L_{\mathrm{ins}}=\operatorname{mean}_i\big|\hat I^{\mathrm{sim}}_i-\hat I^{\mathrm{tgt}}_i\big| ,
+$$
+
+a distance between $0$ (same profile) and $1$ (opposite). For a target made of loops (BEDPE) the insulation and the decay are not read from the drawn map but from the loops themselves; see [Prefer a Hi-C target](#using-the-optimizer).
+
+#### Loop size
+
+$$
+L_{\mathrm{size}}=\max\!\Big(0,\ \Big|\log_2\frac{\tilde\ell^{\mathrm{sim}}}{\tilde\ell^{\mathrm{input}}}\Big|-1\Big),
+$$
+
+with $\tilde\ell$ the *median* loop length. The term is zero while the simulated median is within a factor 2 of the input median, and grows by one for every further factor 2, in either direction. Sparse loop data hardly constrain the loop size, and without it the search can drift to tiny loops, or, with the folding coefficient at its upper limit and the binding weak, to loops stacked over the whole region. The median is used instead of the mean because input loop lengths have a long tail: the mean would ask for far more nesting than the extruders can supply.
+
+#### Weights follow the region size
+
+The two weights $w_{\mathrm{eig}}$ and $w_{\mathrm{ins}}$ depend on the *length of the modelled region* $S$, because the two terms describe structures of different size. TADs are domains of about 0.1–1 Mb, so in a region of a few Mb the insulation is the informative term. Compartments are blocks of a few Mb: a 5 Mb region holds at most one or two of them, so PC1 says almost nothing there. It starts to carry information when the region contains 2–3 blocks (about 10 Mb) and dominates when it contains many (30 Mb up to a whole chromosome). The switch is sharp, not linear:
+
 $$
 s=\frac{1}{1+(S_0/S)^{3}},\qquad w_{\mathrm{eig}}=2s,\qquad w_{\mathrm{ins}}=\max\big(2(1-s),\,0.25\big),\qquad S_0=30\,\mathrm{Mb}.
 $$
-Here $s$ is a smooth switch that goes from 0 (small regions) to 1 (large ones), and $S_0$ is where both weights equal 1. For example, $(w_{\mathrm{eig}},w_{\mathrm{ins}})$ is about $(0.01,2)$ at 5 Mb, $(0.3,1.7)$ at 17 Mb, $(1,1)$ at 30 Mb and $(1.95,0.25)$ at 100 Mb. The decay weight stays $0.5$ and the size weight $1$. The weights used are shown in the report and in the log.
+
+Here $s$ is a smooth switch from $0$ (small regions) to $1$ (large ones), and $S_0$ is where both weights equal $1$.
+
+| Region | $w_{\mathrm{eig}}$ | $w_{\mathrm{ins}}$ | What dominates |
+|---|---|---|---|
+| 5 Mb | 0.01 | 2.0 | TADs and loops |
+| 10 Mb | 0.07 | 1.9 | TADs and loops |
+| 17 Mb | 0.3 | 1.7 | mostly TADs and loops |
+| 30 Mb | 1.0 | 1.0 | balanced |
+| 60 Mb | 1.8 | 0.25 | compartments |
+| 100 Mb or more | 2.0 | 0.25 | compartments |
+
+The weights used are printed in the log and shown in the report.
 
 <figure markdown>
   ![Loss weights, region content and the two stages](../assets/theory/optimizer_scale.svg){ width="700" }
-  <figcaption><b>a</b> The weight of the PC1 (eigenvector) term and of the insulation term against the length of the modelled region. <b>b</b> What a region of that size contains: TADs (triangles), A (red) and B (blue) compartment blocks, and a sketch of the chain. A small region holds a few TADs and at most one A/B block, so PC1 carries almost no information; a large region holds many blocks, which segregate in space into an A and a B cloud. <b>c</b> With the Potts model on, the loop-extrusion parameters are fitted first and the Potts parameters second.</figcaption>
+  <figcaption markdown="span"><b>a</b> The weight of the PC1 (eigenvector) term and of the insulation term against the length of the modelled region. <b>b</b> What a region of that size contains: TADs (triangles), A (red) and B (blue) compartment blocks, and a sketch of the chain. A small region holds a few TADs and at most one A/B block, so PC1 carries almost no information; a large region holds many blocks, which segregate in space into an A and a B cloud. <b>c</b> With the Potts model on, the loop-extrusion parameters are fitted first and the Potts parameters second.</figcaption>
 </figure>
 
 ### With the Potts model: two stages
@@ -77,11 +129,11 @@ Stage 2 uses a third of the evaluations of stage 1 (at least 10). Without an A/B
 
 Every evaluation of $L$ is a Monte Carlo run. So $L$ has no formula and no gradient, one input ($K$) is an integer, and the value is *noisy*: two seeds give slightly different losses. A method that only needs *values* of $L$ fits well, and the optimizer uses the *Nelder&ndash;Mead simplex method* (Nelder and Mead, 1965; the SciPy implementation follows Gao and Han, 2012).
 
-*The idea.* In $n=4$ dimensions a *simplex* is a set of $n+1=5$ points $x_{(1)},\dots,x_{(5)}$, like a triangle in 2D. Imagine that the points are hikers on a foggy hill who can only measure their own height $L$. The one who stands highest (the worst point) walks to a better place, using what the others know. Repeating this makes the group slide downhill and shrink around a minimum.
+**The idea.** In $n=4$ dimensions a *simplex* is a set of $n+1=5$ points $x_{(1)},\dots,x_{(5)}$, like a triangle in 2D. Imagine that the points are hikers on a foggy hill who can only measure their own height $L$. The one who stands highest (the worst point) walks to a better place, using what the others know. Repeating this makes the group slide downhill and shrink around a minimum.
 
-*Initial simplex.* It contains the start $x_0$ and four more points, each obtained by moving *one* coordinate of $x_0$: $K$ by $+\max(0.3K_0,2)$, $\ln f$ by $-1.2$, $\ln b$ by $-1.2$ and $\ln T$ by $+0.5$.
+**Initial simplex.** It contains the start $x_0$ and four more points, each obtained by moving *one* coordinate of $x_0$: $K$ by $+\max(0.3K_0,2)$, $\ln f$ by $-1.2$, $\ln b$ by $-1.2$ and $\ln T$ by $+0.5$.
 
-*One iteration.* Sort the points so that $L(x_{(1)})\le\dots\le L(x_{(5)})$. Write $x_w=x_{(5)}$ for the worst point and $c=\tfrac14\sum_{i=1}^{4}x_{(i)}$ for the centre of the other four. Then:
+**One iteration.** Sort the points so that $L(x_{(1)})\le\dots\le L(x_{(5)})$. Write $x_w=x_{(5)}$ for the worst point and $c=\tfrac14\sum_{i=1}^{4}x_{(i)}$ for the centre of the other four. Then:
 
 1. *Reflect.* Mirror the worst point through the centre, $x_r=c+(c-x_w)$, and evaluate $L(x_r)$.
 2. *Expand.* If $L(x_r)<L(x_{(1)})$ (better than all points), the direction is very good, so go twice as far: $x_e=c+2\,(x_r-c)$. Keep the better of $x_e$ and $x_r$ in place of $x_w$.

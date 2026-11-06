@@ -6,7 +6,7 @@ import pytest
 
 from monte_carlo.energy import E_cross, Kappa
 from monte_carlo.energy import E_bind
-from monte_carlo.energy import E_fold, dE_fold
+from monte_carlo.energy import dE_bind_inner, E_bind_inner, E_fold, dE_fold
 
 
 def _arr(*v):
@@ -39,8 +39,17 @@ def test_e_bind_sums_left_and_right():
     assert E_bind(L, R, _arr(2), _arr(7)) == 8.0
 
 
+def test_bind_inner_rewards_spanning_covered_beads():
+    cover = np.array([-1, -1, 1, 1, 1, -1, -1.0])
+    P = np.r_[0.0, np.cumsum(cover)]
+    inside, outside = E_bind_inner(P, -1.0, _arr(2), _arr(5)), E_bind_inner(P, -1.0, _arr(0), _arr(2))
+    assert inside == -3 and outside == 2                    # covered span lowers the energy, loop-free span raises it
+    assert dE_bind_inner(P, -1.0, 0, 2, 2, 5) == inside - outside
+
+
 @pytest.mark.parametrize("extra", [[], ["--set", "epi_coeff=1.0", "--set", "epigenetic_mode=dynamic"],
-                                   ["--set", "epi_coeff=1.0", "--set", "epigenetic_mode=static"]])
+                                   ["--set", "epi_coeff=1.0", "--set", "epigenetic_mode=static"],
+                                   ["--binding-mode", "contrastive"]])
 def test_mc_incremental_energy_matches_recomputed(tiny_args, extra):
     """After sampling, the running energy must equal a fresh evaluation of the final state (all epigenetic modes)."""
     from monte_carlo.energy import total_energy

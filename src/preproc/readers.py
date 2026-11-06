@@ -29,6 +29,7 @@ class LoopData:
     loop_lengths: np.ndarray  # unique loop lengths, beads (empty for peak files)
     stats: dict = field(default_factory=dict)
     fmt: str = "bedpe"
+    cover: np.ndarray = None  # loop coverage per bead in [-1, 1], mean 0 (contrastive binding; None without loops)
 
 
 def read_region_table(path, geom, paired: bool) -> pd.DataFrame:
@@ -65,14 +66,23 @@ def mean_scale(v) -> np.ndarray:
 
 
 def contrast(v) -> np.ndarray:
-    """z-score then tanh: bounded signal in (-1, 1) with loop-free regions < 0."""
-    return np.tanh((v - np.mean(v)) / (np.std(v) + _EPS))
+    """Subtract the mean, divide by the largest deviation: values in [-1, 1], mean 0, the densest bead = 1."""
+    c = np.asarray(v, float) - np.mean(v)
+    return c / (np.max(np.abs(c)) + _EPS)
 
 
-def contrast_map(m) -> np.ndarray:
-    """Same contrast for a 2D map, after dividing by its maximum."""
-    m = m / (np.max(m) + _EPS)
-    return np.tanh((m - np.mean(m)) / (np.std(m) + _EPS))
+def contrast_cover(c) -> np.ndarray:
+    """Coverage relative to its mean, clipped to [-1, 1]: -1 where no loop spans, 0 at the average, +1 at twice the average or more."""
+    c = np.asarray(c, float)
+    return np.clip(c / (np.mean(c) + _EPS) - 1.0, -1.0, 1.0)
+
+
+def loop_cover(x, y, w, n, sigma=0.0) -> np.ndarray:
+    """Weight of the loops that span each bead (loop [x, y) adds w to its beads), optionally smoothed."""
+    d = np.zeros(n + 1)
+    np.add.at(d, x, w); np.add.at(d, y, -w)
+    c = np.cumsum(d)[:n]
+    return gaussian_filter1d(c, sigma, mode="nearest") if sigma > 0 else c
 
 
 def smooth_sparse(v, sigma: float) -> np.ndarray:
@@ -173,12 +183,11 @@ def vectors_from_bedpe(path, geom, smooth=False, contrastive=True, sigma=1.0, lo
     if loss_sigma > 0:                               # smooth 2D landscape for the loop-map data energy
         J_loss = gaussian_filter(J_loss, loss_sigma)
     L, R = mean_scale(L), mean_scale(R)
-    if contrastive:
-        J_loss, L, R = contrast_map(J_loss), contrast(L), contrast(R)
+    cover = contrast_cover(loop_cover(np.minimum(x, y), np.maximum(x, y), numeric_col(df, 6, 1.0), n, sigma if smooth else 0.0)) if contrastive else None
 
     lengths, stats = _stats(J, (x + y) // 2)
     log.step("Input: %d unique loops (%d anchors) in %s", stats["n_loops"], stats["n_anchors"], geom.label)
-    return LoopData(L, R, J, np.sqrt(stats["n_anchors"]) * J_loss, stats["n_anchors"], lengths, stats, "bedpe")
+    return LoopData(L, R, J, np.sqrt(stats["n_anchors"]) * J_loss, stats["n_anchors"], lengths, stats, "bedpe", cover)
 
 
 # ---- BED / narrowPeak CTCF sites -> anchor profiles (L, R) -----------------
@@ -198,10 +207,7 @@ def _profiles(beads, w, prob, spans, geom, smooth, sigma, contrastive):
             L[b0:b1] += a / width; R[b0:b1] += b / width
     if smooth:
         L, R = smooth_sparse(L, sigma), smooth_sparse(R, sigma)
-    L, R = mean_scale(L), mean_scale(R)
-    if contrastive:
-        L, R = contrast(L), contrast(R)
-    return 2 * L, 2 * R
+    return 2 * mean_scale(L), 2 * mean_scale(R)
 
 
 def _finish(L, R, w, prob, geom, label):

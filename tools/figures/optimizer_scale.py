@@ -65,7 +65,7 @@ for i, (m, size, tads, blocks) in enumerate(cols):
         tex += f"  \\fill[{c}] ({x0 + wb * k:.2f},{y0 - 0.35}) rectangle ({x0 + wb * (k + 1):.2f},{y0 - 0.12});\n"
     tex += f"  \\node[note,align=center] at ({x0 + 1.8},{y0 - 0.85}) {{{tads}\\\\{blocks}}};\n"
 y3 = -4.75
-# 3D sketches: a smooth fibre with equally spaced beads, coloured by compartment block (a: three TAD globules, b: open chain with A, B, A blocks, c: A and B segregated)
+# 3D sketches: a smooth fibre with equally spaced beads, coloured by compartment block (a: three TAD globules, b: open chain with A, B, A blocks, c: one loose A aggregate, one dense B aggregate)
 from scipy.interpolate import splprep, splev
 
 
@@ -101,8 +101,7 @@ gl = [scribble(dx, 0, 0.33, 9, 20 + k) for k, dx in enumerate((-1.35, 0.0, 1.35)
 c1 = [(sum(gl, []) and gl[k], G) for k in range(3)]
 c2 = [([(-1.6 + 3.2 * k / 14, 0.4 * np.sin(k * 0.9)) for k in range(a, b)], c) for a, b, c in ((0, 5, RA), (5, 10, RB), (10, 15, RA))]
 la, lb = (0, 0.3), (0, -0.3)
-c3 = [(scribble(-1.2, 0.05, 0.5, 8, 31), RA), ([(-0.35, 0.5), (0.35, 0.5)], RA), (scribble(1.2, 0.1, 0.24, 8, 32), RB), ([(0.35, -0.5), (-0.35, -0.5)], RB),
-      (scribble(-1.2, 0.05, 0.5, 8, 33), RA), ([(-0.35, 0.5), (0.35, 0.5)], RA), (scribble(1.2, 0.1, 0.24, 8, 34), RB)]
+c3 = [(scribble(-0.85, 0.0, 0.62, 9, 31), RA), (scribble(0.8, 0.0, 0.27, 14, 32), RB)]   # A: loose aggregate, B: small dense one, joined directly
 tex += chain(2.4, y3, c1) + chain(6.6, y3, c2) + chain(10.8, y3, c3)
 for i, w in enumerate(wt):
     x0 = 0.6 + 4.2 * i

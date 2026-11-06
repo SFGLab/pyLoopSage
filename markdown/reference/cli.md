@@ -50,6 +50,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | `--hic-resolution` | integer (bp) | `0` | Hi-C bin size to read (0 = automatic, closest to the bead size) |
 | `--genome` | text | `hg38` | Genome assembly for chromosome sizes |
 | `-n`, `--n-beads` | integer (beads) | *(empty)* | Number of simulation beads (empty = region / 2 kb) |
+| `--lef-track` | text | *(empty)* | BigWig of LEF loading preference (cohesin/condensin ChIP) |
 | `--min-pet` | integer (PET) | `0` | BEDPE: keep only loops with at least this many PET counts / score (0 = keep all) |
 | `--motif-genome` | text | *(empty)* | BEDPE: reference genome FASTA; enables the CTCF motif search that sets anchor orientations |
 | `--motif-pfm` | text | *(empty)* | Motif PFM file (empty = bundled JASPAR CTCF MA0139.1) |
@@ -81,7 +82,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | `--mc-steps` | integer (MC steps) | `40000` | Total Monte Carlo steps |
 | `--sample-every` | integer (MC steps) | `200` | Save one snapshot every this many steps |
 | `--burnin` | integer (MC steps) | `1000` | Burn-in period discarded from statistics |
-| `--t-init` | number (a.u.) | `2.0` | Initial temperature |
+| `--t-init` | number (a.u.) | `3.0` | Initial temperature |
 | `--t-final` | number (a.u.) | `1.0` | Final temperature (Annealing only) |
 | `--method` | text | `Annealing` | Sampling method |
 | `--n-lef` | integer (LEFs) | *(empty)* | Loop extrusion factors (empty = N_anchors / 2) |
@@ -91,6 +92,12 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | `--lef-fast-fraction` | number | `0.2` | two_state only: fraction of fast LEFs |
 | `--lef-fast-ratio` | number | `5.0` | two_state only: speed of fast LEFs relative to slow ones |
 
+### Energy model coefficients
+
+| Option | Type (unit) | Default | What it does |
+|---|---|---|---|
+| `--binding-mode` | text | `preferential` | Anchor binding mode: preferential = LEFs are attracted to the anchor profiles (non-negative), loop-free regions cost nothing; contrastive = in addition, loops are penalised for spanning loop-free regions and rewarded for spanning regions the input loops cover (needs loops) |
+
 ### Molecular dynamics (3D structures)
 
 | Option | Type (unit) | Default | What it does |
@@ -99,7 +106,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | `--platform` | text | `auto` | OpenMM platform: auto (try CUDA, then OpenCL, then parallel CPU), CUDA, OpenCL, CPU or Reference |
 | `--init-structure` | text | `rw` | Initial polymer shape |
 | `--step-size` | number (fs) | `100.0` | Integrator time step |
-| `--md-steps` | integer (MD steps) | `2000` | MD steps per MC snapshot (per frame) |
+| `--md-steps` | integer (MD steps) | `5000` | MD steps per MC snapshot (per frame) |
 | `--temperature` | number (K) | `310.0` | Simulation temperature |
 
 ### 3D structure analysis and rendering

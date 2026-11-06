@@ -84,6 +84,19 @@ def dE_data(mode, L, R, J_loss, bind_norm, m_old, n_old, m_new, n_new):
     return bind_norm * (new - old)
 
 
+# ---- Interior part of the binding energy (contrastive mode): loops are rewarded for spanning beads that the input loops cover ----
+
+@njit(cache=True)
+def E_bind_inner(P, cov_norm, ms, ns):
+    """cov_norm * sum over loops of the coverage summed over the loop's beads (P = prefix sums of the coverage profile)."""
+    return cov_norm * np.sum(P[ns] - P[ms])
+
+
+@njit(cache=True)
+def dE_bind_inner(P, cov_norm, m_old, n_old, m_new, n_new):
+    return cov_norm * ((P[n_new] - P[m_new]) - (P[n_old] - P[m_old]))
+
+
 # ---- Folding energy: rewards long loops (norm < 0), logarithmically --------
 
 @njit(cache=True)
@@ -236,6 +249,8 @@ def total_energy(p, ms, ns, S):
     E = E_data(p.loss_mode, p.L, p.R, p.J_loss, ms, ns, p.bind_norm)
     E += E_cross(ms, ns, p.k_norm, p.N_lef, p.cross_loop, p.between)
     E += fold_energy(p, ms, ns)
+    if p.P.shape[0] > 0:
+        E += E_bind_inner(p.P, p.cov_norm, ms, ns)
     if p.BWs.shape[0] > 0:
         E += E_bw(p.r, p.BWs, ms, ns)
     if p.epi_norm != 0.0:
@@ -250,6 +265,8 @@ def dE_edge(p, ms, ns, S, m_new, n_new, idx):
     dE = dE_fold(norm, ms[idx], ns[idx], m_new, n_new)
     dE += dE_data(p.loss_mode, p.L, p.R, p.J_loss, p.bind_norm, ms[idx], ns[idx], m_new, n_new)
     dE += dE_cross(ms, ns, m_new, n_new, idx, p.k_norm, p.N_lef, p.cross_loop, p.between)
+    if p.P.shape[0] > 0:
+        dE += dE_bind_inner(p.P, p.cov_norm, ms[idx], ns[idx], m_new, n_new)
     if p.BWs.shape[0] > 0:
         dE += dE_bw(p.r, p.BWs, ms[idx], ns[idx], m_new, n_new)
     if p.epi_norm != 0.0 and p.epi_dynamic:

@@ -1,12 +1,12 @@
 """Loss of one parameter set (K, f, b): how well the MC loop map reproduces the experimental loop map.
 
-loss = w_eig L_eig + 0.5 decay mismatch + w_ins L_ins + 1.0 loop-size shortfall, each term 0 for a perfect match (loss_weights):
+loss = w_eig L_eig + 0.5 decay mismatch + w_ins L_ins + 1.0 loop-size mismatch, each term 0 for a perfect match (loss_weights):
 - L_eig (Potts model on: (1 - r)/2, r = Pearson correlation of the average Potts state with the A/B reference, B negative): 1 - mean cosine between the absolute values of the leading eigenvectors (N_EIG, paired by eigenvalue) of the correlation matrix of
   log(O/E + 0.2) (O/E = each diagonal divided by its mean, so the decay drops out); 0 = same profiles, 1 = no overlap;
 - decay mismatch: variance of log P(s) differences (shape of the decay, scale free);
 - L_ins: mean absolute difference of the insulation profiles, each scaled to [0, 1] (0 = identical, 1 = opposite); for a loop target the profile is the loop coverage
   (every loop counts on all beads between its anchors, for the input and the simulated loops alike);
-- loop-size shortfall: log2(mean input loop / mean simulated loop) when the simulated loops are shorter (see size_shortfall).
+- loop-size mismatch: |log2(median simulated loop / median input loop)| beyond a factor of 2 (see size_mismatch); it stops the search from shrinking the loops to nothing and from stacking them over the whole region.
 The weights w_eig and w_ins depend on the size of the region: for a TAD-scale region the insulation dominates, for a region that spans
 compartments the eigenvectors do, and in between they are equal (see loss_weights).
 """
@@ -40,7 +40,7 @@ def loss_weights(span_bp: float) -> tuple:
 
 
 def weighted(parts, weights) -> float:
-    """Weighted loss from the terms (loss_parts, plus the loop-size shortfall when present)."""
+    """Weighted loss from the terms (loss_parts, plus the loop-size mismatch when present)."""
     return float(np.dot(weights[:len(parts)], parts))
 
 
@@ -68,11 +68,12 @@ def target_coverage(geom, path) -> tuple:
     return loop_profiles(loop_matrix(read_region_table(path, geom, paired=True), geom))
 
 
-def size_shortfall(mc, loops) -> float:
-    """0 when the simulated loops are at least as long on average as the input loops; log2 of the ratio of the mean lengths when shorter.
+def size_mismatch(mc, loops, tol: float = 1.0) -> float:
+    """How far the median simulated loop length is from the median input loop length, in octaves beyond a tolerance (0 inside a factor 2^tol).
 
-    Sparse loop data hardly constrain the loop size, so the search can drift to microscopic loops; this one-sided
-    term keeps the simulated loops from being much shorter than the measured ones (it never pushes them longer).
+    Sparse loop data hardly constrain the loop size: the search can drift to microscopic loops, or (with the
+    folding reward at its limit) to loops stacked over the whole region. The median is used because the input lengths
+    have a heavy tail, so their mean would ask for far more nesting than the extruders can supply.
     """
     ref = np.asarray(getattr(loops, "loop_lengths", []), float)
     if ref.size == 0:
@@ -80,7 +81,9 @@ def size_shortfall(mc, loops) -> float:
     ms, ns = mc.production(mc.Ms), mc.production(mc.Ns)
     sim = np.abs(ns - ms).ravel()
     sim = sim[sim > 0]
-    return float(max(0.0, np.log2(ref.mean() / max(sim.mean(), 1.0)))) if sim.size else 0.0
+    if not sim.size:
+        return 0.0
+    return float(max(0.0, abs(np.log2(max(np.median(sim), 1.0) / max(np.median(ref), 1.0))) - tol))
 
 
 def _oe(m, sep):
@@ -182,7 +185,7 @@ class Objective:
         n = self.geom.n_beads
         cnt = loop_counts(mc, n)
         cover = None if self.cover is None else (loop_profiles(cnt), self.cover)
-        self.parts = (*loss_parts(loop_map_from_counts(cnt, n, **COMMUNICATION), self.target, insulation_window(self.geom), state, self.ref, self.smooth, cover, not self.loops_only), size_shortfall(mc, self.inputs.loops))
+        self.parts = (*loss_parts(loop_map_from_counts(cnt, n, **COMMUNICATION), self.target, insulation_window(self.geom), state, self.ref, self.smooth, cover, not self.loops_only), size_mismatch(mc, self.inputs.loops))
         return weighted(self.parts, self.weights)
 
 

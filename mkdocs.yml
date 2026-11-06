@@ -53,12 +53,20 @@ nav:
       - Installation: intro/installation.md
   - Theory:
       - Overview: theory/index.md
+      - Scope: theory/scope.md
       - Loop extrusion: theory/loop-extrusion.md
+      - Mechanics: theory/mechanics.md
+      - MCMC: theory/mcmc.md
+      - Molecular dynamics: theory/molecular-dynamics.md
       - Topology: theory/topology.md
   - Implementation:
       - Overview: implementation/index.md
+      - The Pipeline: implementation/pipeline.md
+      - Preprocessing: implementation/preprocessing.md
       - Motif Finder: implementation/motif-finder.md
       - The Optimizer: implementation/optimizer.md
+      - Monte Carlo: implementation/monte-carlo.md
+      - Molecular Dynamics: implementation/molecular-dynamics.md
   - Reference:
       - Overview: reference/index.md
       - Command-line interface: reference/cli.md

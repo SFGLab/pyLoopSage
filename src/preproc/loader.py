@@ -31,6 +31,8 @@ class InputData:
     def save(self, path) -> None:
         lo = self.loops
         arrays = dict(L=lo.L, R=lo.R, J=lo.J, J_loss=lo.J_loss, lengths=lo.loop_lengths, BWs=self.BWs)
+        if lo.cover is not None:
+            arrays["cover"] = lo.cover
         for name in ("lef_track", "comp"):
             if getattr(self, name) is not None:
                 arrays[name] = getattr(self, name)
@@ -41,7 +43,7 @@ class InputData:
     def load(cls, path) -> "InputData":
         z = np.load(path, allow_pickle=False)
         meta = json.loads(str(z["meta"]))
-        loops = LoopData(z["L"], z["R"], z["J"], z["J_loss"], meta["n_sites"], z["lengths"], meta["stats"], meta["fmt"])
+        loops = LoopData(z["L"], z["R"], z["J"], z["J_loss"], meta["n_sites"], z["lengths"], meta["stats"], meta["fmt"], z["cover"] if "cover" in z else None)
         return cls(loops, z["BWs"], meta["bw_names"],
                    z["lef_track"] if "lef_track" in z else None, z["comp"] if "comp" in z else None, meta.get("comp_source", ""))
 
@@ -137,7 +139,9 @@ def load_inputs(cfg, geom, path=None) -> InputData:
         raise ValueError(f"unsupported input format '{ext}' (use .bedpe, .bed or .narrowPeak)")
     extra = dict(loss_sigma=float(cfg.loss_sigma)) if ext == ".bedpe" and int(cfg.data_loss_mode) == 1 else {}
     loops = _READERS[ext](path, geom, smooth=cfg.smoothing_input,
-                          contrastive=cfg.contrastive_binding, sigma=geom.n_beads / 100, **extra)
+                          contrastive=cfg.binding_mode == "contrastive", sigma=max(1.5, geom.n_beads / 300), **extra)
+    if cfg.binding_mode == "contrastive" and loops.cover is None:
+        log.warning("binding_mode = contrastive needs loops (a BEDPE file): with peaks only it changes nothing.")
     bws = [bigwig_to_beads(f, geom) for f in cfg.bw_files]
     lef = None
     if cfg.lef_track_file:

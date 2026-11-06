@@ -8,7 +8,7 @@ from collections import namedtuple
 import numpy as np
 from numba import njit
 
-from monte_carlo.energy import dE_edge, dE_epi, dE_epi_dyn, E_cross, E_data, fold_energy
+from monte_carlo.energy import dE_edge, dE_epi, dE_epi_dyn, E_bind_inner, E_cross, E_data, fold_energy
 
 
 # ---- Bundle of everything the (numba) sampler needs, plus normalisation constants ----
@@ -19,7 +19,7 @@ MCParams = namedtuple("MCParams", [
     "fold_norm", "fold_norm2", "bind_norm", "k_norm", "epi_norm",
     "cross_loop", "between", "loss_mode", "epi_dynamic", "p_epigenetic", "n_epi", "step_length", "rw",
     "annealing", "T", "T_min",
-    "L", "R", "J", "J_loss", "h", "BWs", "r", "use_track", "cdf", "use_speed", "speed_cdf",
+    "L", "R", "J", "J_loss", "h", "BWs", "r", "use_track", "cdf", "use_speed", "speed_cdf", "P", "cov_norm",
 ])
 
 
@@ -39,9 +39,14 @@ def build_params(cfg, inputs, n_beads: int, n_lef: int) -> MCParams:
     f64 = lambda a: np.ascontiguousarray(a, dtype=np.float64)
     h = inputs.comp if inputs.comp is not None else np.zeros(n_beads)
 
+    bind_norm = -2 * n_beads * cfg.bind_coeff / lo.n_sites
+    cover = lo.cover is not None and cfg.binding_mode == "contrastive"
+    P = np.r_[0.0, np.cumsum(lo.cover)] if cover else np.zeros(0)           # prefix sums: the coverage of a loop's beads in O(1)
+    cov_norm = bind_norm / max(float(np.mean(lo.loop_lengths)), 1.0) if cover else 0.0     # per bead: a mean-length loop in a dense region ~ one anchor
+
     return MCParams(
         n_beads, n_lef, cfg.n_lef2,
-        fold * cfg.folding_coeff, fold * cfg.folding_coeff2, -2 * n_beads * cfg.bind_coeff / lo.n_sites,
+        fold * cfg.folding_coeff, fold * cfg.folding_coeff2, bind_norm,
         cfg.cross_coeff * 1e4, float(cfg.epi_coeff),
         bool(cfg.cross_loop), bool(cfg.between_families_penalty), int(cfg.data_loss_mode), cfg.epigenetic_mode == "dynamic",
         float(cfg.p_epigenetic), int(cfg.n_epi_states), max(step, 1), bool(cfg.lef_rw),
@@ -49,6 +54,7 @@ def build_params(cfg, inputs, n_beads: int, n_lef: int) -> MCParams:
         f64(lo.L), f64(lo.R), f64(lo.J), f64(lo.J_loss), f64(h), f64(inputs.BWs).reshape(n_bw, n_beads), f64(r),
         track is not None, f64(np.cumsum(track / track.sum())) if track is not None else np.zeros(0),
         cfg.lef_speed_dist != "constant", np.zeros(0),          # speed_cdf is set per chain (see lef_speeds)
+        P, cov_norm,
     )
 
 
@@ -176,6 +182,8 @@ def mc_block(p, i0, i1, n_steps, mc_step, ms, ns, S, E, rec, acc):
             Ks[k] = E_cross(ms, ns, p.k_norm, p.N_lef, p.cross_loop, p.between)
             Fs[k] = fold_energy(p, ms, ns)
             Bs[k] = E_data(p.loss_mode, p.L, p.R, p.J_loss, ms, ns, p.bind_norm)
+            if p.P.shape[0] > 0:
+                Bs[k] += E_bind_inner(p.P, p.cov_norm, ms, ns)
             covered = np.zeros(p.N_beads)
             for j in range(n_tot):
                 covered[ms[j]:ns[j]] = 1.0

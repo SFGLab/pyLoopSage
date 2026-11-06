@@ -165,19 +165,18 @@ def binding_profiles(inputs, geom):
     lo, x = inputs.loops, geom.axis_mb()
     has_loops = len(lo.loop_lengths) > 0
     fig, axs = make_fig(1, 2 if has_loops else 1)
-    axs[0].fill_between(x, lo.L, color=VIOLET, alpha=0.25)
-    glow(axs[0], x, lo.L, VIOLET, lw=1, label="L (left anchor, up)")
-    axs[0].fill_between(x, -lo.R, color=ORANGE, alpha=0.25)
-    glow(axs[0], x, -lo.R, ORANGE, lw=1, label="R (right anchor, mirrored down)")
+    for v, c, t, y in ((lo.L, VIOLET, "L: left anchors", 0.96), (-lo.R, ORANGE, "R: right anchors (mirrored)", 0.04)):
+        axs[0].fill_between(x, v, color=c, alpha=0.35, lw=0)
+        axs[0].plot(x, v, color=c, lw=0.9)
+        axs[0].text(0.01, y, t, transform=axs[0].transAxes, color=c, fontsize=9, va="top" if y > 0.5 else "bottom")
     axs[0].axhline(0, color="#b9b0d4", lw=0.8)
     axs[0].set_title("Anchor binding profiles")
     axs[0].set_ylabel("Signal (scaled, a.u.)")
     genomic_x(axs[0], geom)
-    axs[0].legend()
     if has_loops:
         kb = geom.beads_to_bp(lo.loop_lengths) / 1e3
         axs[1].hist(kb, bins=25, color=VIOLET, alpha=0.75, edgecolor="white")
-        axs[1].axvline(kb.mean(), color=ORANGE, ls="--", label=f"mean {kb.mean():.0f} kb")
+        axs[1].axvline(kb.mean(), color=ORANGE, ls="--", lw=1.5, label=f"mean {kb.mean():.0f} kb")
         axs[1].set(title="Loop lengths in the input", xlabel="Loop length (kb)", ylabel="Number of loops")
         axs[1].legend()
     save_figure(fig, "binding_profiles")

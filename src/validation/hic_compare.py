@@ -3,7 +3,7 @@ import numpy as np
 
 from scipy.ndimage import gaussian_filter1d
 
-from analysis.maps import compartment_from_hic, STATE_SMOOTH, fill_masked, insulation_score, observed_over_expected, pc1, ps_curve
+from analysis.maps import compartment_from_hic, oe_correlation, STATE_SMOOTH, fill_masked, insulation_score, observed_over_expected, pc1, ps_curve
 from validation.compare import boundaries, boundary_overlap
 
 NAN = float("nan")
@@ -13,6 +13,7 @@ METRICS = [("log-contact r", "r_log", "Pearson r of log contacts over all bead p
            ("P(s) r", "r_ps", "Pearson r of the log contact decay with distance"),
            ("insulation r", "r_ins", "Pearson r of the insulation scores (domain boundaries)"),
            ("boundary F1", "f1", "TAD boundaries found in both maps"),
+           ("correlation matrix r", "r_cm", "Pearson r between the two O/E correlation matrices (which beads share a contact pattern: compartments and domains)"),
            ("compartment r", "r_pc", "Pearson r of the Hi-C leading eigenvector (A/B) with the average Potts state when the epigenetic model is on (B = negative), else with the simulated eigenvector (sign free)")]
 
 
@@ -53,11 +54,14 @@ def compare_hic(model, hic, window: int = 5, tol: int = 2, state=None) -> dict:
     b_h, b_m = boundaries(ins_h), boundaries(ins_m)
     rec, prec = boundary_overlap(b_h, b_m, tol), boundary_overlap(b_m, b_h, tol)
     f1 = 2 * rec * prec / (rec + prec) if rec + prec > 0 else 0.0
+    c_h, c_m = oe_correlation(h), oe_correlation(m)
+    iu = (sep >= 2) & (np.triu(np.ones((n, n)), 1) > 0)
+    row_r = np.array([_r(np.delete(c_h[i], i), np.delete(c_m[i], i)) for i in range(n)])      # per bead: do its two contact patterns agree?
     p_h = compartment_from_hic(hic)
     st = None if state is None else gaussian_filter1d(np.asarray(state, float), STATE_SMOOTH, mode="nearest")      # sliding-window smoothing
     p_m, r_pc = (st, _r(p_h, st)) if st is not None else (pc1(m)[0], abs(_r(p_h, pc1(m)[0])))
     return dict(r_log=_r(np.log10(h[ok]), np.log10(m[ok])), r_oe=_r(np.log2(oe_h[ok] + 1e-3), np.log2(oe_m[ok] + 1e-3)),
-                scc=_scc(np.where(seen, h, np.nan), m), r_ps=_r(np.log(ps_h), np.log(ps_m)), r_ins=_r(ins_h, ins_m),
+                scc=_scc(np.where(seen, h, np.nan), m), r_cm=_r(c_h[iu & seen], c_m[iu & seen]), corr_h=c_h, corr_m=c_m, row_r=np.where(seen.any(0), row_r, np.nan), r_ps=_r(np.log(ps_h), np.log(ps_m)), r_ins=_r(ins_h, ins_m),
                 f1=float(f1) if np.isfinite(f1) else NAN, r_pc=r_pc, n_pairs=int(ok.sum()),
                 ps_data=ps_h, ps_model=ps_m, ins_data=ins_h, ins_model=ins_m, b_data=b_h + window, b_model=b_m + window,
                 pc_data=p_h, pc_model=p_m * (1 if state is not None or _r(p_h, p_m) >= 0 else -1), window=window, h=h, m=m)

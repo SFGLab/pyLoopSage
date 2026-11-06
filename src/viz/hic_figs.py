@@ -2,7 +2,7 @@
 import numpy as np
 
 from validation.hic_compare import METRICS
-from viz.theme import EXP_COLOR, heatmap, make_fig, MUTED, save_figure, SIM_COLOR, VIOLET
+from viz.theme import EXP_COLOR, genomic_x, heatmap, make_fig, MUTED, save_figure, SIM_COLOR, VIOLET
 
 
 def _norm(m):
@@ -62,8 +62,23 @@ def hic_validation_figure(r, geom, source):
     save_figure(fig, "hic_validation")
 
 
+def hic_correlation_figure(r, geom, source):
+    """Correlation matrices of the O/E maps: Hi-C (upper) against the simulation (lower), and how well each bead's contact pattern agrees."""
+    fig, ax = make_fig(1, 2, cell=(6.0, 4.6), width_ratios=[1, 1.15])
+    comb = np.triu(r["corr_h"], 1) + np.tril(r["corr_m"], -1)
+    heatmap(fig, ax[0], comb, geom, f"Hi-C (upper) vs {source} (lower)", "Correlation of contact patterns", diverging=True, vmax=0.6)
+    x = geom.axis_mb()
+    ax[1].fill_between(x, r["row_r"], 0, color=VIOLET, alpha=0.25, lw=0)
+    ax[1].plot(x, r["row_r"], color=VIOLET, lw=1.8)
+    ax[1].axhline(0, color=MUTED, lw=0.9)
+    ax[1].axhline(np.nanmean(r["row_r"]), color=EXP_COLOR, lw=1.2, ls="--", label=f"mean r = {np.nanmean(r['row_r']):.2f}")
+    ax[1].set(title="Where the contact patterns agree", ylabel="r between the two rows of a bead", xlabel=f"Position on {geom.chrom} (Mb)", xlim=(x[0], x[-1]), ylim=(-1, 1))
+    ax[1].legend(frameon=False, fontsize=8, loc="lower right")
+    save_figure(fig, "hic_correlation")
+
+
 def hic_scores_figure(results):
-    """Bars of the seven agreement scores for every simulated map (higher is better)."""
+    """Bars of the agreement scores for every simulated map (higher is better)."""
     fig, ax = make_fig(1, 1, cell=(8.0, 4.2))
     a, names = ax[0], list(results)
     h = 0.8 / len(names)

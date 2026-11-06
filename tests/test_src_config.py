@@ -51,3 +51,16 @@ def test_missing_input_file_exits(tmp_path):
 
 def test_defaults_documented():
     assert all(p.help for p in PARAMS) and BY_NAME["run_md"].flag == "--run-MD"
+
+
+def test_binding_mode_replaces_contrastive_binding(tmp_path):
+    bedpe = tmp_path / "loops.bedpe"
+    bedpe.write_text("chr1\t1000\t1100\tchr1\t1500\t1600\t5\n")
+    base = ["-f", str(bedpe), "-r", "chr1:1000-2000"]
+    assert load_config(base).binding_mode == "preferential"
+    assert load_config(base + ["--binding-mode", "contrastive"]).binding_mode == "contrastive"
+    old = load_config(base + ["--set", "contrastive_binding=true"])                 # old key still works and says so
+    assert old.binding_mode == "contrastive" and any("binding_mode" in n for n in old.notes)
+    ini = tmp_path / "old.ini"
+    ini.write_text("[energy]\ncontrastive_binding = False\n")
+    assert load_config(base + ["-c", str(ini)]).binding_mode == "preferential"

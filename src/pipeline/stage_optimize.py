@@ -134,7 +134,7 @@ def describe(ctx):
                 ["Binding coefficient b", s["b"], b["b"], ""], ["Initial temperature", s["t_init"], b["t_init"], "a.u."],
                 ["Final temperature", s["t_final"], b["t_final"], "a.u. (Annealing)"], ["Loss (long check run)", s["loss"], b["loss"], "0 = perfect"],
                 ["Evaluations", "", res.evaluations, "short MC runs"], ["Converged", "", "yes" if res.converged else "no (budget reached)", ""], ["Search time", "", res.seconds, "s"]],
-               "Loss = weighted sum of the distance of the leading eigenvectors, the decay mismatch, the distance of the insulation profiles and the loop-size shortfall (weights set by the region size), against the " + (f"Hi-C map denoised over {ctx.cfg.hic_denoise:g} beads (decay, insulation and O/E taken from it). " if ctx.hic is not None
+               "Loss = weighted sum of the distance of the leading eigenvectors, the decay mismatch, the distance of the insulation profiles and the loop-size mismatch (weights set by the region size), against the " + (f"Hi-C map denoised over {ctx.cfg.hic_denoise:g} beads (decay, insulation and O/E taken from it). " if ctx.hic is not None
                                                                                                           else f"input loops drawn like the simulated ones (with communication between loops) and smoothed over {ctx.cfg.target_smooth:g} beads. ")
                + verdict(res) + " The Monte Carlo stage then runs all its steps with the optimized values.", "optimizer")
     W = loss_weights(ctx.geom.length_bp)
@@ -149,7 +149,7 @@ def describe(ctx):
     emit_table("Optimizer loss terms of the loop-extrusion stage (long check run)" if res.potts else "Optimizer loss terms (long check run)", ["Term", "Weight", "Start", "Optimized", "Meaning"],
                [["Eigenvector distance", W[0], s["parts"][0], b["parts"][0], "1 - cosine between the absolute values of the leading eigenvectors of the O/E correlation (0-1)"], ["Decay mismatch", W[1], s["parts"][1], b["parts"][1], "shape of P(s)"],
                 ["Insulation distance", W[2], s["parts"][2], b["parts"][2], "mean difference of the insulation profiles scaled to 0-1 (domain boundaries)"],
-                ["Loop-size shortfall", W[3], s["parts"][3], b["parts"][3], "mean simulated loop shorter than the mean input loop (log2)"], ["Total (weighted)", "", s["loss"], b["loss"], ""]],
+                ["Loop-size mismatch", W[3], s["parts"][3], b["parts"][3], "median simulated loop differs from the median input loop by more than a factor 2 (log2)"], ["Total (weighted)", "", s["loss"], b["loss"], ""]],
                "Each term is 0 for a perfect match. The weights of the eigenvectors and of the insulation depend on the size of the region: the insulation dominates for TAD-scale regions, the eigenvectors for regions that span compartments, and they are equal in between (with the Potts model on the eigenvector weight is 0 here: PC1 is fitted in stage 2). The loop-size term keeps the loops from collapsing to microscopic sizes when the input loops are sparse.", "optimizer")
     top = tr[np.argsort(tr[:, 1])[:8]]
     hit = [r[1] for r in tr if (int(r[2]), r[3], r[4], r[5]) == (b["K"], b["f"], b["b"], b["T"])]

@@ -19,6 +19,9 @@ from settings.schema import BY_NAME, DEPRECATED, PARAMS, SECTIONS
 
 # ---- Convert raw strings (ini / CLI) into typed values ---------------------
 
+# old key -> (new key, converter of the old value): old config files keep working
+_RENAMED = {"contrastive_binding": ("binding_mode", lambda v: "contrastive" if str(v).strip().lower() in _TRUE else "preferential")}
+
 _NUM = re.compile(r"^\s*([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)\s*([A-Za-z]*)\s*$")
 _TRUE, _FALSE = {"true", "1", "y", "yes", "on"}, {"false", "0", "n", "no", "off"}
 
@@ -211,8 +214,12 @@ class Config(SimpleNamespace):
 
 
 def _apply(values, source, raw, origin, notes):
-    for key, val in raw.items():
-        key = key.lower()
+    for raw_key, val in raw.items():
+        key = raw_key.lower()
+        if key in _RENAMED:
+            key, conv = _RENAMED[key]
+            notes.append(f"'{raw_key.lower()}' was replaced by '{key}'.")
+            val = conv(val)
         if key in DEPRECATED:
             notes.append(f"'{key}' is no longer used and was ignored.")
         elif key not in BY_NAME:

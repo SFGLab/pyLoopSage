@@ -190,6 +190,11 @@ class MapFeatures:
     slope: float               # log-log slope of P(s)
 
 
+def oe_correlation(mat) -> np.ndarray:
+    """Pearson correlation matrix of the rows of ln(O/E + 0.2): which beads have the same contact pattern (the matrix behind PC1; compartments show as a checkerboard)."""
+    return np.nan_to_num(np.corrcoef(np.log(observed_over_expected(np.asarray(mat, float)) + 0.2)))
+
+
 def observed_over_expected(mat) -> np.ndarray:
     """Divide every diagonal by its mean."""
     n = mat.shape[0]

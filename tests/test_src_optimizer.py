@@ -98,7 +98,7 @@ def test_optimize_flag_changes_the_production_parameters(tiny_args):
 @pytest.mark.parametrize("mode", ["contrastive", "2D loop map", "preferential loading"])
 def test_optimizer_works_with_every_binding_mode(tiny_args, tmp_path, mode):
     """Contrastive binding, the 2D loop map and preferential LEF loading all run through --optimize and never worsen the start."""
-    extra = {"contrastive": ["--set", "contrastive_binding=true"], "2D loop map": ["--set", "data_loss_mode=1"]}.get(mode)
+    extra = {"contrastive": ["--binding-mode", "contrastive"], "2D loop map": ["--set", "data_loss_mode=1"]}.get(mode)
     if extra is None:
         pyBigWig = pytest.importorskip("pyBigWig")
         bw = str(tmp_path / "lef.bw")
@@ -163,3 +163,13 @@ def test_potts_run_fits_the_loop_stage_first_and_then_the_potts_stage(tiny_args,
     assert r.potts and r.best["parts"][0] == 0.0                   # stage 1 has no eigenvector term; stage 2 has it, weighted
     assert 0.1 <= r.potts["best"]["p"] <= 0.9 and r.potts["best"]["loss"] <= r.potts["start"]["loss"] + 1e-9
     assert ctx.cfg.epi_coeff == r.potts["best"]["epi"]
+
+
+def test_size_mismatch_is_two_sided_and_uses_the_median():
+    from types import SimpleNamespace
+    from optimizer.objective import size_mismatch
+    loops = SimpleNamespace(loop_lengths=np.r_[np.full(8, 10), [500, 500]])               # heavy tail: mean 109, median 10
+    mc = lambda length: SimpleNamespace(Ms=np.zeros((1, 50)), Ns=np.full((1, 50), float(length)), production=lambda a: a)
+    assert size_mismatch(mc(10), loops) == 0.0 and size_mismatch(mc(18), loops) == 0.0   # within a factor 2
+    assert size_mismatch(mc(2), loops) > 1.0                                                # microscopic loops
+    assert size_mismatch(mc(80), loops) > 1.0                                               # stacked loops

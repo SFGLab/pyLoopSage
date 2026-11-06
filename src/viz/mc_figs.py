@@ -205,6 +205,16 @@ def lef_trajectories(res, geom, max_lefs=120):
     cb = fig.colorbar(sm, ax=ax, shrink=0.8, pad=0.01)
     cb.set_label("LEF index")
     cb.outline.set_visible(False)
+    T = np.asarray(res.Ts, float)                                          # temperature strip under the x axis
+    strip = ax.inset_axes([0, -0.095, 1, 0.03])
+    strip.imshow(T[None, :], aspect="auto", cmap="Purples", extent=[0, x[-1], 0, 1], vmin=0, vmax=max(T.max(), 1e-9))
+    strip.set(xlim=(0, x[-1]), yticks=[], xticks=[])
+    for sp in strip.spines.values():
+        sp.set_visible(False)
+    strip.text(-0.008, 0.5, "T", transform=strip.transAxes, ha="right", va="center", color=MUTED, fontsize=9)
+    strip.text(0.004, 0.5, f"{T[0]:.1f}", transform=strip.transAxes, ha="left", va="center", color="white" if T[0] > 0.5 * T.max() else MUTED, fontsize=8)
+    strip.text(0.996, 0.5, f"{T[-1]:.1f}", transform=strip.transAxes, ha="right", va="center", color="white" if T[-1] > 0.5 * T.max() else MUTED, fontsize=8)
+    ax.xaxis.labelpad = 24
     save_figure(fig, "lef_trajectories")
 
 
@@ -260,16 +270,64 @@ def occupancy_lengths(res, geom, inputs):
     save_figure(fig, "occupancy_lengths")
 
 
-def loop_joint(res, geom):
-    """Joint density of left and right leg positions."""
-    fig, axs = make_fig(1, 1, cell=(5.8, 5))
-    f = lambda b: (geom.start + b * geom.bp_per_bead) / 1e6
-    hb = axs[0].hexbin(f(res.production(res.Ms).ravel()), f(res.production(res.Ns).ravel()),
-                       gridsize=45, cmap=HEAT, mincnt=1, bins="log")
-    cb = fig.colorbar(hb, ax=axs[0], shrink=0.82)
-    cb.set_label("Snapshots x LEFs (log count)")
-    axs[0].set(title="Where loops start and end", xlabel=f"Left leg on {geom.chrom} (Mb)", ylabel=f"Right leg on {geom.chrom} (Mb)")
-    save_figure(fig, "loop_joint")
+def _input_loops(inputs, geom):
+    """(left, right) beads of the input loops (BEDPE only; empty otherwise)."""
+    lo = getattr(inputs, "loops", None)
+    if lo is None or lo.fmt != "bedpe":
+        return np.zeros((0, 2), int)
+    return np.argwhere(np.triu(lo.J, 2) > 0)
+
+
+def loop_landscape(res, geom, inputs=None, max_arcs=250):
+    """Top: arcs of the simulated loops over all snapshots (above; darker = present more often) and of the input loops (below), arc height = loop length.
+    Bottom: loop length against loop centre over all snapshots; black dots are the input loops."""
+    mb = lambda b: (geom.start + np.asarray(b) * geom.bp_per_bead) / 1e6
+    ms, ns = res.production(res.Ms), res.production(res.Ns)
+    inp = _input_loops(inputs, geom)
+    fig, ax = make_mosaic([["arc"], ["len"]], size=(9.5, 8.2), height_ratios=[1.25, 1])
+    t = np.linspace(0, 1, 40)
+
+    def arcs(a, pairs, sign, color, lw, alpha):
+        for l, r in pairs:
+            x0, x1 = mb(l), mb(r)
+            a.plot(x0 + (x1 - x0) * t, sign * (x1 - x0) * np.sin(np.pi * t), color=color, lw=lw, alpha=alpha)
+
+    allp = np.stack([ms.ravel(), ns.ravel()], axis=1)
+    allp = allp[allp[:, 1] > allp[:, 0]]
+    pairs, cnt = np.unique(allp, axis=0, return_counts=True)             # each distinct loop and how often it occurs
+    top = np.argsort(cnt)[::-1][:max_arcs]
+    freq = cnt[top] / len(ms)                                           # fraction of snapshots containing the loop
+    for i in np.argsort(freq):                                          # frequent loops drawn last, on top
+        arcs(ax["arc"], pairs[top[i]][None], 1, VIOLET, 1.1, float(np.clip(0.15 + freq[i], 0.15, 0.9)))
+    arcs(ax["arc"], inp[np.random.default_rng(0).permutation(len(inp))[:max_arcs]], -1, INK, 0.8, 0.45)
+    ax["arc"].axhline(0, color=INK, lw=0.9)
+    n_in = f"{len(inp)} input loops" if len(inp) else "no input loops"
+    ax["arc"].set(xlim=(mb(0), mb(geom.n_beads)), title=f"Simulated loops over {len(ms)} snapshots (above; darker = more frequent) and {n_in} (below)", ylabel="Loop length (Mb, arc height)", xlabel=f"Position on {geom.chrom} (Mb)")
+    ax["arc"].yaxis.set_major_formatter(lambda v, _: f"{abs(v):g}")
+    # bottom: loop length along the region, as a median and bands over windows of loop centres (loop lengths are whole beads, so a cloud of points looks like rows)
+    L, R = ms.ravel(), ns.ravel()
+    ok = R > L
+    mid, ln = mb((L[ok] + R[ok]) / 2), geom.beads_to_bp(R[ok] - L[ok]) / 1e3
+    edges = np.linspace(mb(0), mb(geom.n_beads), max(int(geom.length_bp / 5e5), 8) + 1)
+    k = np.digitize(mid, edges) - 1
+    cx, q = [], []
+    for b in range(len(edges) - 1):
+        v = ln[k == b]
+        if len(v) >= 30:
+            cx.append((edges[b] + edges[b + 1]) / 2)
+            q.append(np.percentile(v, [10, 25, 50, 75, 90]))
+    cx, q = np.array(cx), np.array(q)
+    a = ax["len"]
+    if len(cx) > 3:
+        xs = np.linspace(cx[0], cx[-1], 200)
+        q = np.exp(np.array([np.interp(xs, cx, gaussian_filter1d(np.log(q[:, c]), 1.0, mode="nearest")) for c in range(5)]).T)          # smooth on the log scale
+        a.fill_between(xs, q[:, 1], q[:, 3], color=VIOLET, alpha=0.25, lw=0, label="middle 50% of simulated loops")
+        a.plot(xs, q[:, 2], color=VIOLET, lw=2.4, label="median of simulated loops")
+    if len(inp):
+        a.scatter(mb((inp[:, 0] + inp[:, 1]) / 2), geom.beads_to_bp(inp[:, 1] - inp[:, 0]) / 1e3, s=12, color=INK, alpha=0.6, zorder=3, label="input loops")
+    a.set(yscale="log", title="Loop length along the region", xlabel=f"Loop centre on {geom.chrom} (Mb)", ylabel="Loop length (kb)", xlim=(mb(0), mb(geom.n_beads)))
+    a.legend(frameon=False, fontsize=8, loc="upper right")
+    save_figure(fig, "loop_landscape")
 
 
 def mc_heatmap(mat, geom):
