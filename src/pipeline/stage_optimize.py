@@ -13,11 +13,13 @@ import numpy as np
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from common.genome import Geometry
 from common.runtime import fun_bar
 from common.utils import emit_table
 from logger import get_logger
 from optimizer.nelder_mead import ask_keep_best, optimize, optimize_potts, OptResult
 from analysis.maps import compartment_from_hic
+from preproc.loader import load_inputs
 from optimizer.objective import loss_parts, loss_weights, Objective, PottsObjective, target_coverage, target_map
 from reporting.report import REGISTRY
 from settings.loader import write_ini
@@ -39,29 +41,54 @@ def load(path) -> OptResult:
     return OptResult(**json.loads(Path(path).read_text()))
 
 
+def pick_window(inputs, size: int) -> int:
+    """First bead of the `size`-bead window with the most loop anchors."""
+    a = np.asarray(inputs.loops.L, float) + np.asarray(inputs.loops.R, float)
+    return int(np.argmax(np.convolve(a, np.ones(size), "valid")))
+
+
+def rescale_K(res: OptResult, s: float) -> None:
+    """Window -> full region: the number of LEFs scales with the length (the LEF density is what is fitted)."""
+    for d in (res.start, res.best):
+        d["K"] = max(int(round(d["K"] * s)), 1)
+    res.bounds["K"] = [int(round(v * s)) for v in res.bounds["K"]]
+    for row in res.trace:
+        row[2] = row[2] * s
+
+
 def compute(ctx):
     cfg, g = ctx.cfg, ctx.geom
-    hic = ctx.hic
+    hic, inputs = ctx.hic, ctx.inputs
+    s = 1.0                                                                          # window length / region length
+    if g.n_beads > cfg.opt_max_beads:                                                # big region: the search runs on the densest window only
+        size, bp = int(cfg.opt_max_beads), g.bp_per_bead
+        i0 = pick_window(inputs, size)
+        g = Geometry(g.chrom, g.start + i0 * bp, g.start + (i0 + size) * bp, size)
+        inputs, s = load_inputs(cfg, g, ctx.loops_file), size / ctx.geom.n_beads
+        hic = None if hic is None else (hic[0][i0:i0 + size, i0:i0 + size], hic[1])
+        cfg = copy.copy(cfg)
+        cfg.n_lef2 = int(round(cfg.n_lef2 * s))
+        log.info("Large region (%d beads): the optimizer works on the %d-bead window %s with most loops and scales the number of LEFs back (--opt-max-beads).", ctx.geom.n_beads, size, g.label)
     if hic is None and detect_format(ctx.loops_file) != "bedpe":
         log.warning("--optimize needs a BEDPE loop file or a Hi-C map (--hic) as the target: skipped.")
         return None
     if hic is not None:
         log.info("Optimizer target: Hi-C map (%s, %s bp, %s normalisation)", hic[1]["file"], f"{hic[1]['resolution']:,}", hic[1]["norm"])
-    k0 = cfg.n_lef or max(ctx.inputs.loops.n_sites // 2, 1)
+    k0 = max(int(round(ctx.cfg.n_lef * s)), 1) if ctx.cfg.n_lef else max(inputs.loops.n_sites // 2, 1)
     if cfg.opt_interactive and sys.stdin.isatty():
         log.info("Press Enter at any time to see the best parameters so far and choose whether to keep them and stop the search.")
     log.info("Optimizer start: n_lef=%d f=%.3g b=%.3g, temperature %.3g -> %.3g; %d evaluations of %d MC steps", k0, cfg.folding_coeff, cfg.bind_coeff, cfg.t_init, cfg.t_final, cfg.opt_evals, cfg.opt_steps)
     log.info("Loss weights (eigenvectors, decay, insulation, loop size) for a %.3g Mb region: %s", g.length_bp / 1e6, ", ".join(f"{w:.2f}" for w in loss_weights(g.length_bp)))
     seed = (cfg.seed if cfg.seed is not None else 0) + 100_000                       # never the seed of the production run
-    ref = compartment_from_hic(hic[0], smooth=cfg.track_smooth) if hic is not None else ctx.inputs.comp          # A/B reference for the Potts model
+    ref = compartment_from_hic(hic[0], smooth=cfg.track_smooth) if hic is not None else inputs.comp          # A/B reference for the Potts model
     two = float(cfg.epi_coeff) > 0 and ref is not None                                # Potts on with an A/B reference: two stages
     if float(cfg.epi_coeff) > 0 and ref is None:
         log.warning("Potts model on but no A/B reference (no compartment track or Hi-C map): epi_coeff is not optimized.")
     if two:
         log.info("Potts model on: stage 1 fits the loop-extrusion parameters (insulation, decay, loop size), stage 2 fits epi_coeff and p_epigenetic (PC1 vs <s> balanced with the TAD terms).")
-    target = target_map(cfg, ctx.inputs, g, ctx.loops_file, None if hic is None else hic[0])
+    target = target_map(cfg, inputs, g, ctx.loops_file, None if hic is None else hic[0])
     cover = target_coverage(g, ctx.loops_file) if hic is None else None
-    make = lambda cls, c, sd, **kw: cls(c, ctx.inputs, g, target, cfg.opt_steps, sd, ref, sparse=hic is None, cover=cover, **kw)
+    make = lambda cls, c, sd, **kw: cls(c, inputs, g, target, cfg.opt_steps, sd, ref, sparse=hic is None, cover=cover, **kw)
     obj = make(Objective, cfg, seed, loops_only=two)
     with fun_bar("Optimizer", cfg.opt_evals + 4) as tick:                             # search evaluations + 3 candidate checks + the start check
         res = optimize(obj, k0, cfg.folding_coeff, cfg.bind_coeff, g.n_beads, cfg.opt_evals, tick=tick,
@@ -72,15 +99,18 @@ def compute(ctx):
         d["t_init"], d["t_final"] = cfg.t_init * d["T"], cfg.t_final * d["T"]
     log.step(verdict(res))
     if two:
-        res.potts = potts_stage(ctx, res, lambda c: make(PottsObjective, c, seed + 50_000))
+        res.potts = potts_stage(ctx, res, lambda c: make(PottsObjective, c, seed + 50_000), s)
+    if s < 1:
+        rescale_K(res, 1 / s)
     return res
 
 
-def potts_stage(ctx, res, make) -> dict:
+def potts_stage(ctx, res, make, s: float = 1.0) -> dict:
     """Stage 2: epi_coeff and p_epigenetic, with the loop-extrusion parameters of stage 1 fixed; the full weighted loss balances PC1 with the TAD terms."""
     cfg, b = ctx.cfg, res.best
     c = copy.copy(cfg)
     c.n_lef, c.folding_coeff, c.bind_coeff, c.t_init, c.t_final = b["K"], b["f"], b["b"], b["t_init"], b["t_final"]
+    c.n_lef2 = int(round(cfg.n_lef2 * s))
     evals = max(10, cfg.opt_evals // 3)
     log.info("Potts stage: start epi_coeff=%.3g p_epigenetic=%.3g; %d evaluations of %d MC steps", cfg.epi_coeff, cfg.p_epigenetic, evals, cfg.opt_steps)
     with fun_bar("Optimizer (Potts)", evals + 4) as tick:

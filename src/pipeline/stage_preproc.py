@@ -118,7 +118,7 @@ def _input_use(ctx):
     dyn = str(cfg.epigenetic_mode).lower() == "dynamic"
     rows = [["Anchor profiles L, R", "USED: data energy at the left / right legs" if not two_d else "not used (computed for display)", proc],
             ["Loop map J_loss", "USED: data energy of every loop (m, n)" if two_d else "not used (computed for display)", proc_loss if two_d else ""],
-            *([["Loop coverage", "USED (contrastive): loops are rewarded for spanning covered beads, penalised on loop-free ones", "loops spanning each bead / mean - 1, clipped to [-1, 1]"]] if cfg.binding_mode == "contrastive" else []),
+            *([["Loop coverage", "USED (contrastive): loops are rewarded for spanning covered beads, penalised on loop-free ones", "-1 on loop-free beads (coverage < 5% of the mean), else (loops spanning the bead / mean - 1) clipped to [0, 1]"]] if cfg.binding_mode == "contrastive" else []),
             ["Loop adjacency J", ("USED: epigenetic coupling" + (" (replaced by the current LEF loops in 'dynamic' mode)" if dyn else "")) if epi else "not used (epi_coeff = 0)", "binary, never smoothed"]]
     emit_table("What the simulation uses as input", ["Input", "Role in the simulation", "Processing"], rows,
                "data_loss_mode = %d selects %s. J_loss is the loop strength map; in the 2D mode it is a smooth landscape that the LEF legs move on." % (int(cfg.data_loss_mode), "the 2D loop map J_loss" if two_d else "the 1D profiles L and R"), "input")

@@ -45,7 +45,7 @@ $$
 E_{\mathrm{bind}} = b\,c_b\sum_i\Big[\big(L_{m_i}+R_{n_i}\big)+\frac{1}{\bar\ell}\sum_{k=m_i}^{n_i-1}\hat c_k\Big],
 $$
 
-where $\hat c_k\in[-1,1]$ is the rescaled coverage of bead $k$ by the input loops (see [Preprocessing](preprocessing.md#preferential-and-contrastive-binding)) and $\bar\ell$ is the mean input loop length, which keeps the second part on the scale of one anchor. Since $c_b<0$, a loop is rewarded for spanning beads with $\hat c>0$ and penalised for spanning loop-free beads ($\hat c<0$). The inner sum is a difference of prefix sums, $P_{n_i}-P_{m_i}$ with $P_j=\sum_{k<j}\hat c_k$, so a move costs $O(1)$. In preferential mode only the first part is used.
+where $\hat c_k\in[-1,1]$ is the coverage score of bead $k$ (−1 only where the input has no loops, 0 where it has some, up to +1 where it has many) (see [Preprocessing](preprocessing.md#preferential-and-contrastive-binding)) and $\bar\ell$ is the mean input loop length, which keeps the second part on the scale of one anchor. Since $c_b<0$, a loop is rewarded for spanning beads with $\hat c>0$ and penalised for spanning loop-free beads ($\hat c=-1$). The inner sum is a difference of prefix sums, $P_{n_i}-P_{m_i}$ with $P_j=\sum_{k<j}\hat c_k$, so a move costs $O(1)$. In preferential mode only the first part is used.
 
 ### Crossing: loops should not cross
 

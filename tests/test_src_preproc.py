@@ -65,4 +65,11 @@ def test_contrastive_adds_loop_coverage(tiny_args):
     assert pref.cover is None and cont.cover is not None
     assert cont.cover.min() >= -1 and cont.cover.max() <= 1
     assert cont.cover.min() < 0 < cont.cover.max()          # loop-free beads negative, covered beads positive
+    assert set(np.unique(cont.cover[cont.cover < 0])) == {-1.0}   # only loop-free beads are penalised
     assert np.allclose(pref.L, cont.L)                      # the anchor profiles are the same in both modes
+
+
+def test_contrast_cover_penalises_only_loop_free_beads():
+    from preproc.readers import contrast_cover
+    c = contrast_cover(np.array([0, 0, 1, 2, 5, 10, 10.0]))      # mean 4: beads with 1 or 2 loops are sparse, not empty
+    assert list(c[:2]) == [-1, -1] and (c[2:] >= 0).all() and c[-1] == 1.0

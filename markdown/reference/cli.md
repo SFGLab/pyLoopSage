@@ -130,7 +130,8 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | `--opt-early-stop` / `--no-opt-early-stop` | true / false | `True` | Stop the optimizer early when the loss no longer improves |
 | `--opt-interactive` / `--no-opt-interactive` | true / false | `True` | Pressing Enter during the optimizer shows the best parameters so far and asks whether to keep them and stop (only in a terminal) |
 | `--opt-patience` | integer (evaluations) | `20` | Early stopping: evaluations without a real improvement (see opt_min_gain) before the optimizer stops |
-| `--opt-steps` | integer (MC steps) | `20000` | Monte Carlo steps of one evaluation (the final candidate check runs 3x longer) |
+| `--opt-steps` | integer (MC steps) | `4000` | Monte Carlo steps of one optimizer evaluation (each step is a sweep over all LEFs; 25% burn-in, 200 snapshots; the final candidate check runs 3x longer) |
+| `--opt-max-beads` | integer (beads) | `1500` | Largest region the optimizer simulates: bigger regions are optimized on the window of this many beads with most loops, and the number of LEFs is scaled back to the full region |
 | `--target-smooth` | number (beads) | `0.8` | Smoothing of the optimizer target built from the input loops, so that the sparse loops look like a Hi-C map (0 = none) |
 | `--hic-denoise` | number (beads) | `1.0` | Denoising of the Hi-C target of the optimizer, to bring out the TAD pattern (0 = none); validation always uses the raw map |
 

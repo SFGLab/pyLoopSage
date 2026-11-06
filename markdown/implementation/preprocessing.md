@@ -77,10 +77,10 @@ binding_mode = preferential      # or: contrastive          (CLI: --binding-mode
 **Contrastive binding.** The anchor terms are the same, and a second term is added that looks at the *inside* of a loop. For every bead we count how many input loops span it (its *coverage*) and rescale it,
 
 $$
-\hat c_k=\mathrm{clip}\!\left(\frac{c_k}{\bar c}-1,\,-1,\,1\right),
+\hat c_k=\begin{cases}-1 & c_k<0.05\,\bar c\quad\text{(loop free)},\\[2pt] \mathrm{clip}\!\left(\dfrac{c_k}{\bar c}-1,\,0,\,1\right) & \text{otherwise,}\end{cases}
 $$
 
-where $c_k$ is the coverage of bead $k$ and $\bar c$ its mean. So $\hat c_k=-1$ on a bead that no input loop spans, $0$ at the average coverage, and $+1$ at twice the average or more. A simulated loop is rewarded for every bead inside it with $\hat c>0$ and penalised for every bead with $\hat c<0$: loops over loop-free regions are discouraged, loops over well covered regions are favoured. It enters the binding energy, see [Monte Carlo](monte-carlo.md#binding-legs-like-anchors).
+where $c_k$ is the coverage of bead $k$ and $\bar c$ its mean. So $\hat c_k=-1$ only on a bead that (practically) no input loop spans, $0$ on every covered bead up to the average coverage, and up to $+1$ at twice the average or more. A simulated loop is penalised only for beads inside it that are really loop free, and rewarded for beads that are covered more than average: regions with few loops but some loops cost nothing. It enters the binding energy, see [Monte Carlo](monte-carlo.md#binding-legs-like-anchors).
 
 !!! note "Why not simply centre the profiles?"
     The obvious idea is to subtract the mean from $L$ and $R$, so that empty beads get a negative value. It does nothing. Every extruder has exactly two legs, one left and one right, so a constant shift of $L$ or $R$ adds the same amount to every state and cancels in the Metropolis rule. Only the *shape* of the profile matters. The coverage term works because it counts the beads *between* the legs, and that number does change from one loop to another. Contrastive mode needs loops (a BEDPE file); with peaks only it changes nothing, and LoopSage warns about it.

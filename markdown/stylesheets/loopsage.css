@@ -24,7 +24,7 @@
 
 /* header: white bar with the logo, thin violet rule; tabs in black */
 .md-header { background: #fff; color: var(--ls-ink); box-shadow: none; border-bottom: 3px solid var(--ls-violet); }
-.md-header__button.md-logo img { height: 1.9rem; width: auto; }
+.md-header__button.md-logo img { height: 2.1rem; width: auto; }
 .md-header__title, .md-header .md-icon { color: var(--ls-ink); }
 .md-search__input, .md-search__input::placeholder { color: var(--ls-ink); }
 .md-search__form { background: var(--ls-soft); }

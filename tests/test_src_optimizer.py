@@ -188,3 +188,10 @@ def test_user_can_stop_the_search_and_keep_the_best(monkeypatch):
     res = nm.optimize(Obj(), 10, 0.5, 0.5, 100, max_evals=40, ask=lambda tr, p=None: asked.append(len(tr)) or len(tr) >= 4)
     assert res.by_user and res.evaluations == 4 and asked == [1, 2, 3, 4]
     assert res.best["loss"] <= res.start["loss"]
+
+
+def test_big_region_is_optimized_on_a_window_and_k_is_scaled_back(tiny_args):
+    ctx = run_pipeline(load_config(tiny_args + ["--optimize", "--opt-evals", "4", "--opt-steps", "500", "--opt-max-beads", "60"]))
+    b = ctx.optimization.best
+    assert ctx.cfg.n_lef == b["K"] and b["K"] >= 1 and ctx.geom.n_beads == 120
+    assert ctx.optimization.bounds["K"][1] >= b["K"] >= ctx.optimization.bounds["K"][0]

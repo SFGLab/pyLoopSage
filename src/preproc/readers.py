@@ -29,7 +29,7 @@ class LoopData:
     loop_lengths: np.ndarray  # unique loop lengths, beads (empty for peak files)
     stats: dict = field(default_factory=dict)
     fmt: str = "bedpe"
-    cover: np.ndarray = None  # loop coverage per bead in [-1, 1], mean 0 (contrastive binding; None without loops)
+    cover: np.ndarray = None  # loop coverage score per bead in [-1, 1]: -1 loop free, 0 covered, up to +1 densely covered (contrastive binding; None without loops)
 
 
 def read_region_table(path, geom, paired: bool) -> pd.DataFrame:
@@ -71,10 +71,14 @@ def contrast(v) -> np.ndarray:
     return c / (np.max(np.abs(c)) + _EPS)
 
 
+EMPTY = 0.05      # a bead is loop free when its coverage is below this fraction of the mean coverage
+
+
 def contrast_cover(c) -> np.ndarray:
-    """Coverage relative to its mean, clipped to [-1, 1]: -1 where no loop spans, 0 at the average, +1 at twice the average or more."""
+    """Coverage score in [-1, 1]: -1 only on loop-free beads, 0 on covered beads up to the average, rising to +1 at twice the average or more."""
     c = np.asarray(c, float)
-    return np.clip(c / (np.mean(c) + _EPS) - 1.0, -1.0, 1.0)
+    m = np.mean(c) + _EPS
+    return np.where(c < EMPTY * m, -1.0, np.clip(c / m - 1.0, 0.0, 1.0))
 
 
 def loop_cover(x, y, w, n, sigma=0.0) -> np.ndarray:

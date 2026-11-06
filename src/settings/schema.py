@@ -145,7 +145,8 @@ PARAMS = (
     Param("opt_interactive", "optimizer", "bool", True, "Pressing Enter during the optimizer shows the best parameters so far and asks whether to keep them and stop (only in a terminal)", flag="--opt-interactive"),
     Param("opt_patience", "optimizer", "int", 20, "Early stopping: evaluations without a real improvement (see opt_min_gain) before the optimizer stops", "evaluations", flag="--opt-patience"),
     Param("opt_min_gain", "optimizer", "float", 0.01, "Early stopping: smallest drop of the best loss that counts as an improvement (the loss is about 1-4 at the start)"),
-    Param("opt_steps", "optimizer", "int", 20000, "Monte Carlo steps of one evaluation (the final candidate check runs 3x longer)", "MC steps", flag="--opt-steps"),
+    Param("opt_steps", "optimizer", "int", 4000, "Monte Carlo steps of one optimizer evaluation (each step is a sweep over all LEFs; 25% burn-in, 200 snapshots; the final candidate check runs 3x longer)", "MC steps", flag="--opt-steps"),
+    Param("opt_max_beads", "optimizer", "int", 1500, "Largest region the optimizer simulates: bigger regions are optimized on the window of this many beads with most loops, and the number of LEFs is scaled back to the full region", "beads", flag="--opt-max-beads"),
 
     # ---- topology (optional, advanced: nothing here runs by default) ----
     Param("detect_knots", "topology", "bool", False, "Optional linking analysis of loops in 3D (slow; off by default)", flag="--knots"),

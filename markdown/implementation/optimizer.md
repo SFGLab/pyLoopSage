@@ -143,7 +143,7 @@ Every evaluation of $L$ is a Monte Carlo run. So $L$ has no formula and no gradi
 
 The factors $1$, $2$, $\tfrac12$ and $\tfrac12$ are the standard choices (reflection, expansion, contraction, shrink). In LoopSage, $K$ is rounded to an integer and every point is clipped to the box before it is evaluated.
 
-Each evaluation is a *short run* of `opt_steps` steps (the first quarter is burn-in, one replica) with a *new* random seed, never that of the production run.
+Each evaluation is a *short run* of `opt_steps` steps (the first quarter is burn-in, one replica, 200 snapshots, so about 150 equilibrium configurations) with a *new* random seed, never that of the production run. One step is a sweep over all LEFs, so the cost of an evaluation grows with the number of LEFs and the loss maps with the square of the number of beads. For a big region (above `opt_max_beads`, 1500 beads by default; 20 000 or 50 000 beads are common) the optimizer therefore simulates only the window of that many beads that holds most loops, with the LEF density kept, and the fitted number of LEFs is scaled back to the whole region. The production run then uses your own `n_steps` and sampling frequency.
 
 ### When the search stops
 
@@ -174,7 +174,8 @@ loopsage -c config.ini --optimize --opt-evals 40 --opt-steps 20000 --hic sample.
 |---|---|---|
 | `optimize` (`--optimize`) | off | fit $K$, $f$, $b$ and the temperature before the run |
 | `opt_evals` (`--opt-evals`) | 60 | maximum number of short Monte Carlo evaluations |
-| `opt_steps` (`--opt-steps`) | 20000 | Monte Carlo steps of one evaluation (the final check runs 3x longer) |
+| `opt_steps` (`--opt-steps`) | 4000 | Monte Carlo steps of one evaluation (the final check runs 3x longer) |
+| `opt_max_beads` (`--opt-max-beads`) | 1500 | largest region the optimizer simulates; a bigger one is optimized on a window of this many beads |
 | `opt_early_stop` (`--opt-early-stop`) | on | stop when the loss no longer improves |
 | `opt_interactive` (`--opt-interactive`) | on | pressing Enter during the search shows the best parameters so far and asks whether to keep them and stop, (Y/n), Enter = yes (terminal only) |
 | `opt_patience` (`--opt-patience`) | 20 | early stopping: evaluations without a real improvement before stopping |
