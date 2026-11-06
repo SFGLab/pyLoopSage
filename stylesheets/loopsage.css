@@ -1,0 +1,80 @@
+/* LoopSage docs: black, purple and white; serious and quiet */
+:root {
+  --ls-violet: #6a3de8;
+  --ls-deep: #3d1fa8;
+  --ls-ink: #111114;
+  --ls-soft: #f4f1fc;
+  --ls-line: #e3ddf5;
+  --md-primary-fg-color: #6a3de8;/* header colours are set below; this is the active-link colour of the menu */
+  --md-primary-bg-color: #111114;
+  --md-primary-bg-color--light: #111114;
+  --md-accent-fg-color: #6a3de8;
+}
+.md-header__button, .md-header__button.md-icon { color: var(--ls-ink); }
+.md-nav--primary .md-nav__title { background: var(--ls-soft); color: var(--ls-ink); }   /* drawer title on narrow screens */
+.md-nav--primary .md-nav__title[for="__drawer"] { background: var(--ls-ink); color: #fff; }
+
+/* page and text */
+.md-typeset { color: var(--ls-ink); font-size: 0.78rem; line-height: 1.7; }
+.md-typeset h1 { color: var(--ls-ink); font-weight: 700; letter-spacing: -0.01em; }
+.md-typeset h2 { color: var(--ls-ink); font-weight: 650; border-bottom: 2px solid var(--ls-line); padding-bottom: 0.25rem; }
+.md-typeset h3 { color: var(--ls-deep); font-weight: 600; }
+.md-typeset a { color: var(--ls-violet); }
+.md-typeset a:hover { color: var(--ls-deep); }
+
+/* header: white bar with the logo, thin violet rule; tabs in black */
+.md-header { background: #fff; color: var(--ls-ink); box-shadow: none; border-bottom: 3px solid var(--ls-violet); }
+.md-header__button.md-logo { padding: 0.1rem 0.3rem; margin: 0 0.2rem 0 0.3rem; }       /* no empty frame around the loop */
+.md-header__button.md-logo img { height: 2rem; width: auto; display: block; }
+.md-header__title, .md-header .md-icon { color: var(--ls-ink); }
+.md-search__input, .md-search__input::placeholder { color: var(--ls-ink); }
+.md-search__form { background: var(--ls-soft); }
+.md-tabs { background: var(--ls-ink); color: #fff; }
+.md-tabs__link { color: #cfc6ee; opacity: 1; }
+.md-tabs__link--active, .md-tabs__link:hover { color: #fff; box-shadow: inset 0 -3px 0 var(--ls-violet); }
+
+/* side navigation */
+.md-nav__link--active, .md-nav__link:hover { color: var(--ls-violet); }
+.md-nav__title { color: var(--ls-ink); }
+
+/* tables: black header row, violet rule, soft stripes */
+.md-typeset table:not([class]) { border: 1px solid var(--ls-line); border-radius: 4px; font-size: 0.72rem; box-shadow: none; }
+.md-typeset table:not([class]) th { background: var(--ls-ink); color: #fff; font-weight: 600; border-bottom: 3px solid var(--ls-violet); }
+.md-typeset table:not([class]) tbody tr:nth-child(even) { background: var(--ls-soft); }
+.md-typeset table:not([class]) td { border-top: 1px solid var(--ls-line); vertical-align: top; }
+
+/* option names (first column) stay on one line; other cells wrap, long defaults break softly, and the description keeps a readable width */
+.md-typeset table:not([class]) td:first-child code { white-space: nowrap; }
+.md-typeset table:not([class]) td:not(:first-child) code { white-space: normal; overflow-wrap: break-word; }
+.md-typeset table:not([class]) td:last-child { min-width: 14rem; }
+
+/* code: dark blocks, violet inline code */
+.md-typeset pre > code { background: #0d0626; color: #ece6fb; border-radius: 4px; }
+.md-typeset code { background: var(--ls-soft); color: var(--ls-deep); border-radius: 3px; }
+.md-typeset pre > code span { color: #ece6fb !important; }                      /* readable on the dark block */
+.md-typeset pre > code .c1, .md-typeset pre > code .cm, .md-typeset pre > code .ch, .md-typeset pre > code .c { color: #9a8fc4 !important; }
+.md-typeset pre > code .m, .md-typeset pre > code .mi, .md-typeset pre > code .mf { color: #ffd45e !important; }
+.md-typeset pre > code .s, .md-typeset pre > code .s1, .md-typeset pre > code .s2 { color: #9be3c4 !important; }
+.md-typeset pre > code .k, .md-typeset pre > code .nb, .md-typeset pre > code .nv, .md-typeset pre > code .nt, .md-typeset pre > code .na { color: #b9a3f2 !important; }
+
+/* notes */
+.md-typeset .admonition, .md-typeset details { border: 1px solid var(--ls-line); border-left: 4px solid var(--ls-violet); border-radius: 4px; box-shadow: none; }
+.md-typeset .admonition-title, .md-typeset summary { background: var(--ls-soft); }
+
+.md-typeset .admonition.tip, .md-typeset .admonition.note, .md-typeset .admonition.info { border-left-color: var(--ls-violet); }
+.md-typeset .tip > .admonition-title, .md-typeset .note > .admonition-title, .md-typeset .info > .admonition-title { background: var(--ls-soft); }
+.md-typeset .tip > .admonition-title::before, .md-typeset .note > .admonition-title::before, .md-typeset .info > .admonition-title::before { background-color: var(--ls-violet); }
+.md-header__title { display: none; }
+.md-header__inner .md-search { margin-left: auto; }                               /* search bar on the right */                                              /* the logo already carries the name */
+
+/* footer */
+.md-footer, .md-footer-meta { background: var(--ls-ink); }
+img[alt^="GPL"], img[src*="shields.io"] { margin: 2px; vertical-align: middle; }
+
+/* home page: the logo banner fills the text width (the small header logo stays on every page) */
+.home-banner { display: block; width: 100%; height: auto; margin: 0 0 0.6rem; }
+
+/* theory figures: centred, white card, short caption */
+.md-typeset figure { margin: 1.4rem 0; text-align: center; }
+.md-typeset figure img { max-width: 100%; height: auto; }
+.md-typeset figcaption { font-size: 0.68rem; color: #5a5668; max-width: 46rem; margin: 0.5rem auto 0; text-align: left; }

@@ -1,0 +1,1866 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Energy-based stochastic modelling of chromatin loop extrusion and 3D genome structure">
+      
+      
+      
+        <link rel="canonical" href="https://sfglab.github.io/pyLoopSage/theory/topology/">
+      
+      
+        <link rel="prev" href="../molecular-dynamics/">
+      
+      
+        <link rel="next" href="../../implementation/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Topology - LoopSage</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/loopsage.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#topology" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="LoopSage" class="md-header__button md-logo" aria-label="LoopSage" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            LoopSage
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Topology
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/SFGLab/pyLoopSage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SFGLab/pyLoopSage
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../intro/" class="md-tabs__link">
+          
+  
+  
+  Intro
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+  Theory
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../implementation/" class="md-tabs__link">
+          
+  
+  
+  Implementation
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../acknowledgments/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Acknowledgments
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="LoopSage" class="md-nav__button md-logo" aria-label="LoopSage" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    LoopSage
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/SFGLab/pyLoopSage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SFGLab/pyLoopSage
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Intro
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Intro
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Theory
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Theory
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scope/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scope
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../loop-extrusion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loop extrusion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mechanics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mechanics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcmc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCMC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../molecular-dynamics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Molecular dynamics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Topology
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Topology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-look-at-topology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why look at topology?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#knots-and-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Knots and links
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Knots and links">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#in-which-dimensions-do-they-exist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In which dimensions do they exist?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#knots-or-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Knots or links?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-linking-number" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The linking number
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The linking number">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-same-number-as-an-integral" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The same number as an integral
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-is-it-hard-to-compute-in-3d" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why is it hard to compute in 3D?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why is it hard to compute in 3D?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-loopsage-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What LoopSage does
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#linking-in-loopsage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Linking in LoopSage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Linking in LoopSage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-links-appear-and-disappear" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why links appear and disappear
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-topoisomerase-and-the-crossing-counter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The topoisomerase and the crossing counter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Implementation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Implementation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/motif-finder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Motif Finder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/optimizer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Optimizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/monte-carlo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monte Carlo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/molecular-dynamics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Molecular Dynamics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command-line interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../acknowledgments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acknowledgments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-look-at-topology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why look at topology?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#knots-and-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Knots and links
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Knots and links">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#in-which-dimensions-do-they-exist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In which dimensions do they exist?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#knots-or-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Knots or links?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-linking-number" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The linking number
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The linking number">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-same-number-as-an-integral" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The same number as an integral
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-is-it-hard-to-compute-in-3d" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why is it hard to compute in 3D?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why is it hard to compute in 3D?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-loopsage-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What LoopSage does
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#linking-in-loopsage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Linking in LoopSage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Linking in LoopSage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-links-appear-and-disappear" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why links appear and disappear
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-topoisomerase-and-the-crossing-counter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The topoisomerase and the crossing counter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="topology">Topology<a class="headerlink" href="#topology" title="Permanent link">&para;</a></h1>
+<p>This page explains the <em>topological</em> side of LoopSage: whether the loops of a 3D structure are interlocked, how this is measured, and which optional switches model it.
+It is an advanced, optional feature. Nothing here runs by default and the default model is unchanged.</p>
+<h2 id="why-look-at-topology">Why look at topology?<a class="headerlink" href="#why-look-at-topology" title="Permanent link">&para;</a></h2>
+<p>A chromatin fibre is a very long thread. In the nucleus a thread cannot pass through another thread (the two strands repel each other), unless an enzyme, a <em>topoisomerase</em>, cuts one strand, passes the other one through and joins the cut again.
+Because of this rule, the way two pieces of the fibre are wound around each other is not changed by the usual motion of the chain. It is a <em>conserved</em> property, called its <em>topology</em>.</p>
+<p>In loop extrusion this matters in a concrete way. Each ring holds a <em>loop</em>, and loops of different rings sit close to each other in space. Two loops can lie next to each other like two separate rubber bands, or they can pass through each other like two links of a chain. The second case is called <em>catenation</em>, and it can only be created or removed by strand passage.</p>
+<h2 id="knots-and-links">Knots and links<a class="headerlink" href="#knots-and-links" title="Permanent link">&para;</a></h2>
+<p>Topology studies shapes that can be deformed without cutting or gluing (a deformation without cutting is called an <em>isotopy</em>). Two objects are <em>the same</em> if one can be deformed into the other in this way. A coffee cup and a doughnut are the same in this sense, a doughnut and a sphere are not.</p>
+<p>For closed threads there are two basic objects.</p>
+<ul>
+<li>A <em>knot</em> is <em>one</em> closed curve in 3D space. The simplest closed curve is a round circle, the <em>unknot</em>. A knot is a closed curve that cannot be deformed into a circle without cutting it. The simplest one is the <em>trefoil</em>.</li>
+<li>A <em>link</em> is a set of <em>two or more</em> disjoint closed curves, called its <em>components</em>. The simplest link is the <em>Hopf link</em>: two circles, each passing through the other. The <em>unlink</em> is the trivial case, curves that can be pulled apart.</li>
+</ul>
+<figure>
+<p><img alt="Knot, link and unlink" src="../../assets/theory/topology_dims.svg" width="760" />
+  </p>
+<figcaption>A knot is one closed curve (here the trefoil), a link is several closed curves (here the Hopf link), and in the unlink the curves can be separated. At every crossing the strand that is cut by a gap passes <em>under</em> the other one.</figcaption>
+</figure>
+<h3 id="in-which-dimensions-do-they-exist">In which dimensions do they exist?<a class="headerlink" href="#in-which-dimensions-do-they-exist" title="Permanent link">&para;</a></h3>
+<p>A closed curve is a one-dimensional object. Knots and links need room to <em>go around</em> each other, and the number of dimensions of the space decides how much room there is.</p>
+<table>
+<thead>
+<tr>
+<th>Space</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a line (1D)</td>
+<td>a closed curve does not even fit</td>
+</tr>
+<tr>
+<td>the plane (2D)</td>
+<td>no knots and no links. Every simple closed curve (one that does not cross itself) is equivalent to a circle (the <em>Jordan curve theorem</em>), and two disjoint circles are either one inside the other or side by side, never interlocked</td>
+</tr>
+<tr>
+<td>ordinary space (3D)</td>
+<td>knots and links exist, and there are infinitely many different ones</td>
+</tr>
+<tr>
+<td>4D and higher</td>
+<td>no knots and no links: there is a free direction, so any closed curve can be unknotted and any two curves can be pulled apart</td>
+</tr>
+</tbody>
+</table>
+<p>Knots and links are therefore a purely three-dimensional phenomenon. This is why topology cannot be read from the contact map or from the loop list alone, and why LoopSage needs the <em>3D structures</em> (the molecular dynamics stage) to study it.</p>
+<h2 id="knots-or-links">Knots or links?<a class="headerlink" href="#knots-or-links" title="Permanent link">&para;</a></h2>
+<p>For the loops of LoopSage the natural object is a <em>link</em>, for four reasons.</p>
+<ol>
+<li><strong>The fibre is not closed.</strong> A chromosome piece is an open chain with two free ends, and strictly speaking an open chain cannot be knotted, because a knot needs a closed curve.</li>
+<li><strong>Loops are closed curves.</strong> The two legs of a ring, <span class="arithmatex">\(m_i\)</span> and <span class="arithmatex">\(n_i\)</span>, are held together by the ring, so they are neighbours in space. The stretch of fibre between them, closed by this short gap, is a closed curve (see below).</li>
+<li><strong>The question is about pairs.</strong> Loops are short and rarely knot on their own. The biologically interesting question is whether two <em>different</em> loops are interlocked, that is, whether the set of loops forms a link.</li>
+<li><strong>The ring itself is a link.</strong> A cohesin ring that holds DNA inside it is thought to be topologically linked with it (the ring entraps the fibre).</li>
+</ol>
+<p>The tools that analyse <em>knots</em> of a single chain, such as the Python package <em>Topoly</em> (Dabrowski-Tumanski et al. 2021), compute polynomial invariants (Alexander, Jones, HOMFLY-PT) of a closed curve. They are the right tool to ask whether a protein or a closed DNA ring is knotted, and they can also compute linking numbers. LoopSage needs one quantity for many pairs of loops in thousands of frames, so it uses its own small implementation of the <em>linking number</em>, defined next. It does not depend on any external topology package.</p>
+<h2 id="the-linking-number">The linking number<a class="headerlink" href="#the-linking-number" title="Permanent link">&para;</a></h2>
+<p>The <em>linking number</em> <span class="arithmatex">\(\mathrm{Lk}\)</span> is the simplest and most useful number that tells how two closed curves are interlocked.
+It is defined for two <em>oriented</em> curves (we choose a direction along each curve). Draw the pair on a plane, so that at every crossing one strand is over and the other is under. A crossing between the two curves gets a sign <span class="arithmatex">\(\varepsilon=\pm1\)</span>:</p>
+<ul>
+<li><span class="arithmatex">\(\varepsilon=+1\)</span> (<em>right-handed</em>) if the over strand has to be rotated counter-clockwise (by less than half a turn) to point along the under strand,</li>
+<li><span class="arithmatex">\(\varepsilon=-1\)</span> (<em>left-handed</em>) otherwise.</li>
+</ul>
+<p>Then</p>
+<div class="arithmatex">\[
+\mathrm{Lk}(\gamma_1,\gamma_2) \;=\; \frac12 \sum_{\text{crossings between } \gamma_1 \text{ and } \gamma_2} \varepsilon .
+\]</div>
+<p>Crossings of a curve with itself are not counted. Every crossing between the two curves is counted once, and half of the sum is used because, as in the Hopf link, the curves pass each other in pairs.</p>
+<figure>
+<p><img alt="Linking number" src="../../assets/theory/topology_lk.svg" width="760" />
+  </p>
+<figcaption><b>a</b> The sign of a crossing. <b>b</b> The Hopf link has two crossings of sign +1, so Lk = +1. <b>c</b> Two circles that overlap in the picture but are not interlocked: the same curve is over at both crossings, the signs cancel and Lk = 0. Counting crossings alone would be misleading.</figcaption>
+</figure>
+<p>The most important properties are the following.</p>
+<ul>
+<li><span class="arithmatex">\(\mathrm{Lk}\)</span> is an <em>integer</em>, and it does not depend on how the curves are drawn: any deformation without cutting leaves it unchanged. It is an <em>invariant</em>.</li>
+<li>If <span class="arithmatex">\(\mathrm{Lk}\neq0\)</span> the curves are linked. The reverse is not true: there are linked curves with <span class="arithmatex">\(\mathrm{Lk}=0\)</span> (the Whitehead link), so <span class="arithmatex">\(\mathrm{Lk}=0\)</span> only says that the simplest test finds no linking.</li>
+<li>When a strand of one curve is passed through the other curve (what a topoisomerase does), <span class="arithmatex">\(\mathrm{Lk}\)</span> changes by exactly <span class="arithmatex">\(\pm1\)</span>.</li>
+<li>Reversing the direction of one curve changes the sign of <span class="arithmatex">\(\mathrm{Lk}\)</span>. We therefore report <span class="arithmatex">\(|\mathrm{Lk}|\)</span> and call a pair <em>linked</em> if <span class="arithmatex">\(|\mathrm{Lk}|\ge 1\)</span>.</li>
+</ul>
+<h3 id="the-same-number-as-an-integral">The same number as an integral<a class="headerlink" href="#the-same-number-as-an-integral" title="Permanent link">&para;</a></h3>
+<p>The linking number can also be written without any drawing. Let <span class="arithmatex">\(\mathbf r_1(s)\)</span> and <span class="arithmatex">\(\mathbf r_2(t)\)</span> be points of the two curves. Then</p>
+<div class="arithmatex">\[
+\mathrm{Lk}(\gamma_1,\gamma_2) \;=\; \frac{1}{4\pi}\oint_{\gamma_1}\oint_{\gamma_2}
+\frac{(\mathbf r_1-\mathbf r_2)\cdot(\mathrm d\mathbf r_1\times \mathrm d\mathbf r_2)}{\lVert \mathbf r_1-\mathbf r_2\rVert^{3}} .
+\]</div>
+<p>This is the <em>Gauss integral</em> (Gauss, 1833). Its meaning is geometric. The unit vector <span class="arithmatex">\((\mathbf r_1-\mathbf r_2)/\lVert\mathbf r_1-\mathbf r_2\rVert\)</span> that points from one curve to the other changes as the two points move along their curves, and it covers the sphere of directions a whole number of times. The factor <span class="arithmatex">\(1/4\pi\)</span> is the inverse of the area of the unit sphere, so <span class="arithmatex">\(\mathrm{Lk}\)</span> is exactly <em>how many times</em> the sphere is covered.</p>
+<h2 id="why-is-it-hard-to-compute-in-3d">Why is it hard to compute in 3D?<a class="headerlink" href="#why-is-it-hard-to-compute-in-3d" title="Permanent link">&para;</a></h2>
+<p>The drawing recipe needs a <em>projection</em> of the 3D curves onto a plane. For a computer model, which is a chain of beads joined by straight segments, this causes several problems.</p>
+<ol>
+<li><strong>The picture depends on the viewing direction.</strong> From one direction the two loops cross twice, from another four times. Only the signed sum is the same.</li>
+<li><strong>Some directions are bad.</strong> If we look along a direction in which two segments overlap, or a bead lies exactly behind another segment, the crossing is degenerate, and the over/under decision is not defined. One has to find a "generic" direction, or average over many.</li>
+<li><strong>Structures are noisy.</strong> A molecular dynamics frame is a wiggling polymer with segments that pass very close to each other. A tiny change of the viewing direction can create or remove crossings.</li>
+<li><strong>Closed curves are needed.</strong> The loops of a chain are open pieces of the fibre.</li>
+<li><strong>There are many pairs and many frames.</strong> A region has tens of loops, so hundreds of pairs, in every analysed frame.</li>
+</ol>
+<figure>
+<p><img alt="Three views of one pair of loops" src="../../assets/theory/topology_projection.svg" width="760" />
+  </p>
+<figcaption>One pair of linked loops, taken from a 3D polymer, seen from three directions. The number of crossings changes (2, 4, and an almost edge-on view in which the crossings pile up), but half the sum of the signs is always +1, which was also computed with the Gauss integral. The pictures are generated from the actual 3D coordinates.</figcaption>
+</figure>
+<h3 id="what-loopsage-does">What LoopSage does<a class="headerlink" href="#what-loopsage-does" title="Permanent link">&para;</a></h3>
+<p>LoopSage avoids projections completely and computes the Gauss integral directly on the 3D coordinates.</p>
+<ol>
+<li><strong>Closing the loops.</strong> Every loop is the piece of the chain between the two legs of a ring, beads <span class="arithmatex">\(m_i,\dots,n_i\)</span>. The closing segment between the two anchors (the <em>chord</em>) turns it into a closed polygon. This is a good approximation because the ring holds the two anchors next to each other.</li>
+<li><strong>Which pairs are tested.</strong> Only pairs of loops that are really two separate curves are tested. Nested or overlapping loops share a piece of the chain, so they are not two separate curves and are skipped, and a loop of fewer than 4 beads is too short to be counted as a curve. What remains are loops that lie side by side along the chain, which can still be interlocked in 3D.</li>
+<li><strong>Exact formula for polygons.</strong> For two closed polygons the double integral is a <em>finite sum over pairs of segments</em>, one term for every segment of the first loop and every segment of the second (Klenin and Langowski 2000). Each term is the signed area on the unit sphere swept by the direction between the two segments, written with the four unit vectors that join their end points. The sum divided by <span class="arithmatex">\(4\pi\)</span> is an integer up to rounding errors, and LoopSage rounds it to give <span class="arithmatex">\(\mathrm{Lk}\)</span>. It is exact for the polygon, needs no projection and has no degenerate directions.</li>
+<li><strong>A cheap pre-filter.</strong> Two curves whose bounding boxes do not overlap cannot be linked, so the sum is only computed for pairs whose boxes overlap.</li>
+</ol>
+<figure>
+<p><img alt="From loops to closed curves" src="../../assets/theory/topology_loops.svg" width="760" />
+  </p>
+<figcaption><b>a</b> A loop becomes a closed curve when its two anchors are joined by a chord. <b>b</b> Only pairs of loops that are separate curves are tested. Nested or overlapping loops and loops shorter than 4 beads are skipped.</figcaption>
+</figure>
+<h2 id="linking-in-loopsage">Linking in LoopSage<a class="headerlink" href="#linking-in-loopsage" title="Permanent link">&para;</a></h2>
+<div class="admonition note">
+<p class="admonition-title">In LoopSage</p>
+<p>The linking analysis is switched on with <code>--knots</code> (key <code>detect_knots</code>) and works on the 3D structures, so it needs the molecular dynamics stage (<code>run_MD = True</code>).
+The name <em>knots</em> is historical: the quantity that is computed is the <em>linking number</em> of pairs of loops, as explained above.</p>
+</div>
+<p>For every <code>knots_stride</code>-th MD frame LoopSage takes the loops <span class="arithmatex">\((m_i,n_i)\)</span> of the Monte Carlo configuration that belongs to that frame, closes them, tests all admissible pairs and stores the pairs with <span class="arithmatex">\(|\mathrm{Lk}|\ge1\)</span>. From this it reports:</p>
+<ul>
+<li>the number of linked pairs per frame, next to the number of pairs that were tested,</li>
+<li>the <em>lifetime</em> of a link, which is the number of consecutive analysed frames in which the same pair stays linked, and how many links are formed and dissolved at each step,</li>
+<li>the closest approach of two loops, and a <em>link map</em>, which shows where along the chromosome linked pairs occur,</li>
+<li>3D snapshots of linked examples, in which the two loops are thick, closed by their chords, and a gold marker shows where they meet.</li>
+</ul>
+<h3 id="why-links-appear-and-disappear">Why links appear and disappear<a class="headerlink" href="#why-links-appear-and-disappear" title="Permanent link">&para;</a></h3>
+<p>If the excluded volume were perfect, strands could never cross, and the topology of the chain could not change during the molecular dynamics. Links would then only come and go because the <em>loops themselves</em> change, since the Monte Carlo trajectory moves the legs and the pair of loops that is analysed is not the same in every frame. The second source is the topoisomerase.</p>
+<h3 id="the-topoisomerase-and-the-crossing-counter">The topoisomerase and the crossing counter<a class="headerlink" href="#the-topoisomerase-and-the-crossing-counter" title="Permanent link">&para;</a></h3>
+<p>LoopSage offers two optional models of a topoisomerase II, both set in the <code>[topology]</code> section and both off by default.</p>
+<ul>
+<li><strong><code>random</code> mode</strong> (<code>ev_p</code>, <code>continuous_top</code>). In every frame a random fraction <code>ev_p</code> of the beads has its excluded volume switched off, either scattered or as one continuous stretch (<code>continuous_top</code>). Strands can pass through these beads.</li>
+<li><strong><code>local</code> mode</strong> (<code>topo_mode = local</code>). Short strand-passage events: at close contacts, a strand of <code>topo_width</code> beads loses its excluded volume for a short window <code>topo_window</code> of the frame, and then the volume is switched on again. The attempts occur at a rate <code>topo_rate</code> per frame and per 1000 beads, between strands closer than <code>topo_radius</code> bond lengths. With <code>topo_keep &lt; 1</code> a passage that <em>creates</em> a new link is undone with probability <span class="arithmatex">\(1-\)</span><code>topo_keep</code>, which models a topoisomerase that simplifies the topology.</li>
+</ul>
+<figure>
+<p><img alt="The two topoisomerase models" src="../../assets/theory/topology_topo.svg" width="700" />
+  </p>
+<figcaption><b>a</b> Random mode: in every frame some beads have no excluded volume (dashed), scattered or in one stretch, and a strand can pass through them. <b>b</b> Local mode: two strands come close, a short stretch of one loses its excluded volume for a short window, the other strand passes through, and the volume is restored. A passage that creates a new link can be undone.</figcaption>
+</figure>
+<p>The <em>crossing counter</em> (<code>track_crossings</code>, checked every <code>track_every</code> MD steps) detects two bonds that pass through each other between two checks. Crossings that occur with the excluded volume on are <em>leaks</em> of the force field, and crossings through a switched-off bead are <em>passages</em>.</p>
+<p>How easily strands cross is controlled by the excluded volume <span class="arithmatex">\(E(r)=\big(\varepsilon^2 s/(r+r_0)\big)^{p}\)</span>, where <span class="arithmatex">\(s\)</span> is the strength (<code>ev_ff_strength</code>), <span class="arithmatex">\(p\)</span> the exponent (<code>ev_ff_power</code>), <span class="arithmatex">\(r\)</span> the distance between two beads and <span class="arithmatex">\(r_0\)</span> a small softening length.
+Two bonds can only cross if four bead pairs overlap, so the <em>barrier</em> for a crossing is the lowest value of the sum of <span class="arithmatex">\(E\)</span> over these four pairs, in units of <span class="arithmatex">\(k_BT\)</span>. A barrier of a few <span class="arithmatex">\(k_BT\)</span> is crossed easily, and about <span class="arithmatex">\(10\,k_BT\)</span> or more keeps the chain intact. The topology report prints the barrier of the current setting, and <code>ev_barrier_target</code> is the barrier for which it suggests a new <code>ev_ff_strength</code>.</p>
+<h3 id="keys">Keys<a class="headerlink" href="#keys" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>detect_knots</code> (<code>--knots</code>)</td>
+<td>linking analysis of the loops in 3D</td>
+</tr>
+<tr>
+<td><code>knots_stride</code></td>
+<td>analyse every n-th MD frame</td>
+</tr>
+<tr>
+<td><code>topo_mode</code></td>
+<td><code>random</code> (default) or <code>local</code> topoisomerase model</td>
+</tr>
+<tr>
+<td><code>ev_p</code>, <code>continuous_top</code></td>
+<td><code>random</code> mode: share of beads without excluded volume, and whether they form one stretch</td>
+</tr>
+<tr>
+<td><code>topo_rate</code>, <code>topo_radius</code>, <code>topo_width</code>, <code>topo_window</code></td>
+<td><code>local</code> mode: rate, reach, strand length and duration of the passage events</td>
+</tr>
+<tr>
+<td><code>topo_keep</code></td>
+<td><code>local</code> mode: probability to keep a passage that creates a link (1 = no bias)</td>
+</tr>
+<tr>
+<td><code>track_crossings</code>, <code>track_every</code></td>
+<td>count chain crossings, and how often to check</td>
+</tr>
+<tr>
+<td><code>ev_barrier_target</code></td>
+<td>barrier (in <span class="arithmatex">\(k_BT\)</span>) used to suggest <code>ev_ff_strength</code></td>
+</tr>
+</tbody>
+</table>
+<p>All keys are described in the <a href="../../reference/config/">config reference</a>, and <code>examples/11_topology_links.ini</code> is a ready example.</p>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Gauss C. F. (1833). Integral formula for linking number. <em>Werke</em> 5, 605.</li>
+<li>Klenin K., Langowski J. (2000). Computation of writhe in modeling of supercoiled DNA. <em>Biopolymers</em> 54, 307.</li>
+<li>Dabrowski-Tumanski P., Rubach P., Niemyska W., Gren B. A., Sulkowska J. I. (2021). Topoly: Python package to analyze topology of polymers. <em>Briefings in Bioinformatics</em> 22, bbaa196.</li>
+<li>Rolfsen D. (1976). <em>Knots and Links</em>. Publish or Perish.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../molecular-dynamics/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Molecular dynamics">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Molecular dynamics
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../implementation/" class="md-footer__link md-footer__link--next" aria-label="Next: Overview">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Overview
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

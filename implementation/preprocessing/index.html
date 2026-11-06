@@ -1,0 +1,1856 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Energy-based stochastic modelling of chromatin loop extrusion and 3D genome structure">
+      
+      
+      
+        <link rel="canonical" href="https://sfglab.github.io/pyLoopSage/implementation/preprocessing/">
+      
+      
+        <link rel="prev" href="../pipeline/">
+      
+      
+        <link rel="next" href="../motif-finder/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Preprocessing - LoopSage</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/loopsage.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#preprocessing" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="LoopSage" class="md-header__button md-logo" aria-label="LoopSage" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            LoopSage
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Preprocessing
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/SFGLab/pyLoopSage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SFGLab/pyLoopSage
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../intro/" class="md-tabs__link">
+          
+  
+  
+  Intro
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../theory/" class="md-tabs__link">
+          
+  
+  
+  Theory
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+  Implementation
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../acknowledgments/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Acknowledgments
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="LoopSage" class="md-nav__button md-logo" aria-label="LoopSage" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    LoopSage
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/SFGLab/pyLoopSage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SFGLab/pyLoopSage
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Intro
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Intro
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Theory
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Theory
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/scope/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scope
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/loop-extrusion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loop extrusion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/mechanics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mechanics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/mcmc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCMC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/molecular-dynamics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Molecular dynamics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/topology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Topology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Implementation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Implementation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-comes-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What comes out
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#region-and-beads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Region and beads
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loop-files-bedpe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Loop files (BEDPE)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Loop files (BEDPE)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-loops-to-l-and-r" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From loops to \(L\) and \(R\)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-loop-maps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The loop maps
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#peak-files-bed-narrowpeak" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Peak files (BED, narrowPeak)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preferential-and-contrastive-binding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Preferential and contrastive binding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extra-tracks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extra tracks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hi-c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hi-C
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Hi-C">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reading-the-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the map
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compartments-from-hi-c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compartments from Hi-C
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#everything-in-one-place" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Everything in one place
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-code-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the code is
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Where the code is">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../motif-finder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Motif Finder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../optimizer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Optimizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../monte-carlo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monte Carlo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../molecular-dynamics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Molecular Dynamics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command-line interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../acknowledgments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acknowledgments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-comes-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What comes out
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#region-and-beads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Region and beads
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loop-files-bedpe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Loop files (BEDPE)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Loop files (BEDPE)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-loops-to-l-and-r" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From loops to \(L\) and \(R\)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-loop-maps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The loop maps
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#peak-files-bed-narrowpeak" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Peak files (BED, narrowPeak)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preferential-and-contrastive-binding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Preferential and contrastive binding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extra-tracks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extra tracks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hi-c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hi-C
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Hi-C">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reading-the-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the map
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compartments-from-hi-c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compartments from Hi-C
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#everything-in-one-place" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Everything in one place
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-code-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the code is
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Where the code is">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="preprocessing">Preprocessing<a class="headerlink" href="#preprocessing" title="Permanent link">&para;</a></h1>
+<p>The simulation does not work with genomic coordinates, files and read counts. It works with <em>beads</em> and with a few arrays of numbers per bead. The preprocessing stage is the translation: it reads the experimental files for your region and turns them into the arrays that the <a href="../monte-carlo/">Monte Carlo</a> needs.
+This page explains what is read, how every file type is modelled, and the two ways to turn anchor signal into an energy landscape (<em>preferential</em> and <em>contrastive</em> binding).</p>
+<h2 id="what-comes-out">What comes out<a class="headerlink" href="#what-comes-out" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Array</th>
+<th>Meaning</th>
+<th>Used by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="arithmatex">\(L_k\)</span>, <span class="arithmatex">\(R_k\)</span></td>
+<td>how strongly bead <span class="arithmatex">\(k\)</span> holds the <em>left</em> leg and the <em>right</em> leg of an extruder (anchor profiles)</td>
+<td>binding energy</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(J_{ij}\)</span></td>
+<td>which bead pairs are connected: the chain backbone and the input loops</td>
+<td>epigenetic coupling (static mode)</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(J^{\mathrm{loss}}_{ij}\)</span></td>
+<td>weighted map of the input loops</td>
+<td>binding energy in the 2D mode</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(h_k\)</span></td>
+<td>compartment field, <span class="arithmatex">\(+1\)</span> for A and <span class="arithmatex">\(-1\)</span> for B</td>
+<td>epigenetic energy, compartment force</td>
+</tr>
+<tr>
+<td>extra tracks</td>
+<td>BigWig signals, a loading preference for extruders</td>
+<td>extra binding energy, loading</td>
+</tr>
+<tr>
+<td>Hi-C map</td>
+<td>contact map on the bead grid</td>
+<td>validation, target of the optimizer, field <span class="arithmatex">\(h\)</span></td>
+</tr>
+</tbody>
+</table>
+<h2 id="region-and-beads">Region and beads<a class="headerlink" href="#region-and-beads" title="Permanent link">&para;</a></h2>
+<p>You choose a chromosome region and the number of beads <span class="arithmatex">\(N\)</span>. The region is cut into <span class="arithmatex">\(N\)</span> equal pieces, and bead <span class="arithmatex">\(k\)</span> stands for the <span class="arithmatex">\(k\)</span>-th piece. The <em>bead size</em> is the region length divided by <span class="arithmatex">\(N\)</span> (for 14 Mb and 1000 beads: 14 kb). If you give no number of beads, LoopSage uses one bead per 2 kb.</p>
+<div class="highlight"><pre><span></span><code><span class="k">[input]</span>
+<span class="na">chrom</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="s">chr1</span>
+<span class="na">region_start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">78000000</span>
+<span class="na">region_end</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">92000000</span>
+<span class="na">n_beads</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s">1000</span><span class="w">          </span><span class="c1"># empty: region length / 2 kb</span>
+<span class="na">genome</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s">hg38</span><span class="w">          </span><span class="c1"># or hg19: only used for chromosome sizes</span>
+</code></pre></div>
+<p>On the command line the region is <code>-r chr1:78000000-92000000</code> and the beads <code>-n 1000</code>. A loop anchor is placed on the bead that contains the <em>middle</em> of the anchor interval; two anchors that fall on the same bead make a loop of length zero, so they are dropped.</p>
+<h2 id="loop-files-bedpe">Loop files (BEDPE)<a class="headerlink" href="#loop-files-bedpe" title="Permanent link">&para;</a></h2>
+<p>A BEDPE file has one line per loop, with the two anchors as genomic intervals:</p>
+<div class="highlight"><pre><span></span><code>chr1  78450000  78460000  chr1  78790000  78800000  14
+#     start1    end1      #     start2    end2      score (weight)
+</code></pre></div>
+<p>The first six columns are the two anchors, the seventh (optional) is the <em>weight</em> of the loop, normally the number of read pairs (PET count) that support it. A loop with weight 14 pulls the model's attention more than a loop with weight 2. Two more optional columns (the eighth and ninth) hold the probability that each anchor's CTCF site is <em>reversed</em>; they are written by the <a href="../motif-finder/">Motif Finder</a> and are the only place where the direction of the CTCF sites enters.</p>
+<h3 id="from-loops-to-l-and-r">From loops to <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span><a class="headerlink" href="#from-loops-to-l-and-r" title="Permanent link">&para;</a></h3>
+<p>Every loop adds its weight to the two beads of its anchors. If the directions of the CTCF sites are known, the weight of an anchor is divided between <span class="arithmatex">\(L\)</span> (forward site) and <span class="arithmatex">\(R\)</span> (reverse site), exactly as described in <a href="../motif-finder/#from-orientation-to-l-and-r">From orientation to <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span></a>. Without directions, each anchor feeds both profiles and the model decides the orientation on its own. At the end of this step <span class="arithmatex">\(L_k\)</span> and <span class="arithmatex">\(R_k\)</span> are large on beads where many loops start (or end) and zero elsewhere.</p>
+<p>Three further steps make the profiles easy to use:</p>
+<ol>
+<li><strong>Smoothing.</strong> A ChIA-PET anchor is a window of a few kb, but the simulation can place a leg only on a bead; a very sharp spike would either be hit exactly or missed. A Gaussian filter spreads each spike over a few neighbouring beads, with width <span class="arithmatex">\(\sigma=\max(1.5,\,N/300)\)</span> beads (about 40 kb for 1000 beads over 14 Mb). It is on by default (<code>smoothing_input = True</code>).</li>
+<li><strong>Mean scaling.</strong> Each profile is divided by its mean over the beads, so the average bead has value 1. After this, the numbers do not depend on how many loops the file has or on the bead size.</li>
+<li><strong>Binding mode</strong> (next section): optionally add the coverage of the input loops, so that loop-free beads are penalised.</li>
+</ol>
+<h3 id="the-loop-maps">The loop maps<a class="headerlink" href="#the-loop-maps" title="Permanent link">&para;</a></h3>
+<p>Besides <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span> the stage keeps two <span class="arithmatex">\(N\times N\)</span> matrices. <span class="arithmatex">\(J\)</span> is binary: 1 on the chain backbone (neighbouring beads) and on every input loop. <span class="arithmatex">\(J^{\mathrm{loss}}\)</span> keeps the weights of the loops. By default the energy uses only <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span> (<code>data_loss_mode = 0</code>); with <code>data_loss_mode = 1</code> it uses <span class="arithmatex">\(J^{\mathrm{loss}}\)</span> instead, which scores a <em>pair</em> of legs and not each leg alone. In that mode <span class="arithmatex">\(J^{\mathrm{loss}}\)</span> is smoothed with a Gaussian of width <code>loss_sigma</code> beads, so that the extruder legs see a continuous landscape and not isolated dots.</p>
+<h2 id="peak-files-bed-narrowpeak">Peak files (BED, narrowPeak)<a class="headerlink" href="#peak-files-bed-narrowpeak" title="Permanent link">&para;</a></h2>
+<p>If you have only CTCF ChIP-seq peaks and no loops, give a <code>.bed</code> or <code>.narrowPeak</code> file. Each peak is a binding site with a weight (the score column); a peak spanning several beads spreads its weight over them. There are no loop pairs in such a file, so only <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span> are built (the 2D mode and the loop-based optimizer target are not available). An optional probability column gives the direction of each site in the same way as for BEDPE.</p>
+<h2 id="preferential-and-contrastive-binding">Preferential and contrastive binding<a class="headerlink" href="#preferential-and-contrastive-binding" title="Permanent link">&para;</a></h2>
+<p>The profiles <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span> enter the energy through the <em>binding energy</em>: a leg placed on a bead with a large value lowers the energy, so it is more probable (the Monte Carlo page gives the formula). What the energy should say about beads <em>without</em> any anchor is a modelling choice, and LoopSage offers two:</p>
+<div class="highlight"><pre><span></span><code><span class="k">[energy]</span>
+<span class="na">binding_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">preferential</span><span class="w">      </span><span class="c1"># or: contrastive          (CLI: --binding-mode)</span>
+</code></pre></div>
+<figure>
+<p><img alt="Preferential and contrastive binding" src="../../assets/theory/binding_modes.svg" width="780" />
+  </p>
+<figcaption><b>a</b> Every loop adds its weight to the bead of its left anchor (<span class="arithmatex">\(L\)</span>) and of its right anchor (<span class="arithmatex">\(R\)</span>); this is the same in both modes. <b>b</b> Contrastive mode also measures how much the input loops cover each bead. <b>c</b> What a simulated loop feels at three places. Numbers are from this toy example.</figcaption>
+</figure>
+<p><strong>Preferential binding</strong> (default). Only the anchors count: a leg is <em>attracted</em> to the anchors and feels nothing special elsewhere, so a loop-free region costs nothing. Its weakness is that, with few and strong anchors, the extruders can form loops over regions where the input has none.</p>
+<p><strong>Contrastive binding.</strong> The anchor terms are the same, and a second term is added that looks at the <em>inside</em> of a loop. For every bead we count how many input loops span it (its <em>coverage</em>) and rescale it,</p>
+<div class="arithmatex">\[
+\hat c_k=\begin{cases}-1 &amp; c_k&lt;0.05\,\bar c\quad\text{(loop free)},\\[2pt] \mathrm{clip}\!\left(\dfrac{c_k}{\bar c}-1,\,0,\,1\right) &amp; \text{otherwise,}\end{cases}
+\]</div>
+<p>where <span class="arithmatex">\(c_k\)</span> is the coverage of bead <span class="arithmatex">\(k\)</span> and <span class="arithmatex">\(\bar c\)</span> its mean. So <span class="arithmatex">\(\hat c_k=-1\)</span> only on a bead that (practically) no input loop spans, <span class="arithmatex">\(0\)</span> on every covered bead up to the average coverage, and up to <span class="arithmatex">\(+1\)</span> at twice the average or more. A simulated loop is penalised only for beads inside it that are really loop free, and rewarded for beads that are covered more than average: beads with few but some loops cost nothing. It enters the binding energy, see <a href="../monte-carlo/#binding-legs-like-anchors">Monte Carlo</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">What the coverage term adds</p>
+<p>Every extruder has one left and one right leg, so the anchor terms depend only on the <em>shape</em> of <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span> (a constant shift would change every state equally and cancel in the Metropolis rule). The coverage term looks at the beads <em>between</em> the two legs, and that number differs from one loop to another, so it changes the preferred loops. It needs loops (a BEDPE file); with peaks only it has no effect, and LoopSage warns about it.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Which one to use</p>
+<p>Start with preferential binding. If the simulated loops cover regions where the input has no loops, try contrastive. If the simulation instead collapses onto a few strong anchors and leaves most of the region empty, go back to preferential, or lower the binding coefficient <span class="arithmatex">\(b\)</span>.</p>
+</div>
+<h2 id="extra-tracks">Extra tracks<a class="headerlink" href="#extra-tracks" title="Permanent link">&para;</a></h2>
+<p>Any BigWig signal (for example RNA polymerase II, H3K27ac or another cohesin ChIP) can add a binding term. Each track is averaged over the beads, and a leg placed on a bead with a high signal is rewarded or penalised according to the strength you give the track (a negative strength rewards; the default is <span class="arithmatex">\(-N/10\)</span> per track). A separate BigWig can describe where extruders <em>load</em> on the chromatin (for example NIPBL or cohesin ChIP): the rebinding move then picks the new loop position in proportion to this track instead of uniformly.</p>
+<div class="highlight"><pre><span></span><code><span class="k">[input]</span>
+<span class="na">bw_files</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s">rnapii.bw,h3k27ac.bw</span><span class="w">        </span><span class="c1"># extra binding tracks</span>
+<span class="na">bw_strengths</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">-100,-100</span><span class="w">                   </span><span class="c1"># one per track (empty = -N_beads/10)</span>
+<span class="na">lef_track_file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">nipbl.bw</span><span class="w">                    </span><span class="c1"># loading preference of the extruders   (CLI: --lef-track)</span>
+</code></pre></div>
+<h2 id="hi-c">Hi-C<a class="headerlink" href="#hi-c" title="Permanent link">&para;</a></h2>
+<p>A Hi-C file (<code>.hic</code>) is not needed to run the model, but it adds three things: a reference for the validation, a target for the <a href="../optimizer/">optimizer</a>, and, when the epigenetic model is on, the compartments.</p>
+<div class="highlight"><pre><span></span><code>loopsage<span class="w"> </span>-f<span class="w"> </span>loops.bedpe<span class="w"> </span>-r<span class="w"> </span>chr1:78000000-92000000<span class="w"> </span>-n<span class="w"> </span><span class="m">1000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">         </span>--hic<span class="w"> </span>sample.hic<span class="w"> </span>--hic-norm<span class="w"> </span>KR<span class="w"> </span>--hic-resolution<span class="w"> </span><span class="m">10000</span>
+</code></pre></div>
+<h3 id="reading-the-map">Reading the map<a class="headerlink" href="#reading-the-map" title="Permanent link">&para;</a></h3>
+<p>The file is read with <code>hic-straw</code>, in a separate process (the library can crash the interpreter when a resolution or a normalisation is missing, and a crash must only fail one attempt). The stage tries the resolutions closest to the bead size first (an equal or finer one is preferred, because it can be summed into beads), and the normalisations in the order KR, SCALE, VC_SQRT, VC, NONE, starting with the one you asked for. Whatever it finally used is written to the report. The matrix is then put on the bead grid: finer bins are summed into beads, coarser bins are spread over the beads they cover (with a correction, so the total contact count is kept). Beads for which less than half of the Hi-C rows have data are <em>masked</em> (set to missing), so they do not distort the comparison.</p>
+<div class="highlight"><pre><span></span><code><span class="k">[input]</span>
+<span class="na">hic_file</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s">sample.hic</span>
+<span class="na">hic_norm</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s">KR</span><span class="w">          </span><span class="c1"># falls back to SCALE, VC_SQRT, VC, NONE</span>
+<span class="na">hic_resolution</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0</span><span class="w">           </span><span class="c1"># bp; 0 = automatic, closest to the bead size</span>
+</code></pre></div>
+<h3 id="compartments-from-hi-c">Compartments from Hi-C<a class="headerlink" href="#compartments-from-hi-c" title="Permanent link">&para;</a></h3>
+<p>The Potts field <span class="arithmatex">\(h_k\)</span> tells the epigenetic model which beads are A (positive) and which are B (negative). It comes from the first source that is available:</p>
+<ol>
+<li>a BigWig of the A/B signal (<code>comp_bw_file</code>), rescaled to <span class="arithmatex">\([-1,1]\)</span>;</li>
+<li>a BED of compartments or sub-compartments (<code>comp_bed_file</code>): A labels count positive and B negative, deeper sub-compartments (A.2 against A.1) count a bit more, and a score column, if present, is used as <span class="arithmatex">\(2s-1\)</span>;</li>
+<li>the Hi-C map itself, when the epigenetic model is on (<code>epi_coeff</code> greater than 0) and no track is given.</li>
+</ol>
+<p>In the Hi-C case the compartments are the usual <em>PC1</em>. From the map we divide out the decay with distance, which gives the observed/expected map. The correlation matrix of its rows says which beads contact the same partners, and its leading eigenvector (PC1) splits the beads into two groups. The sign is chosen so that the group with <em>denser short-range contacts</em> is B (negative), the usual convention. The values are clipped to a robust range and scaled to <span class="arithmatex">\([-1,1]\)</span>.</p>
+<div class="highlight"><pre><span></span><code><span class="k">[input]</span>
+<span class="na">comp_bw_file</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">compartments.bw</span><span class="w">      </span><span class="c1"># A/B signal</span>
+<span class="na">comp_bed_file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">subcompartments.bed</span><span class="w">  </span><span class="c1"># or a BED of (sub)compartments</span>
+</code></pre></div>
+<h2 id="everything-in-one-place">Everything in one place<a class="headerlink" href="#everything-in-one-place" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="k">[input]</span>
+<span class="na">interaction_file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">loops.bedpe</span><span class="w">        </span><span class="c1"># .bedpe, .bed or .narrowPeak       (CLI: -f)</span>
+<span class="na">chrom</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">chr1</span><span class="c1">;  region_start = 78000000;  region_end = 92000000;  n_beads = 1000</span>
+<span class="na">min_pet</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="s">0</span><span class="w">                  </span><span class="c1"># BEDPE: drop loops with fewer PET counts</span>
+<span class="na">smoothing_input</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">True</span><span class="w">               </span><span class="c1"># Gaussian smoothing of L and R</span>
+<span class="na">hic_file</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="s">sample.hic</span><span class="w">         </span><span class="c1"># optional</span>
+<span class="na">motif_genome</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s">hg38.fa</span><span class="w">            </span><span class="c1"># optional: CTCF directions (see Motif Finder)</span>
+
+<span class="k">[energy]</span>
+<span class="na">binding_mode</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s">preferential</span><span class="w">       </span><span class="c1"># or contrastive</span>
+<span class="na">data_loss_mode</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">0</span><span class="w">                  </span><span class="c1"># 0 = profiles L and R, 1 = 2D loop map</span>
+<span class="na">loss_sigma</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s">2.0</span><span class="w">                </span><span class="c1"># smoothing of the 2D map, in beads</span>
+</code></pre></div>
+<h2 id="where-the-code-is">Where the code is<a class="headerlink" href="#where-the-code-is" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/preproc/readers.py</code></td>
+<td>BEDPE, BED and narrowPeak readers: anchors to beads, <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span>, smoothing, scaling, binding mode</td>
+</tr>
+<tr>
+<td><code>src/preproc/loader.py</code></td>
+<td>region and beads, compartment files, tracks, the container of all inputs</td>
+</tr>
+<tr>
+<td><code>src/preproc/hic.py</code></td>
+<td>reading <code>.hic</code> files, choosing resolution and normalisation, putting the map on the bead grid</td>
+</tr>
+<tr>
+<td><code>src/analysis/maps.py</code></td>
+<td>the compartment eigenvector from a Hi-C map</td>
+</tr>
+<tr>
+<td><code>src/pipeline/stage_preproc.py</code></td>
+<td>the pipeline stage: runs the steps, writes the tables and figures of the input</td>
+</tr>
+</tbody>
+</table>
+<h3 id="outputs">Outputs<a class="headerlink" href="#outputs" title="Permanent link">&para;</a></h3>
+<p>The arrays are saved in <code>data/inputs.npz</code>. The report shows a summary of what was read (number of loops and anchors, loop lengths), the figure of the anchor profiles and loop lengths, the loop matrices, the extra tracks, and, with Hi-C, the map as it was read together with its resolution and normalisation.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../pipeline/" class="md-footer__link md-footer__link--prev" aria-label="Previous: The Pipeline">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                The Pipeline
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../motif-finder/" class="md-footer__link md-footer__link--next" aria-label="Next: Motif Finder">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Motif Finder
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

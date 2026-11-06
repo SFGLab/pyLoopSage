@@ -1,0 +1,1853 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Energy-based stochastic modelling of chromatin loop extrusion and 3D genome structure">
+      
+      
+      
+        <link rel="canonical" href="https://sfglab.github.io/pyLoopSage/implementation/motif-finder/">
+      
+      
+        <link rel="prev" href="../preprocessing/">
+      
+      
+        <link rel="next" href="../optimizer/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Motif Finder - LoopSage</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/loopsage.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#the-motif-finder" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="LoopSage" class="md-header__button md-logo" aria-label="LoopSage" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            LoopSage
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Motif Finder
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/SFGLab/pyLoopSage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SFGLab/pyLoopSage
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../intro/" class="md-tabs__link">
+          
+  
+  
+  Intro
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../theory/" class="md-tabs__link">
+          
+  
+  
+  Theory
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+  Implementation
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../acknowledgments/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Acknowledgments
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="LoopSage" class="md-nav__button md-logo" aria-label="LoopSage" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    LoopSage
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/SFGLab/pyLoopSage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SFGLab/pyLoopSage
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Intro
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Intro
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Theory
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Theory
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/scope/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scope
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/loop-extrusion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loop extrusion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/mechanics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mechanics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/mcmc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCMC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/molecular-dynamics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Molecular dynamics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/topology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Topology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Implementation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Implementation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Motif Finder
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Motif Finder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-mathematics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The mathematics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The mathematics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-known-sites-to-a-score" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From known sites to a score
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-high-must-a-score-be" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How high must a score be?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#two-strands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two strands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#one-probability-per-anchor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One probability per anchor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-orientation-to-l-and-r" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From orientation to \(L\) and \(R\)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The algorithm
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-the-motif-finder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using the motif finder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using the motif finder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-the-code-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the code is
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../optimizer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Optimizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../monte-carlo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monte Carlo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../molecular-dynamics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Molecular Dynamics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command-line interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../acknowledgments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acknowledgments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-mathematics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The mathematics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The mathematics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-known-sites-to-a-score" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From known sites to a score
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-high-must-a-score-be" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How high must a score be?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#two-strands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two strands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#one-probability-per-anchor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One probability per anchor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-orientation-to-l-and-r" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From orientation to \(L\) and \(R\)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The algorithm
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-the-motif-finder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using the motif finder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using the motif finder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-the-code-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the code is
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="the-motif-finder">The Motif Finder<a class="headerlink" href="#the-motif-finder" title="Permanent link">&para;</a></h1>
+<p>The direction of a CTCF site decides which legs of a ring it can stop (see <a href="../../theory/loop-extrusion/">Loop extrusion</a>): a <em>forward</em> site stops a leg that moves left, a <em>reverse</em> site stops a leg that moves right.
+Loop files such as ChIA-PET or HiChIP tell us <em>where</em> the two anchors of a loop are, but not in which direction the CTCF sites point.
+The <strong>motif finder</strong> reads this direction from the DNA sequence. It searches each anchor of a loop for the CTCF motif on both strands, turns the hits into a probability that the site is reversed, and writes this probability into the loop file. The Monte Carlo stage then uses it to build the profiles <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span>.</p>
+<p>It is an optional step: it runs when a reference genome is given (<code>--motif-genome</code>), and the plain BEDPE import keeps working without it.</p>
+<h2 id="the-mathematics">The mathematics<a class="headerlink" href="#the-mathematics" title="Permanent link">&para;</a></h2>
+<p>The idea is simple. We slide a small window along the DNA, give every window a <em>score</em> that tells us how much it looks like a CTCF site, and keep the windows that score high. In this section we will see how the score is built, how high it has to be, and how the hits end up as one number per anchor. To keep things friendly, we follow a tiny made-up motif of length <span class="arithmatex">\(L=3\)</span> all the way through, so you can check every formula by hand.</p>
+<h3 id="from-known-sites-to-a-score">From known sites to a score<a class="headerlink" href="#from-known-sites-to-a-score" title="Permanent link">&para;</a></h3>
+<p><strong>Notation.</strong> DNA is a string written with four letters (bases) <span class="arithmatex">\(b\in\{A,C,G,T\}\)</span>. A <em>motif</em> is a short pattern of length <span class="arithmatex">\(L\)</span> that a protein likes to bind; we number its positions <span class="arithmatex">\(i=1,\dots,L\)</span>. A <em>window</em> <span class="arithmatex">\(x=x_1x_2\dots x_L\)</span> is a piece of DNA of the same length, which we want to compare with the motif.</p>
+<p><strong>Counts.</strong> We start from a collection of <span class="arithmatex">\(N\)</span> DNA sites that are known to be bound by the protein. At every position we simply count how often each base appears: <span class="arithmatex">\(c_{b,i}\)</span> is the number of sites with base <span class="arithmatex">\(b\)</span> at position <span class="arithmatex">\(i\)</span>. This table is the <em>position frequency matrix</em> (PFM). In the toy example, with <span class="arithmatex">\(N=10\)</span> sites:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><span class="arithmatex">\(i=1\)</span></th>
+<th><span class="arithmatex">\(i=2\)</span></th>
+<th><span class="arithmatex">\(i=3\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>8</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>C</td>
+<td>0</td>
+<td>10</td>
+<td>1</td>
+</tr>
+<tr>
+<td>G</td>
+<td>1</td>
+<td>0</td>
+<td>9</td>
+</tr>
+<tr>
+<td>T</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>Reading the columns: position 1 is mostly A, position 2 is always C, and position 3 is mostly G, so the motif is roughly <code>ACG</code>. For CTCF the table has <span class="arithmatex">\(L=19\)</span> columns (JASPAR MA0139.1).</p>
+<p><strong>Probabilities.</strong> The fraction <span class="arithmatex">\(c_{b,i}/N\)</span> would be a natural probability of base <span class="arithmatex">\(b\)</span> at position <span class="arithmatex">\(i\)</span>. There is a catch, though. A base that was never seen (say G at position 2) would get probability <span class="arithmatex">\(0\)</span>, and any window with a G there would be rejected for ever, even if it matches perfectly everywhere else. Absence in a small sample does not mean impossible, so we give every base a tiny benefit of the doubt, a <em>pseudocount</em> <span class="arithmatex">\(\alpha\)</span> (<code>motif_pseudocount</code>, default <span class="arithmatex">\(0.8\)</span>), shared equally among the four bases,</p>
+<div class="arithmatex">\[
+p_{b,i}=\frac{c_{b,i}+\alpha/4}{N+\alpha}.
+\]</div>
+<p>A quick check: the four numbers at one position still add up to 1, because the four shares <span class="arithmatex">\(\alpha/4\)</span> add up to <span class="arithmatex">\(\alpha\)</span>. In the toy example, <span class="arithmatex">\(p_{A,1}=(8+0.2)/10.8=0.76\)</span> and <span class="arithmatex">\(p_{G,2}=0.2/10.8=0.019\)</span>: unlikely, but not impossible.</p>
+<p><strong>Log-odds.</strong> How do we decide whether a window is <em>motif-like</em>? We compare two stories: the window was drawn from the motif, or it is random DNA, in which every base has probability <span class="arithmatex">\(1/4\)</span> at every position. At one position the ratio of the two probabilities is <span class="arithmatex">\(p_{b,i}/(1/4)\)</span>. Windows have <span class="arithmatex">\(L\)</span> independent positions, so the ratios multiply. Long products of small numbers are awkward, so we take the logarithm (base 2), which turns the product into an easy sum. The <em>position weight matrix</em> (PWM) is</p>
+<div class="arithmatex">\[
+M_{b,i}=\log_2\frac{p_{b,i}}{1/4},
+\]</div>
+<p>and the <em>score</em> of a window is</p>
+<div class="arithmatex">\[
+S(x)=\sum_{i=1}^{L}M_{x_i,\,i}=\log_2\prod_{i=1}^{L}\frac{p_{x_i,i}}{1/4}.
+\]</div>
+<p>The right-hand form says what <span class="arithmatex">\(S\)</span> means: <span class="arithmatex">\(2^{S}\)</span> is how many times more likely the window is under the motif than under random DNA. So each point of score is one doubling. A base that is more common than <span class="arithmatex">\(1/4\)</span> in the motif adds a positive number, and a base that is rarer takes points away.</p>
+<p>In the toy example the matrix is</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><span class="arithmatex">\(i=1\)</span></th>
+<th><span class="arithmatex">\(i=2\)</span></th>
+<th><span class="arithmatex">\(i=3\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td><span class="arithmatex">\(+1.60\)</span></td>
+<td><span class="arithmatex">\(-3.75\)</span></td>
+<td><span class="arithmatex">\(-3.75\)</span></td>
+</tr>
+<tr>
+<td>C</td>
+<td><span class="arithmatex">\(-3.75\)</span></td>
+<td><span class="arithmatex">\(+1.92\)</span></td>
+<td><span class="arithmatex">\(-1.17\)</span></td>
+</tr>
+<tr>
+<td>G</td>
+<td><span class="arithmatex">\(-1.17\)</span></td>
+<td><span class="arithmatex">\(-3.75\)</span></td>
+<td><span class="arithmatex">\(+1.77\)</span></td>
+</tr>
+<tr>
+<td>T</td>
+<td><span class="arithmatex">\(-1.17\)</span></td>
+<td><span class="arithmatex">\(-3.75\)</span></td>
+<td><span class="arithmatex">\(-3.75\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>so the consensus window <code>ACG</code> scores <span class="arithmatex">\(1.60+1.92+1.77=5.29\)</span> (it is <span class="arithmatex">\(2^{5.29}\approx 39\)</span> times more likely under the motif than at random), the window <code>TCG</code> scores <span class="arithmatex">\(-1.17+1.92+1.77=2.52\)</span>, and <code>ACT</code> scores <span class="arithmatex">\(1.60+1.92-3.75=-0.23\)</span>. The best possible score belongs to the consensus; for CTCF it is <span class="arithmatex">\(26.1\)</span> (<code>TGGCCACCAGGGGGCGCTA</code>). Because every position adds only a little, a window with one or two mismatches can still score high (panel b below).</p>
+<h3 id="how-high-must-a-score-be">How high must a score be?<a class="headerlink" href="#how-high-must-a-score-be" title="Permanent link">&para;</a></h3>
+<p>A window is a <em>hit</em> when <span class="arithmatex">\(S\ge t\)</span>. But how high should the cutoff <span class="arithmatex">\(t\)</span> be? Strict enough that random DNA rarely passes. We say how rare with a <em>p-value</em> <span class="arithmatex">\(\pi\)</span> (<code>motif_pvalue</code>, default <span class="arithmatex">\(10^{-5}\)</span>): <span class="arithmatex">\(t\)</span> is the smallest score for which</p>
+<div class="arithmatex">\[
+P_0(S\ge t)\le\pi ,
+\]</div>
+<p>where <span class="arithmatex">\(P_0\)</span> is the probability for a window of random DNA with independent, equally likely bases. In words: random DNA passes only about once in <span class="arithmatex">\(1/\pi\)</span> windows. A smaller <span class="arithmatex">\(\pi\)</span> means a higher <span class="arithmatex">\(t\)</span> and fewer, more reliable hits.</p>
+<p>In the toy example there are <span class="arithmatex">\(4^3=64\)</span> possible windows, all equally likely at random. Only <code>ACG</code> scores above <span class="arithmatex">\(5\)</span>, so <span class="arithmatex">\(P_0(S\ge5)=1/64\)</span>. For CTCF there are <span class="arithmatex">\(4^{19}\approx 2.7\times10^{11}\)</span> windows, far too many to list, so instead we build the distribution of the score <em>one position at a time</em>. Let <span class="arithmatex">\(f_i(s)\)</span> be the probability that the first <span class="arithmatex">\(i\)</span> positions of a random window add up to <span class="arithmatex">\(s\)</span>. We start with <span class="arithmatex">\(f_0(0)=1\)</span> (an empty window has score <span class="arithmatex">\(0\)</span>). Adding position <span class="arithmatex">\(i\)</span>, each of the four bases appears with probability <span class="arithmatex">\(1/4\)</span> and shifts the sum by <span class="arithmatex">\(M_{b,i}\)</span>:</p>
+<div class="arithmatex">\[
+f_i(s)=\frac14\sum_{b\in\{A,C,G,T\}} f_{i-1}\big(s-M_{b,i}\big).
+\]</div>
+<p>In the toy example, after position 1 the possible sums are <span class="arithmatex">\(1.60,\,-3.75,\,-1.17,\,-1.17\)</span>, each with probability <span class="arithmatex">\(1/4\)</span> (so <span class="arithmatex">\(-1.17\)</span> has <span class="arithmatex">\(1/2\)</span>); position 2 shifts every sum again, and so on. After the last position, the tail is added up:</p>
+<div class="arithmatex">\[
+P_0(S\ge t)=\sum_{s\ge t}f_L(s).
+\]</div>
+<p>The answer is <em>exact</em> (no simulation, no luck involved) and takes only <span class="arithmatex">\(L\)</span> steps. To keep the number of distinct sums finite, scores are rounded to <span class="arithmatex">\(1/100\)</span>. For the bundled CTCF matrix this gives <span class="arithmatex">\(t=8.3\)</span> for <span class="arithmatex">\(\pi=10^{-4}\)</span>, <span class="arithmatex">\(t=13.1\)</span> for <span class="arithmatex">\(\pi=10^{-5}\)</span> and <span class="arithmatex">\(t=17.0\)</span> for <span class="arithmatex">\(\pi=10^{-6}\)</span> (panel c below).</p>
+<figure>
+<p><img alt="Motif finder, scoring" src="../../assets/theory/motif_pwm.svg" width="640" />
+  </p>
+<figcaption><b>a</b> The CTCF motif (JASPAR MA0139.1) as a logo: the height of a letter is how strongly that base is preferred at that position. <b>b</b> One window of DNA is scored by adding one number per position. <b>c</b> The score of a window of random DNA has a known distribution, which fixes the cutoff <i>t</i>.</figcaption>
+</figure>
+<h3 id="two-strands">Two strands<a class="headerlink" href="#two-strands" title="Permanent link">&para;</a></h3>
+<p>DNA is a double helix: two strands that run in opposite directions, and a protein can sit on either of them. A site on the <em>reverse</em> strand reads, along the written strand, as the <em>reverse complement</em> of the motif: every base is swapped for its partner (<span class="arithmatex">\(A\leftrightarrow T\)</span>, <span class="arithmatex">\(C\leftrightarrow G\)</span>) and the order is reversed. For the toy motif <code>ACG</code> it is <code>CGT</code>. Scoring the reverse-strand site therefore uses the matrix</p>
+<div class="arithmatex">\[
+M^{-}_{b,i}=M_{\bar b,\;L+1-i},
+\]</div>
+<p>where <span class="arithmatex">\(\bar b\)</span> is the partner of <span class="arithmatex">\(b\)</span> and <span class="arithmatex">\(L+1-i\)</span> is the mirrored position. Every window is scored twice: with <span class="arithmatex">\(M\)</span> (strand <span class="arithmatex">\(+\)</span>, the motif as written, a <em>forward</em> site) and with <span class="arithmatex">\(M^{-}\)</span> (strand <span class="arithmatex">\(-\)</span>, a <em>reverse</em> site). A window that contains an unknown base (N) never gives a hit.</p>
+<p>Testing both strands doubles the number of tests, so the chance of a false hit grows. An anchor of <span class="arithmatex">\(n\)</span> bp has <span class="arithmatex">\(2(n-L+1)\)</span> windows, and random DNA gives at least one false hit with probability</p>
+<div class="arithmatex">\[
+1-(1-\pi)^{2(n-L+1)} .
+\]</div>
+<p>The report compares the fraction of anchors with a hit with this number: real CTCF anchors should be much richer in motifs than random DNA.</p>
+<h3 id="one-probability-per-anchor">One probability per anchor<a class="headerlink" href="#one-probability-per-anchor" title="Permanent link">&para;</a></h3>
+<p>An anchor can contain several hits, on both strands, and they may disagree. What we want in the end is one number: how likely is the site to be <em>reversed</em>? Say the hits <span class="arithmatex">\(h\)</span> have scores <span class="arithmatex">\(S_h\)</span> and strands <span class="arithmatex">\(\sigma_h\in\{+,-\}\)</span>. Since <span class="arithmatex">\(2^{S_h}\)</span> is a likelihood ratio, it measures how strong the evidence is that hit <span class="arithmatex">\(h\)</span> is the true site. We define</p>
+<div class="arithmatex">\[
+P(\mathrm{rev})=\frac{\sum_{h:\,\sigma_h=-}2^{S_h}}{\sum_{h}2^{S_h}},
+\]</div>
+<p>the <em>share of the evidence that sits on reverse hits</em>. It is <span class="arithmatex">\(0\)</span> when all the evidence is forward and <span class="arithmatex">\(1\)</span> when all of it is reverse, and a hit that is 3 points stronger simply counts <span class="arithmatex">\(2^3=8\)</span> times more. In the code the weights are written <span class="arithmatex">\(2^{S_h-S_{\max}}\)</span>, which gives the same ratio (the common factor <span class="arithmatex">\(2^{-S_{\max}}\)</span> cancels) but avoids huge numbers. An anchor without any hit gets <span class="arithmatex">\(P(\mathrm{rev})=-1\)</span>, meaning <em>unknown</em>.</p>
+<p>For example, a <span class="arithmatex">\(+\)</span> hit with <span class="arithmatex">\(S=17.4\)</span> and a <span class="arithmatex">\(-\)</span> hit with <span class="arithmatex">\(S=14.4\)</span> have weights <span class="arithmatex">\(1\)</span> and <span class="arithmatex">\(2^{-3}=0.125\)</span>, so <span class="arithmatex">\(P(\mathrm{rev})=0.125/1.125=0.11\)</span>: the site is most probably forward.</p>
+<h3 id="from-orientation-to-l-and-r">From orientation to <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span><a class="headerlink" href="#from-orientation-to-l-and-r" title="Permanent link">&para;</a></h3>
+<p>The model describes each CTCF site by two <em>profiles</em> along the chromosome: <span class="arithmatex">\(L_k\)</span> says how strongly bead <span class="arithmatex">\(k\)</span> stops legs that move left (forward sites) and <span class="arithmatex">\(R_k\)</span> how strongly it stops legs that move right (reverse sites). Each loop carries a weight <span class="arithmatex">\(w\)</span> (its PET count, i.e. the number of read pairs supporting it, or 1 when the file has none). Its two anchors are placed on beads, and the weight of the anchor on bead <span class="arithmatex">\(k\)</span> is shared between the profiles according to its probability <span class="arithmatex">\(P_k\)</span>,</p>
+<div class="arithmatex">\[
+L_k \mathrel{+}= w\,(1-P_k),\qquad R_k \mathrel{+}= w\,P_k .
+\]</div>
+<p>A sure forward site (<span class="arithmatex">\(P_k=0\)</span>) feeds only <span class="arithmatex">\(L\)</span>, a sure reverse site only <span class="arithmatex">\(R\)</span>, and an anchor with unknown orientation gives <span class="arithmatex">\(w/2\)</span> to each. A loop whose left anchor is forward and whose right anchor is reverse is <em>convergent</em>, and its two legs can both stop there.</p>
+<figure>
+<p><img alt="Motif finder, orientation" src="../../assets/theory/motif_strands.svg" width="640" />
+  </p>
+<figcaption><b>a</b> Each window of an anchor is scored on both strands. <b>b</b> The hits of an anchor are combined into one probability of being reversed. <b>c</b> This probability divides the weight of the loop between <i>L</i> (red) and <i>R</i> (blue).</figcaption>
+</figure>
+<h2 id="the-algorithm">The algorithm<a class="headerlink" href="#the-algorithm" title="Permanent link">&para;</a></h2>
+<p>For every loop file the finder does the following steps, in this order.</p>
+<ol>
+<li><strong>Read and filter.</strong> The BEDPE is read (at least six columns; the seventh is the PET count or score). Loops with both anchors inside the modelled region and with at least <code>min_pet</code> counts are kept, and identical loops are counted once.</li>
+<li><strong>Collect anchors.</strong> The distinct anchors <span class="arithmatex">\((\text{chrom},\text{start},\text{end})\)</span> of the kept loops are listed, so an anchor shared by many loops is scanned only once.</li>
+<li><strong>Read the sequence.</strong> Each anchor, extended by <code>motif_pad</code> bp on both sides, is read from the reference genome. The FASTA file is indexed (a <code>.fai</code> file is created next to it and reused), so only the requested piece is read, never the whole genome.</li>
+<li><strong>Scan.</strong> The windows of the anchor are scored on both strands, and every window with <span class="arithmatex">\(S\ge t\)</span> is a hit. The scan adds the <span class="arithmatex">\(L\)</span> shifted columns of the matrix, so it needs about <span class="arithmatex">\(L\)</span> operations per base.</li>
+<li><strong>Call.</strong> The number of hits, the best score, its strand and position and <span class="arithmatex">\(P(\mathrm{rev})\)</span> are computed for the anchor.</li>
+<li><strong>Write.</strong> The probabilities of the two anchors are written as columns 8 and 9 of an annotated BEDPE, and the model reads them as its <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span> profiles.</li>
+</ol>
+<h2 id="using-the-motif-finder">Using the motif finder<a class="headerlink" href="#using-the-motif-finder" title="Permanent link">&para;</a></h2>
+<div class="admonition note">
+<p class="admonition-title">In LoopSage</p>
+<p>The search runs in the preparation stage when a genome is given. Example: <code>examples/02_chiapet_motif_orientation.ini</code>.</p>
+</div>
+<div class="highlight"><pre><span></span><code>loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class="w"> </span>--motif-genome<span class="w"> </span>hg38.fa
+loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class="w"> </span>--motif-genome<span class="w"> </span>hg38.fa<span class="w"> </span>--motif-pvalue<span class="w"> </span>1e-4<span class="w"> </span>--min-pet<span class="w"> </span><span class="m">3</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Key (option)</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>motif_genome</code> (<code>--motif-genome</code>)</td>
+<td>none</td>
+<td>reference genome FASTA (not compressed); turns the motif search on</td>
+</tr>
+<tr>
+<td><code>motif_pfm</code> (<code>--motif-pfm</code>)</td>
+<td>bundled CTCF MA0139.1</td>
+<td>motif counts, four rows A, C, G, T of equal length, or a JASPAR file</td>
+</tr>
+<tr>
+<td><code>motif_pvalue</code> (<code>--motif-pvalue</code>)</td>
+<td><span class="arithmatex">\(10^{-5}\)</span></td>
+<td>chance of a hit in random DNA: smaller is stricter</td>
+</tr>
+<tr>
+<td><code>motif_pseudocount</code></td>
+<td>0.8</td>
+<td>pseudocount <span class="arithmatex">\(\alpha\)</span> added to the counts</td>
+</tr>
+<tr>
+<td><code>motif_pad</code></td>
+<td>0</td>
+<td>bp added on both sides of every anchor before the search</td>
+</tr>
+<tr>
+<td><code>min_pet</code> (<code>--min-pet</code>)</td>
+<td>0</td>
+<td>keep only loops with at least this many PET counts or this score</td>
+</tr>
+</tbody>
+</table>
+<p>Chromosome names are matched flexibly (<code>1</code> and <code>chr1</code> are the same). A BEDPE that already has orientation probabilities in columns 8 and 9 keeps them when no genome is given, and they are replaced when it is.</p>
+<h3 id="where-the-code-is">Where the code is<a class="headerlink" href="#where-the-code-is" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/motif_finder/pssm.py</code></td>
+<td>the matrix <span class="arithmatex">\(M\)</span>, the exact cutoff, the two-strand scan</td>
+</tr>
+<tr>
+<td><code>src/motif_finder/fasta.py</code></td>
+<td>indexed random access to a reference genome</td>
+</tr>
+<tr>
+<td><code>src/motif_finder/annotate.py</code></td>
+<td>filtering, scanning anchors, <span class="arithmatex">\(P(\mathrm{rev})\)</span>, the annotated BEDPE</td>
+</tr>
+<tr>
+<td><code>src/preproc/readers.py</code></td>
+<td>turns the probabilities into the profiles <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span></td>
+</tr>
+</tbody>
+</table>
+<h3 id="outputs">Outputs<a class="headerlink" href="#outputs" title="Permanent link">&para;</a></h3>
+<p>The data folder gets the annotated loop file <code>loops_annotated.bedpe</code> (the six BEDPE columns, the PET count and the two probabilities, with <span class="arithmatex">\(-1\)</span> for unknown), and the tables <code>motif_loops.tsv</code> (one row per loop) and <code>motif_anchors.tsv</code> (one row per anchor: number of hits, best score, strand, position and <span class="arithmatex">\(P(\mathrm{rev})\)</span>), and <code>motif_stats.json</code> with the counts of every step.
+The report shows the motif, its cutoff, the fraction of anchors with a motif next to what random DNA would give, and how many loops have both, one or no oriented anchor, plus a figure with the number of loops after each step, the best score of every anchor against the cutoff, and the orientation of the left against the right anchor (convergent loops lie in one corner).</p>
+<div class="admonition tip">
+<p class="admonition-title">Reading the result</p>
+<p>Most loops from CTCF experiments should have convergent anchors. If the share of anchors with a motif is close to the random value, the cutoff is probably too loose, or the anchors are not CTCF-driven, and the orientations are then not informative.</p>
+</div>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Staden R. (1984). Computer methods to locate signals in nucleic acid sequences. <em>Nucleic Acids Research</em> 12, 505.</li>
+<li>Touzet H., Varré J.-S. (2007). Efficient and accurate P-value computation for position weight matrices. <em>Algorithms for Molecular Biology</em> 2, 15.</li>
+<li>Castro-Mondragon J. A. et al. (2022). JASPAR 2022: the 9th release of the open-access database of transcription factor binding profiles. <em>Nucleic Acids Research</em> 50, D165.</li>
+<li>Rao S. S. P. et al. (2014). A 3D map of the human genome at kilobase resolution reveals principles of chromatin looping. <em>Cell</em> 159, 1665.</li>
+<li>de Wit E. et al. (2015). CTCF binding polarity determines chromatin looping. <em>Molecular Cell</em> 60, 676.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../preprocessing/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Preprocessing">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Preprocessing
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../optimizer/" class="md-footer__link md-footer__link--next" aria-label="Next: The Optimizer">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                The Optimizer
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
