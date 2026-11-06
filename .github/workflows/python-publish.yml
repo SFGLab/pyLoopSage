@@ -31,7 +31,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install build  # Needed to build the package
-        pip install .  # Install the LoopSage package from the current directory
 
     # Build the package (wheel + source distribution)
     - name: Build package

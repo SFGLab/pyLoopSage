@@ -86,7 +86,7 @@ def test_run_py_help(capsys):
 def test_version_and_command_entry():
     from version import __version__
     import run
-    assert __version__ == "2.0.0rc1" and callable(run.main)
+    assert __version__ == "2.0.0rc2" and callable(run.main)
 
 
 def test_example_configs_have_known_keys():

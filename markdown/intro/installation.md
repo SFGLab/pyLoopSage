@@ -8,7 +8,7 @@
 
 ## Step by step (recommended: conda)
 
-`openmm` (the molecular dynamics engine) and `pyBigWig` install most reliably from conda, so the packages are installed in two parts. `hic-straw`, which reads `.hic` files for the optional `--hic` reference, builds from source when no wheel exists for your system and then needs a C++ compiler and libcurl.
+`openmm` (the molecular dynamics engine) and `pyBigWig` install most reliably from conda, so the packages are installed in two parts. `hic-straw`, which reads `.hic` files for the optional `--hic` reference, is installed with the package; it builds from source when no wheel exists for your system and then needs a C++ compiler and libcurl.
 
 ```bash
 # 1. get the code

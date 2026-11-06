@@ -21,7 +21,7 @@ From one command you get an HTML report with the contact maps, loop statistics, 
 
 ## Installation
 
-Python 3.10 or newer is required. `openmm` and `pyBigWig` install most reliably from conda. `hic-straw` (reads `.hic` files for the optional `--hic` reference) needs a C++ compiler and libcurl when no wheel exists for your system.
+Python 3.10 or newer is required. `openmm` and `pyBigWig` install most reliably from conda. `hic-straw` (reads `.hic` files for the optional `--hic` reference) is installed with the package. It needs a C++ compiler and libcurl when no wheel exists for your system.
 
 ```bash
 git clone https://github.com/SFGLab/pyLoopSage.git
@@ -31,7 +31,7 @@ conda install -c conda-forge "openmm>=8.5.1" pybigwig -y
 pip install -r requirements.txt && pip install -e .
 ```
 
-Then install the package (`pip install -e .`) to get the `loopsage` command (version 2.0.0rc1).
+Then install the package (`pip install -e .`) to get the `loopsage` command (version 2.0.0rc2).
 
 ## Usage
 
@@ -59,6 +59,18 @@ loopsage -h
 - **Demo:** `python demo/run_demo.py quick` runs a small example in seconds.
 
 Detailed documentation of the model, parameters and outputs is in [`markdown/`](markdown/).
+
+## Tests
+
+Run the whole suite in parallel, with a per-module report:
+
+```bash
+python tools/run_tests.py             # all tests, one worker per two cores
+python tools/run_tests.py -j 8 --html # 8 workers, also writes test_report/report.html
+python tools/run_tests.py -k contrast # only tests whose name matches
+```
+
+Plain `PYTHONPATH=src python -m pytest -q` also works, but runs the files one after another (about 15 minutes). Tests of optional packages (`hicstraw`, `pyBigWig`) are skipped when those are not installed.
 
 ## Citation
 

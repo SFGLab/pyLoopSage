@@ -47,7 +47,7 @@ setup(
         'imageio[ffmpeg]',
         'pillow',
         'pyBigWig',
-        'hic-straw',
+        'hic-straw',  # reads .hic files (--hic)
         'topoly',
     ],
     entry_points={
