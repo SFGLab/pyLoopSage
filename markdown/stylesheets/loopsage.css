@@ -5,7 +5,14 @@
   --ls-ink: #111114;
   --ls-soft: #f4f1fc;
   --ls-line: #e3ddf5;
+  --md-primary-fg-color: #6a3de8;/* header colours are set below; this is the active-link colour of the menu */
+  --md-primary-bg-color: #111114;
+  --md-primary-bg-color--light: #111114;
+  --md-accent-fg-color: #6a3de8;
 }
+.md-header__button, .md-header__button.md-icon { color: var(--ls-ink); }
+.md-nav--primary .md-nav__title { background: var(--ls-soft); color: var(--ls-ink); }   /* drawer title on narrow screens */
+.md-nav--primary .md-nav__title[for="__drawer"] { background: var(--ls-ink); color: #fff; }
 
 /* page and text */
 .md-typeset { color: var(--ls-ink); font-size: 0.78rem; line-height: 1.7; }

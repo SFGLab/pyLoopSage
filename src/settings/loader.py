@@ -137,8 +137,8 @@ def validate(cfg) -> None:
         raise ValueError("motif_pad must be >= 0")
     if cfg.opt_patience < 1 or cfg.opt_min_gain < 0:
         raise ValueError("opt_patience must be >= 1 and opt_min_gain >= 0")
-    if cfg.corr_smooth < 0:
-        raise ValueError("corr_smooth must be >= 0")
+    if cfg.corr_smooth < 0 or cfg.track_smooth < 0:
+        raise ValueError("corr_smooth and track_smooth must be >= 0")
     if cfg.min_pet < 0:
         raise ValueError("min_pet must be >= 0")
     if cfg.motif_genome and not Path(cfg.motif_genome).is_file():

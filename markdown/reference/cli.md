@@ -115,6 +115,12 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 |---|---|---|---|
 | `--render-3d` / `--no-render-3d` | true / false | `True` | Write 3d_viewer.html and videos of the 3D trajectory |
 
+### Analysis
+
+| Option | Type (unit) | Default | What it does |
+|---|---|---|---|
+| `--track-smooth` | number (beads) | `7.0` | Gaussian smoothing of the Hi-C insulation score and of the eigenvector (A/B track) used as input and for validation (0 = off) |
+
 ### Parameter optimizer (--optimize)
 
 | Option | Type (unit) | Default | What it does |

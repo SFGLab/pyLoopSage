@@ -135,6 +135,7 @@ PARAMS = (
     Param("max_video_frames", "structure_3d", "int", 240, "Maximum frames per video", "frames"),
     # ---- analysis ----
     Param("corr_smooth", "analysis", "float", 1.5, "Gaussian smoothing (beads) applied to per-position signals before the extra validation correlations (0 = off)", "beads"),
+    Param("track_smooth", "analysis", "float", 7.0, "Gaussian smoothing of the Hi-C insulation score and of the eigenvector (A/B track) used as input and for validation (0 = off)", "beads", flag="--track-smooth"),
     Param("contact_radius", "analysis", "float", 1.0, "Contact distance for MD contact maps", "nm"),
     Param("zoom_snapshots", "analysis", "int", 120, "Snapshots shown in the zoomed kymograph (window near equilibrium)", "snapshots"),
     Param("zoom_start", "analysis", "int", None, "First snapshot of the zoom window (empty = middle of production)", "snapshot"),

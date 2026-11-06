@@ -134,7 +134,7 @@ def _hic(ctx):
                 ["Beads covered", info["coverage"], "fraction"], ["Used for", "validation" + (" and the optimizer target" if cfg_opt(ctx) else ""), ""]],
                "The Hi-C map of the region read with hic-straw and put on the bead grid of the model (masked beads stay empty).", "input")
     REGISTRY.fact("Hi-C", f"{info['resolution'] // 1000} kb, {info['norm']}")
-    hic_input_figure(H, ctx.geom, info)
+    hic_input_figure(H, ctx.geom, info, ctx.cfg.track_smooth)
 
 
 def cfg_opt(ctx) -> bool:
@@ -154,7 +154,7 @@ def compute(ctx):
     ctx.input_file = path
     inputs = load_inputs(cfg, g, path)
     if inputs.comp is None and float(cfg.epi_coeff) > 0 and ctx.hic is not None:      # Potts field h from the Hi-C compartments (B = negative)
-        inputs.comp, inputs.comp_source = compartment_from_hic(ctx.hic[0]), "hic"
+        inputs.comp, inputs.comp_source = compartment_from_hic(ctx.hic[0], smooth=cfg.track_smooth), "hic"
         log.info("No compartment track given: the Potts field h is the leading eigenvector of the Hi-C O/E correlation (B = denser = negative).")
     return inputs
 

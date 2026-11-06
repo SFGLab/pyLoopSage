@@ -172,6 +172,7 @@ Rules:
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
 | `corr_smooth`<br>*ini only* | number (beads) | `1.5` | Gaussian smoothing (beads) applied to per-position signals before the extra validation correlations (0 = off) |
+| `track_smooth`<br>`--track-smooth` | number (beads) | `7.0` | Gaussian smoothing of the Hi-C insulation score and of the eigenvector (A/B track) used as input and for validation (0 = off) |
 | `contact_radius`<br>*ini only* | number (nm) | `1.0` | Contact distance for MD contact maps |
 | `zoom_snapshots`<br>*ini only* | integer (snapshots) | `120` | Snapshots shown in the zoomed kymograph (window near equilibrium) |
 | `zoom_start`<br>*ini only* | integer (snapshot) | *(empty)* | First snapshot of the zoom window (empty = middle of production) |

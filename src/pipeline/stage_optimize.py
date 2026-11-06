@@ -51,7 +51,7 @@ def compute(ctx):
     log.info("Optimizer start: n_lef=%d f=%.3g b=%.3g, temperature %.3g -> %.3g; %d evaluations of %d MC steps", k0, cfg.folding_coeff, cfg.bind_coeff, cfg.t_init, cfg.t_final, cfg.opt_evals, cfg.opt_steps)
     log.info("Loss weights (eigenvectors, decay, insulation, loop size) for a %.3g Mb region: %s", g.length_bp / 1e6, ", ".join(f"{w:.2f}" for w in loss_weights(g.length_bp)))
     seed = (cfg.seed if cfg.seed is not None else 0) + 100_000                       # never the seed of the production run
-    ref = compartment_from_hic(hic[0]) if hic is not None else ctx.inputs.comp          # A/B reference for the Potts model
+    ref = compartment_from_hic(hic[0], smooth=cfg.track_smooth) if hic is not None else ctx.inputs.comp          # A/B reference for the Potts model
     two = float(cfg.epi_coeff) > 0 and ref is not None                                # Potts on with an A/B reference: two stages
     if float(cfg.epi_coeff) > 0 and ref is None:
         log.warning("Potts model on but no A/B reference (no compartment track or Hi-C map): epi_coeff is not optimized.")

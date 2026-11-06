@@ -180,6 +180,7 @@ loopsage -c config.ini --optimize --opt-evals 40 --opt-steps 20000 --hic sample.
 | `opt_min_gain` | 0.01 | early stopping: smallest drop of the best loss that counts as an improvement |
 | `target_smooth` (`--target-smooth`) | 0.8 | smoothing of the loop-based target, in beads |
 | `hic_denoise` (`--hic-denoise`) | 1.0 | denoising of the Hi-C target, in beads |
+| `track_smooth` (`--track-smooth`) | 7.0 | smoothing of the Hi-C insulation score and eigenvector (A/B track), in beads; raw Hi-C profiles are noisy, which makes the loss rough and slows convergence |
 | `hic_file` (`--hic`), `hic_norm`, `hic_resolution` | | the Hi-C target and how it is read |
 
 The total cost is about $\texttt{opt\_steps}\times(\texttt{opt\_evals}+12)$ Monte Carlo steps: the evaluations of the search, plus four final checks of three times the length. Early stopping usually makes it shorter.

@@ -35,9 +35,10 @@ def _scc(h, m, kmin=2):
     return float(np.average(r, weights=w)) if r else NAN
 
 
-def compare_hic(model, hic, window: int = 5, tol: int = 2, state=None) -> dict:
+def compare_hic(model, hic, window: int = 5, tol: int = 2, state=None, track: float = 0.0) -> dict:
     """Metrics and the tracks behind them for a simulated map `model` and the Hi-C map `hic` (same shape).
 
+    `track` = smoothing (beads) of the insulation score and of the eigenvector.
     `state` = average Potts state per bead: with the epigenetic model on, the Hi-C compartments are compared with it instead of with the simulated eigenvector."""
     n = len(hic)
     seen = np.isfinite(hic)
@@ -48,7 +49,7 @@ def compare_hic(model, hic, window: int = 5, tol: int = 2, state=None) -> dict:
     oe_h, oe_m = observed_over_expected(h), observed_over_expected(m)
     ps_h, ps_m = ps_curve(h)[1:n // 2], ps_curve(m)[1:n // 2]
     ps_h, ps_m = ps_h / ps_h.sum(), ps_m / ps_m.sum()
-    ins_h, ins_m = insulation_score(h, window), insulation_score(m, window)
+    ins_h, ins_m = insulation_score(h, window, track), insulation_score(m, window, track)
     sl = slice(window, n - window)
     ins_h, ins_m = (np.nan_to_num(np.log2(np.clip(v[sl], 1e-12, None) / v[sl].mean())) for v in (ins_h, ins_m))
     b_h, b_m = boundaries(ins_h), boundaries(ins_m)
@@ -57,9 +58,9 @@ def compare_hic(model, hic, window: int = 5, tol: int = 2, state=None) -> dict:
     c_h, c_m = oe_correlation(h), oe_correlation(m)
     iu = (sep >= 2) & (np.triu(np.ones((n, n)), 1) > 0)
     row_r = np.array([_r(np.delete(c_h[i], i), np.delete(c_m[i], i)) for i in range(n)])      # per bead: do its two contact patterns agree?
-    p_h = compartment_from_hic(hic)
+    p_h = compartment_from_hic(hic, smooth=track)
     st = None if state is None else gaussian_filter1d(np.asarray(state, float), STATE_SMOOTH, mode="nearest")      # sliding-window smoothing
-    p_m, r_pc = (st, _r(p_h, st)) if st is not None else (pc1(m)[0], abs(_r(p_h, pc1(m)[0])))
+    p_m, r_pc = (st, _r(p_h, st)) if st is not None else (pc1(m, smooth=track)[0], abs(_r(p_h, pc1(m, smooth=track)[0])))
     return dict(r_log=_r(np.log10(h[ok]), np.log10(m[ok])), r_oe=_r(np.log2(oe_h[ok] + 1e-3), np.log2(oe_m[ok] + 1e-3)),
                 scc=_scc(np.where(seen, h, np.nan), m), r_cm=_r(c_h[iu & seen], c_m[iu & seen]), corr_h=c_h, corr_m=c_m, row_r=np.where(seen.any(0), row_r, np.nan), r_ps=_r(np.log(ps_h), np.log(ps_m)), r_ins=_r(ins_h, ins_m),
                 f1=float(f1) if np.isfinite(f1) else NAN, r_pc=r_pc, n_pairs=int(ok.sum()),

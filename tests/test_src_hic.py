@@ -154,3 +154,12 @@ def test_correlation_matrix_score_and_figure(tmp_path):
     hf.save_figure = lambda fig, name, **kw: saved.append(name)
     hic_correlation_figure(same, geom, "test")
     assert saved == ["hic_correlation"]
+
+
+def test_track_smoothing_reduces_noise_and_keeps_range():
+    from analysis.maps import compartment_from_hic, insulation_score
+    t = _hic_like(seed=3, noise=1.5)
+    rough = lambda v: np.abs(np.diff(v)).sum()
+    assert rough(insulation_score(t, 5, 7.0)[5:-5]) < rough(insulation_score(t, 5)[5:-5])
+    raw, sm = compartment_from_hic(t), compartment_from_hic(t, smooth=7.0)
+    assert rough(sm) < rough(raw) and np.abs(sm).max() <= 1.0 + 1e-9

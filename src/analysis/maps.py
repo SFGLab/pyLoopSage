@@ -61,12 +61,20 @@ def denoise_map(mat, sigma: float) -> np.ndarray:
     return out
 
 
-def insulation_score(mat, window: int = 5) -> np.ndarray:
-    """Diamond insulation score: mean contact across each bead."""
+def smooth_track(x, sigma: float) -> np.ndarray:
+    """Gaussian smoothing of a 1D track along the chain (sigma in beads; 0 = unchanged)."""
+    x = np.asarray(x, float)
+    return gaussian_filter1d(x, sigma, mode="nearest") if sigma > 0 else x
+
+
+def insulation_score(mat, window: int = 5, sigma: float = 0.0) -> np.ndarray:
+    """Diamond insulation score: mean contact across each bead, smoothed over `sigma` beads (its undefined ends stay 0)."""
     n = mat.shape[0]
     ins = np.zeros(n)
     for i in range(window, n - window):
         ins[i] = mat[i - window:i, i + 1:i + window + 1].mean()
+    if sigma > 0 and n > 2 * window:
+        ins[window:n - window] = smooth_track(ins[window:n - window], sigma)
     return ins
 
 
@@ -208,22 +216,22 @@ def observed_over_expected(mat) -> np.ndarray:
     return out
 
 
-def pc1(mat, ref=None):
-    """Leading eigenvector of the Pearson map of O/E; sign chosen to agree with `ref` (e.g. A/B signal)."""
+def pc1(mat, ref=None, smooth: float = 0.0):
+    """Leading eigenvector of the Pearson map of O/E, smoothed over `smooth` beads; sign chosen to agree with `ref` (e.g. A/B signal)."""
     oe = np.log2(observed_over_expected(mat) + 1e-3)
     c = np.nan_to_num(np.corrcoef(oe))
     vals, vecs = np.linalg.eigh(c)
-    v = vecs[:, -1]
+    v = smooth_track(vecs[:, -1], smooth)
     if ref is not None and np.std(ref) > 0 and np.corrcoef(v, ref)[0, 1] < 0:
         v = -v
     return v / (np.abs(v).max() or 1.0), float(vals[-1] / max(vals.sum(), 1e-12))
 
 
-def compartment_from_hic(hic, min_sep: int = 2) -> np.ndarray:
+def compartment_from_hic(hic, min_sep: int = 2, smooth: float = 0.0) -> np.ndarray:
     """A/B track in [-1, 1] from a Hi-C map (NaN = masked beads): the leading eigenvector of the correlation matrix of the O/E map.
 
     O/E is clipped to [1/8, 8] and the near-diagonal is left out, so a few extreme pixels cannot dominate. The sign is set so that B
-    (negative) is where the short-range contacts are denser; masked beads are interpolated.
+    (negative) is where the short-range contacts are denser; masked beads are interpolated. The track is smoothed over `smooth` beads.
     """
     n = len(hic)
     seen = np.isfinite(hic).sum(0) > n / 2
@@ -239,9 +247,8 @@ def compartment_from_hic(hic, min_sep: int = 2) -> np.ndarray:
     if np.corrcoef(v, dens)[0, 1] > 0:                                          # denser = B = negative
         v = -v
     lim = 3 * 1.4826 * np.median(np.abs(v - np.median(v))) or np.abs(v).max()    # robust cap before scaling to [-1, 1]
-    v = np.clip(v, -lim, lim)
-    out = np.interp(np.arange(n), np.flatnonzero(seen), v / (np.abs(v).max() or 1.0))
-    return out
+    v = smooth_track(np.clip(v, -lim, lim), smooth)
+    return np.interp(np.arange(n), np.flatnonzero(seen), v / (np.abs(v).max() or 1.0))
 
 
 def insulation(mat, window: int = 5, prominence: float = 0.5):

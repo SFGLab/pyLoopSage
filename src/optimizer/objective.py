@@ -115,12 +115,13 @@ def short_cfg(cfg, steps: int, seed: int):
     return c
 
 
-def loss_parts(m, t, window: int = 5, state=None, ref=None, smooth=None, cover=None, eig: bool = True):
+def loss_parts(m, t, window: int = 5, state=None, ref=None, smooth=None, cover=None, eig: bool = True, track: float = 0.0):
     """(L_eig, decay mismatch, L_ins) of a simulated map `m` against the target `t`.
 
     With the Potts model on, `state` (average state per bead) and `ref` (A/B reference, B = negative) replace the eigenvector
     comparison: L_eig = (1 - r) / 2 with r their Pearson correlation.
     `eig` = False skips the eigenvector term (0): the loop-extrusion stage of a Potts run fits only insulation and decay.
+    `track` = smoothing (beads) of the insulation profiles of `m` and `t`.
     `cover` = (simulated, input) (coverage, decay) of the loops: the insulation and decay profiles when the target is a set of loops (the whole area between anchors counts).
     `smooth` = (insulation, decay) widths in beads: the target's profiles are smoothed that much (sparse loop targets), so longer loops are not punished.
     """
@@ -141,7 +142,7 @@ def loss_parts(m, t, window: int = 5, state=None, ref=None, smooth=None, cover=N
         l_eig = 1 - float(np.sum(a_m * a_t / np.linalg.norm(a_m, axis=0) / np.linalg.norm(a_t, axis=0))) / k   # mean cosine, 0..1
     half = slice(1, n // 2)
     if cover is None:
-        (ps_m, ps_t), (ins_m, ins_t) = (ps_curve(m), ps_curve(t)), (insulation_score(x, window)[window:-window] for x in (m, t))
+        (ps_m, ps_t), (ins_m, ins_t) = (ps_curve(m), ps_curve(t)), (insulation_score(x, window, track)[window:-window] for x in (m, t))
     else:
         (cov_m, ps_m), (cov_t, ps_t) = cover
         ps_m, ps_t = (np.asarray(p, float) / max(np.mean(p[half]), 1e-12) for p in (ps_m, ps_t))     # decays scaled to unit mean
@@ -185,7 +186,7 @@ class Objective:
         n = self.geom.n_beads
         cnt = loop_counts(mc, n)
         cover = None if self.cover is None else (loop_profiles(cnt), self.cover)
-        self.parts = (*loss_parts(loop_map_from_counts(cnt, n, **COMMUNICATION), self.target, insulation_window(self.geom), state, self.ref, self.smooth, cover, not self.loops_only), size_mismatch(mc, self.inputs.loops))
+        self.parts = (*loss_parts(loop_map_from_counts(cnt, n, **COMMUNICATION), self.target, insulation_window(self.geom), state, self.ref, self.smooth, cover, not self.loops_only, float(self.cfg.track_smooth)), size_mismatch(mc, self.inputs.loops))
         return weighted(self.parts, self.weights)
 
 

@@ -38,7 +38,7 @@ def _ins(ax, geom, w, data, model=None, b_data=(), b_model=()):
     ax.legend()
 
 
-def hic_input_figure(H, geom, info):
+def hic_input_figure(H, geom, info, track: float = 0.0):
     """The Hi-C map read for this region: map, decay, insulation."""
     from analysis.maps import fill_masked, insulation_score, ps_curve
     h = fill_masked(H)
@@ -47,7 +47,7 @@ def hic_input_figure(H, geom, info):
     ps = ps_curve(h)[1:len(h) // 2]
     _decay(ax[1], geom, ps / ps.sum())
     w = 5
-    ins = insulation_score(h, w)[w:-w]
+    ins = insulation_score(h, w, track)[w:-w]
     _ins(ax[2], geom, w, np.log2(np.clip(ins, 1e-12, None) / ins.mean()))
     save_figure(fig, "hic_input")
 

@@ -46,7 +46,7 @@ def _hic(ctx):
     from validation.hic_compare import compare_hic, METRICS
     from viz.hic_figs import hic_correlation_figure, hic_scores_figure, hic_validation_figure
     H, info = ctx.hic
-    res = {src: compare_hic(m, H, state=ctx.mc_epi_profile) for src, m in _sources(ctx).items()}
+    res = {src: compare_hic(m, H, state=ctx.mc_epi_profile, track=ctx.cfg.track_smooth) for src, m in _sources(ctx).items()}
     f = lambda v: "n/a" if v != v else f"{v:.2f}"
     emit_table("Validation vs Hi-C", ["Score", *res, "Meaning"],
                [[name, *[f(r[key]) for r in res.values()], note] for name, key, note in METRICS],
