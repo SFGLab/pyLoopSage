@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/SFGLab/pyLoopSage/main/assets/logo.png" alt="LoopSage" width="560">
+  <img src="https://raw.githubusercontent.com/SFGLab/pyLoopSage/main/assets/logo.png?v=2" alt="LoopSage" width="560">
 </p>
 
 <p align="center">
