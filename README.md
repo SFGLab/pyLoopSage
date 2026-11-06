@@ -2,6 +2,8 @@
   <img src="assets/logo.svg" alt="LoopSage" width="760">
 </p>
 
+<p align="center"><b><a href="https://sfglab.github.io/pyLoopSage/">Documentation</a></b></p>
+
 <p align="center">
   <a href="https://www.python.org"><img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white"></a>
   <a href="https://openmm.org"><img alt="OpenMM" src="https://img.shields.io/badge/OpenMM-8.5%2B-6a3de8"></a>
@@ -58,7 +60,7 @@ loopsage -h
 - **Parallelism:** `-t/--threads` sets worker threads and `--n-replicas` runs independent Monte Carlo chains (default 1).
 - **Demo:** `python demo/run_demo.py quick` runs a small example in seconds.
 
-Detailed documentation of the model, parameters and outputs is in [`markdown/`](markdown/).
+Detailed documentation of the model, parameters and outputs: **[sfglab.github.io/pyLoopSage](https://sfglab.github.io/pyLoopSage/)** (sources in [`markdown/`](markdown/)).
 
 ## Tests
 
