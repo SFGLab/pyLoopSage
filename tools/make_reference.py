@@ -134,7 +134,7 @@ region_start = 77000000                ; in base pairs
 region_end = 95000000
 
 [monte_carlo]
-mc_steps = 40000
+mc_steps = 20000
 method = Annealing
 
 [molecular_dynamics]

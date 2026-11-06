@@ -36,7 +36,7 @@ $$
 U_{\mathrm{ev}}(r)=\left(\frac{\varepsilon^2\,\sigma^2}{r+r_s}\right)^{p},\qquad \sigma^2=\texttt{ev\_ff\_strength},\ \ \varepsilon=0.05,\ \ r_s=0.1\ \mathrm{nm},\ \ p=\texttt{ev\_ff\_power}.
 $$
 
-It is large when two beads overlap and decays quickly with distance; the exponent $p$ decides how steep: a larger $p$ gives a harder, shorter-ranged wall, and a smaller $p$ a softer, longer-ranged one (the default is $p=3$). The softening $r_s$ keeps the force finite when beads touch. How *hard* the wall must be is a real question: if it is too soft, two strands can pass through each other, which creates unphysical knots and links; see [Topology](../theory/topology.md), where the same force is used to set a barrier of a chosen height.
+It is large when two beads overlap and decays quickly with distance; the exponent $p$ decides how steep: a larger $p$ gives a harder, shorter-ranged wall, and a smaller $p$ a softer, longer-ranged one (the default is $p=6$: a hard core at contact, but a weaker push at a distance than $p=3$, so the chain is not over-avoiding; at the default strength the crossing barrier is about $15\,k_BT$, against $5\,k_BT$ for $p=3$). The softening $r_s$ keeps the force finite when beads touch. How *hard* the wall must be is a real question: if it is too soft, two strands can pass through each other, which creates unphysical knots and links; see [Topology](../theory/topology.md), where the same force is used to set a barrier of a chosen height.
 
 **Loop springs.** The springs are the only link between the Monte Carlo and the 3D structure. They are *replaced* in every frame: the old springs are removed and the springs of the new snapshot added. A stiff spring ($k_L=6\cdot10^4$) and a short rest length ($r_L=0.1$ nm) mean that the two anchors of a loop are practically in contact.
 
@@ -98,7 +98,7 @@ tolerance       = 0.001      # energy minimisation, kJ/mol/nm
 # forces
 angle_ff_strength = 50.0     # stiffness, kJ/mol/rad^2
 ev_ff_strength    = 100.0    # excluded volume strength, kJ/mol
-ev_ff_power       = 3.0      # excluded volume exponent
+ev_ff_power       = 6.0      # excluded volume exponent
 le_ff_length      = 0.1      # loop spring rest length, nm
 le_ff_strength    = 60000.0  # loop spring constant, kJ/mol/nm^2
 

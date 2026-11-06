@@ -21,7 +21,7 @@ region_start = 77000000                ; in base pairs
 region_end = 95000000
 
 [monte_carlo]
-mc_steps = 40000
+mc_steps = 20000
 method = Annealing
 
 [molecular_dynamics]
@@ -96,7 +96,7 @@ Rules:
 
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
-| `n_steps`<br>`--mc-steps` | integer (MC steps) | `40000` | Total Monte Carlo steps |
+| `n_steps`<br>`--mc-steps` | integer (MC steps) | `20000` | Total Monte Carlo steps |
 | `mc_step`<br>`--sample-every` | integer (MC steps) | `200` | Save one snapshot every this many steps |
 | `burnin`<br>`--burnin` | integer (MC steps) | `1000` | Burn-in period discarded from statistics |
 | `t_init`<br>`--t-init` | number (a.u.) | `3.0` | Initial temperature |
@@ -147,7 +147,7 @@ Rules:
 | `le_ff_length`<br>*ini only* | number (nm) | `0.1` | Loop-anchor equilibrium distance |
 | `le_ff_strength`<br>*ini only* | number (kJ/mol/nm^2) | `60000.0` | Loop-anchor spring constant |
 | `ev_ff_strength`<br>*ini only* | number (kJ/mol) | `100.0` | Excluded-volume strength |
-| `ev_ff_power`<br>*ini only* | number | `3.0` | Excluded-volume exponent |
+| `ev_ff_power`<br>*ini only* | number | `6.0` | Excluded-volume exponent (larger = harder, shorter-ranged wall; 6 keeps the chain from passing through itself without making it over-avoiding) |
 | `do_compartments`<br>*ini only* | true / false | `False` | Add block-copolymer compartment force (needs epi_coeff > 0) |
 | `comp_strength`<br>*ini only* | number | `0.25` | Block-copolymer compartment attraction: scale of the interaction table (1 = the original strength; lower = softer, compartments stay open instead of collapsing) |
 | `comp_range`<br>*ini only* | number | `0.03` | Block-copolymer attraction range in units of sqrt(N) nm (the original value was 0.05; smaller = shorter range) |

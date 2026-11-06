@@ -79,7 +79,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 
 | Option | Type (unit) | Default | What it does |
 |---|---|---|---|
-| `--mc-steps` | integer (MC steps) | `40000` | Total Monte Carlo steps |
+| `--mc-steps` | integer (MC steps) | `20000` | Total Monte Carlo steps |
 | `--sample-every` | integer (MC steps) | `200` | Save one snapshot every this many steps |
 | `--burnin` | integer (MC steps) | `1000` | Burn-in period discarded from statistics |
 | `--t-init` | number (a.u.) | `3.0` | Initial temperature |

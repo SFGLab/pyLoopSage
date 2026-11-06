@@ -133,7 +133,7 @@ All options of this stage, grouped:
 
 ```ini
 [monte_carlo]
-n_steps    = 40000       # total Monte Carlo steps                       (CLI: --mc-steps)
+n_steps    = 20000       # total Monte Carlo steps                       (CLI: --mc-steps)
 mc_step    = 200         # one snapshot every this many steps            (CLI: --sample-every)
 burnin     = 1000        # steps whose snapshots are not used            (CLI: --burnin)
 method     = Annealing   # Metropolis or Annealing                       (CLI: --method)

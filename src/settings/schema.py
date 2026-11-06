@@ -72,7 +72,7 @@ PARAMS = (
     Param("threads", "parallel", "int", 1, "Worker threads for the numba sampler, OpenMM CPU and numba kernels (0 = all cores)", "threads", flag="--threads", short="-t"),
     Param("replicas", "parallel", "int", 1, "Independent Monte Carlo chains (seed, seed+1, ...) run in parallel; the ensemble is pooled", "chains", flag="--n-replicas"),
     # ---- Monte Carlo ----
-    Param("n_steps", "monte_carlo", "int", 40000, "Total Monte Carlo steps", "MC steps", flag="--mc-steps"),
+    Param("n_steps", "monte_carlo", "int", 20000, "Total Monte Carlo steps", "MC steps", flag="--mc-steps"),
     Param("mc_step", "monte_carlo", "int", 200, "Save one snapshot every this many steps", "MC steps", flag="--sample-every"),
     Param("burnin", "monte_carlo", "int", 1000, "Burn-in period discarded from statistics", "MC steps", flag="--burnin"),
     Param("t_init", "monte_carlo", "float", 3.0, "Initial temperature", "a.u.", flag="--t-init"),
@@ -118,7 +118,7 @@ PARAMS = (
     Param("le_ff_length", "molecular_dynamics", "float", 0.1, "Loop-anchor equilibrium distance", "nm"),
     Param("le_ff_strength", "molecular_dynamics", "float", 60000.0, "Loop-anchor spring constant", "kJ/mol/nm^2"),
     Param("ev_ff_strength", "molecular_dynamics", "float", 100.0, "Excluded-volume strength", "kJ/mol"),
-    Param("ev_ff_power", "molecular_dynamics", "float", 3.0, "Excluded-volume exponent"),
+    Param("ev_ff_power", "molecular_dynamics", "float", 6.0, "Excluded-volume exponent (larger = harder, shorter-ranged wall; 6 keeps the chain from passing through itself without making it over-avoiding)"),
     Param("do_compartments", "molecular_dynamics", "bool", False, "Add block-copolymer compartment force (needs epi_coeff > 0)"),
     Param("comp_strength", "molecular_dynamics", "float", 0.25, "Block-copolymer compartment attraction: scale of the interaction table (1 = the original strength; lower = softer, compartments stay open instead of collapsing)"),
     Param("comp_range", "molecular_dynamics", "float", 0.03, "Block-copolymer attraction range in units of sqrt(N) nm (the original value was 0.05; smaller = shorter range)"),

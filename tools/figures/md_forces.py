@@ -21,9 +21,9 @@ f.add("  \\node[note,text width=3.0cm,anchor=north west] at (10.2,12.0) {$U=\\tf
 # ---- b: EV and Gaussian well
 r = np.linspace(0.02, 1.2, 100)
 ax = Axes(f, 1.4, 5.2, 4.4, 2.3, (0, 1.2), (0, 1.1), "distance $r$ (nm)", "$U_{\\mathrm{ev}}$", xticks=(0, 0.4, 0.8, 1.2), yticks=())
-for p, col in ((2, "cohesin!40"), (3, "cohesin"), (4, "ink!75")):
+for p, col in ((3, "cohesin!40"), (6, "cohesin"), (9, "ink!75")):
     u = (0.5 / (r + 0.1)) ** p; ax.line(r, np.minimum(u / 3.0, 1.1), f"line width=1.7pt,{col}", 1)
-f.add("  \\node[note,anchor=west,text=cohesin!60] at (3.4,7.2) {$p=2$};\\node[note,anchor=west,text=cohesin] at (3.4,6.8) {$p=3$ (default)};\\node[note,anchor=west,text=ink!75] at (3.4,6.4) {$p=4$};\n")
+f.add("  \\node[note,anchor=west,text=cohesin!60] at (3.4,7.2) {$p=3$};\\node[note,anchor=west,text=cohesin] at (3.4,6.8) {$p=6$ (default)};\\node[note,anchor=west,text=ink!75] at (3.4,6.4) {$p=9$};\n")
 ax = Axes(f, 7.1, 5.2, 3.0, 2.3, (0, 3), (-1.1, 0.1), "distance $r$", "$U_{\\mathrm{comp}}$", xticks=(), yticks=())
 rr = np.linspace(0, 3, 80); ax.line(rr, -np.exp(-rr ** 2 / 2), "cur", 1)
 f.add("  \\node[note,text width=2.5cm,anchor=north west] at (10.5,7.8) {\\textbf{ev}: soft power-law wall, so strands do not cross.\\\\[3pt]\\textbf{well}: same-state beads attract.};\n")
