@@ -88,7 +88,7 @@ def make_context(cfg, reuse_latest=False) -> RunContext:
     geom = build_geometry(cfg)
     dirs = create_run_dirs(cfg.out_path, geom, cfg.run_number, reuse_latest)
     setup_logging(cfg.verbosity, dirs.log_file)
-    REGISTRY.reset(dirs.figures)
+    REGISTRY.reset(dirs.figures, cfg.figures)
     log.step("Run folder: %s", dirs.root)
     log.step("Region %s, %d threads, %d replica(s), seed %d", geom.label, apply_threads(cfg), cfg.replicas, cfg.seed)
     for note in cfg.notes:

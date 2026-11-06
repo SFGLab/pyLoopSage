@@ -82,6 +82,7 @@ Rules:
 | `quiet`<br>`--quiet` | true / false | `False` | Print nothing to the console (the log file and the report are still written) |
 | `seed`<br>`--seed` | integer | *(empty)* | Random seed (empty = a random one, saved in the resolved config); the same seed repeats the run exactly, MD included only with --threads 1 |
 | `report`<br>`--report` | true / false | `True` | Write report.html |
+| `figures`<br>`--figures` | true / false | `True` | Draw and save the figures (off: tables and data only, much faster for big or repeated runs) |
 | `save_metadata`<br>`--metadata` | true / false | `True` | Save map matrices (MC and MD heatmaps, distances, strengths) as .npy in data/metadata |
 | `save_ensemble`<br>`--save-ensemble` | true / false | `True` | Save every MD frame as .cif |
 
@@ -104,9 +105,9 @@ Rules:
 | `method`<br>`--method` | text | `Annealing` | Sampling method |
 | `n_lef`<br>`--n-lef` | integer (LEFs) | *(empty)* | Loop extrusion factors (empty = N_anchors / 2) |
 | `n_lef2`<br>*ini only* | integer (LEFs) | `0` | Second LEF family (different speed) |
-| `lef_drift`<br>*ini only* | true / false | `False` | Kept for compatibility with the original LoopSage (has no effect there either) |
-| `lef_rw`<br>`--lef-rw` | true / false | `True` | LEF legs slide as a random walk (True, original) or only extrude outward (False) |
-| `lef_speed_dist`<br>`--lef-speed` | text | `constant` | Initial LEF speeds: constant (all equal, original), maxwell (Maxwell-Boltzmann), lognormal, or two_state (slow and fast LEFs); mean speed is always 1 |
+| `lef_drift`<br>*ini only* | true / false | `False` | Unused; accepted only so older config files still load |
+| `lef_rw`<br>`--lef-rw` | true / false | `True` | LEF legs slide as a random walk (True) or only extrude outward (False) |
+| `lef_speed_dist`<br>`--lef-speed` | text | `constant` | Initial LEF speeds: constant (all equal), maxwell (Maxwell-Boltzmann), lognormal, or two_state (slow and fast LEFs); mean speed is always 1 |
 | `lef_speed_spread`<br>`--lef-speed-spread` | number | `0.5` | lognormal only: width (sigma of ln speed) |
 | `lef_fast_fraction`<br>`--lef-fast-fraction` | number | `0.2` | two_state only: fraction of fast LEFs |
 | `lef_fast_ratio`<br>`--lef-fast-ratio` | number | `5.0` | two_state only: speed of fast LEFs relative to slow ones |
@@ -149,9 +150,9 @@ Rules:
 | `ev_ff_strength`<br>*ini only* | number (kJ/mol) | `100.0` | Excluded-volume strength |
 | `ev_ff_power`<br>*ini only* | number | `6.0` | Excluded-volume exponent (larger = harder, shorter-ranged wall; 6 keeps the chain from passing through itself without making it over-avoiding) |
 | `do_compartments`<br>*ini only* | true / false | `False` | Add block-copolymer compartment force (needs epi_coeff > 0) |
-| `comp_strength`<br>*ini only* | number | `0.25` | Block-copolymer compartment attraction: scale of the interaction table (1 = the original strength; lower = softer, compartments stay open instead of collapsing) |
-| `comp_range`<br>*ini only* | number | `0.03` | Block-copolymer attraction range in units of sqrt(N) nm (the original value was 0.05; smaller = shorter range) |
-| `md_skip_burnin`<br>*ini only* | true / false | `False` | Simulate only post-burn-in MC snapshots (original LoopSage uses every snapshot) |
+| `comp_strength`<br>*ini only* | number | `0.25` | Block-copolymer compartment attraction: scale of the interaction table (1 = full strength of the table; lower = softer, compartments stay open instead of collapsing) |
+| `comp_range`<br>*ini only* | number | `0.03` | Block-copolymer attraction range in units of sqrt(N) nm; smaller = shorter range |
+| `md_skip_burnin`<br>*ini only* | true / false | `False` | Simulate only post-burn-in MC snapshots (False: every snapshot) |
 | `forcefield_path`<br>*ini only* | text | `src/molecular_dynamics/forcefields/classic_sm_ff.xml` | OpenMM force-field XML |
 
 ## `[structure_3d]`: 3D structure analysis and rendering
@@ -187,7 +188,7 @@ Rules:
 | `opt_interactive`<br>`--opt-interactive` | true / false | `True` | Pressing Enter during the optimizer shows the best parameters so far and asks whether to keep them and stop (only in a terminal) |
 | `opt_patience`<br>`--opt-patience` | integer (evaluations) | `20` | Early stopping: evaluations without a real improvement (see opt_min_gain) before the optimizer stops |
 | `opt_min_gain`<br>*ini only* | number | `0.01` | Early stopping: smallest drop of the best loss that counts as an improvement (the loss is about 1-4 at the start) |
-| `opt_steps`<br>`--opt-steps` | integer (MC steps) | `4000` | Monte Carlo steps of one optimizer evaluation (each step is a sweep over all LEFs; 25% burn-in, 200 snapshots; the final candidate check runs 3x longer) |
+| `opt_steps`<br>`--opt-steps` | integer (MC steps) | `4000` | Monte Carlo steps of one optimizer evaluation (each step is a sweep over all LEFs; the first quarter is burn-in, 200 snapshots; the final candidate check runs 3x longer) |
 | `opt_max_beads`<br>`--opt-max-beads` | integer (beads) | `1500` | Largest region the optimizer simulates: bigger regions are optimized on the window of this many beads with most loops, and the number of LEFs is scaled back to the full region |
 | `target_smooth`<br>`--target-smooth` | number (beads) | `0.8` | Smoothing of the optimizer target built from the input loops, so that the sparse loops look like a Hi-C map (0 = none) |
 | `hic_denoise`<br>`--hic-denoise` | number (beads) | `1.0` | Denoising of the Hi-C target of the optimizer, to bring out the TAD pattern (0 = none); validation always uses the raw map |

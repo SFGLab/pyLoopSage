@@ -50,7 +50,7 @@ def test_bind_inner_rewards_spanning_covered_beads():
 @pytest.mark.parametrize("extra", [[], ["--set", "epi_coeff=1.0", "--set", "epigenetic_mode=dynamic"],
                                    ["--set", "epi_coeff=1.0", "--set", "epigenetic_mode=static"],
                                    ["--binding-mode", "contrastive"]])
-def test_mc_incremental_energy_matches_recomputed(tiny_args, extra):
+def test_mc_incremental_energy_matches_recomputed(fast_args, extra):
     """After sampling, the running energy must equal a fresh evaluation of the final state (all epigenetic modes)."""
     from monte_carlo.energy import total_energy
     from monte_carlo.sampler import build_params
@@ -59,7 +59,7 @@ def test_mc_incremental_energy_matches_recomputed(tiny_args, extra):
     from preproc.loader import build_geometry
     from settings.loader import load_config
 
-    cfg = load_config(tiny_args + extra)
+    cfg = load_config(fast_args + extra)
     geom = build_geometry(cfg)
     inputs = load_inputs(cfg, geom)
     res = run_mc(cfg, inputs, geom)

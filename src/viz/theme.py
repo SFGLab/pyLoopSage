@@ -152,6 +152,9 @@ def _tidy_legends(fig) -> None:
 
 def save_figure(fig, key, title=None, caption=None, explain=None, section=None) -> None:
     """Write PNG + SVG and register the figure (with its captions) for the report."""
+    if not REGISTRY.draw:                                       # --no-figures: nothing is drawn
+        plt.close(fig)
+        return
     text = EXPLAIN.get(key, {})
     name = key
     _tag_panels(fig)

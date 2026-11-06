@@ -72,7 +72,7 @@ binding_mode = preferential      # or: contrastive          (CLI: --binding-mode
   <figcaption markdown="span"><b>a</b> Every loop adds its weight to the bead of its left anchor ($L$) and of its right anchor ($R$); this is the same in both modes. <b>b</b> Contrastive mode also measures how much the input loops cover each bead. <b>c</b> What a simulated loop feels at three places. Numbers are from this toy example.</figcaption>
 </figure>
 
-**Preferential binding** (default). Only the anchors count: a leg is *attracted* to the anchors and feels nothing special elsewhere, so a loop-free region costs nothing. This is the original LoopSage behaviour. Its weakness is that, with few and strong anchors, the extruders can form loops over regions where the input has none.
+**Preferential binding** (default). Only the anchors count: a leg is *attracted* to the anchors and feels nothing special elsewhere, so a loop-free region costs nothing. Its weakness is that, with few and strong anchors, the extruders can form loops over regions where the input has none.
 
 **Contrastive binding.** The anchor terms are the same, and a second term is added that looks at the *inside* of a loop. For every bead we count how many input loops span it (its *coverage*) and rescale it,
 
@@ -80,10 +80,10 @@ $$
 \hat c_k=\begin{cases}-1 & c_k<0.05\,\bar c\quad\text{(loop free)},\\[2pt] \mathrm{clip}\!\left(\dfrac{c_k}{\bar c}-1,\,0,\,1\right) & \text{otherwise,}\end{cases}
 $$
 
-where $c_k$ is the coverage of bead $k$ and $\bar c$ its mean. So $\hat c_k=-1$ only on a bead that (practically) no input loop spans, $0$ on every covered bead up to the average coverage, and up to $+1$ at twice the average or more. A simulated loop is penalised only for beads inside it that are really loop free, and rewarded for beads that are covered more than average: regions with few loops but some loops cost nothing. It enters the binding energy, see [Monte Carlo](monte-carlo.md#binding-legs-like-anchors).
+where $c_k$ is the coverage of bead $k$ and $\bar c$ its mean. So $\hat c_k=-1$ only on a bead that (practically) no input loop spans, $0$ on every covered bead up to the average coverage, and up to $+1$ at twice the average or more. A simulated loop is penalised only for beads inside it that are really loop free, and rewarded for beads that are covered more than average: beads with few but some loops cost nothing. It enters the binding energy, see [Monte Carlo](monte-carlo.md#binding-legs-like-anchors).
 
-!!! note "Why not simply centre the profiles?"
-    The obvious idea is to subtract the mean from $L$ and $R$, so that empty beads get a negative value. It does nothing. Every extruder has exactly two legs, one left and one right, so a constant shift of $L$ or $R$ adds the same amount to every state and cancels in the Metropolis rule. Only the *shape* of the profile matters. The coverage term works because it counts the beads *between* the legs, and that number does change from one loop to another. Contrastive mode needs loops (a BEDPE file); with peaks only it changes nothing, and LoopSage warns about it.
+!!! note "What the coverage term adds"
+    Every extruder has one left and one right leg, so the anchor terms depend only on the *shape* of $L$ and $R$ (a constant shift would change every state equally and cancel in the Metropolis rule). The coverage term looks at the beads *between* the two legs, and that number differs from one loop to another, so it changes the preferred loops. It needs loops (a BEDPE file); with peaks only it has no effect, and LoopSage warns about it.
 
 !!! tip "Which one to use"
     Start with preferential binding. If the simulated loops cover regions where the input has no loops, try contrastive. If the simulation instead collapses onto a few strong anchors and leaves most of the region empty, go back to preferential, or lower the binding coefficient $b$.

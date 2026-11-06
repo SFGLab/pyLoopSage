@@ -9,8 +9,8 @@ from pipeline.runner import run_pipeline, run_standalone
 from settings.loader import load_config
 
 
-def test_run_creates_organised_folder_and_report(tiny_args):
-    ctx = run_pipeline(load_config(tiny_args))
+def test_run_creates_organised_folder_and_report(figure_run):
+    ctx = figure_run
     root = ctx.dirs.root
     assert re.fullmatch(r"chr1_77000000_95000000_1", root.name)
     for sub in ("visualizations", "structures", "report", "logs", "data"):
@@ -23,16 +23,16 @@ def test_run_creates_organised_folder_and_report(tiny_args):
     assert (root / "visualizations" / "loop_nesting.png").exists() and (root / "visualizations" / "loop_parents_children.png").exists()
 
 
-def test_run_number_increments(tiny_args):
-    first = run_pipeline(load_config(tiny_args)).dirs.root
-    second = run_pipeline(load_config(tiny_args)).dirs.root
+def test_run_number_increments(fast_args):
+    first = run_pipeline(load_config(fast_args)).dirs.root
+    second = run_pipeline(load_config(fast_args)).dirs.root
     assert first.name.endswith("_1") and second.name.endswith("_2")
-    pinned = run_pipeline(load_config(tiny_args + ["--run", "7"])).dirs.root
+    pinned = run_pipeline(load_config(fast_args + ["--run", "7"])).dirs.root
     assert pinned.name.endswith("_7")
 
 
-def test_every_figure_has_at_most_three_panels(tiny_args):
-    ctx = run_pipeline(load_config(tiny_args))
+def test_every_figure_has_at_most_three_panels(figure_run):
+    ctx = figure_run
     for svg in (ctx.dirs.figures).glob("*.svg"):
         text = svg.read_text()
         n_axes = len(set(re.findall(r'id="axes_(\d+)"', text)))
@@ -40,25 +40,25 @@ def test_every_figure_has_at_most_three_panels(tiny_args):
         assert n_axes - min(n_cbar, n_axes) <= 3 or n_axes <= 5, svg.name
 
 
-def test_standalone_stage_reuses_latest_run(tiny_args):
-    ctx = run_pipeline(load_config(tiny_args))
+def test_standalone_stage_reuses_latest_run(fast_args):
+    ctx = run_pipeline(load_config(fast_args))
     cached = (ctx.dirs.data / "mc.npz").stat().st_mtime
-    run_standalone(stage_report.NAME, tiny_args)
+    run_standalone(stage_report.NAME, fast_args)
     assert (ctx.dirs.data / "mc.npz").stat().st_mtime == cached            # not recomputed
     assert ctx.dirs.report.exists() and len(list(ctx.dirs.root.parent.iterdir())) == 1
 
 
-def test_metadata_default_and_switch(tiny_args):
-    on = run_pipeline(load_config(tiny_args)).dirs.data / "metadata"
+def test_metadata_default_and_switch(fast_args):
+    on = run_pipeline(load_config(fast_args)).dirs.data / "metadata"
     assert (on / "mc_contact_map.npy").exists() and (on / "mc_loop_counts.npy").exists()
-    off = run_pipeline(load_config(tiny_args + ["--no-metadata"])).dirs.data
+    off = run_pipeline(load_config(fast_args + ["--no-metadata"])).dirs.data
     assert not (off / "metadata").exists()
 
 
 def test_md_stage_and_knots_skip(tiny_args):
     pytest.importorskip("openmm")
     args = [a for a in tiny_args if a != "--no-run-MD"] + ["--run-MD", "--md-steps", "50", "--n-lef", "6",
-                                                          "--set", "ev_p=0.05", "--knots"]
+                                                          "--set", "ev_p=0.05", "--knots", "--no-render-3d", "--set", "tolerance=10"]
     ctx = run_pipeline(load_config(args))
     assert ctx.md is not None and ctx.md.coords.shape[1] == 120 and ctx.md.rg.min() > 0
     assert (ctx.dirs.figures / "md_geometry.png").exists()
@@ -86,7 +86,7 @@ def test_run_py_help(capsys):
 def test_version_and_command_entry():
     from version import __version__
     import run
-    assert __version__ == "2.0.0" and callable(run.main)
+    assert __version__ == "2.0.0rc1" and callable(run.main)
 
 
 def test_example_configs_have_known_keys():
@@ -100,10 +100,10 @@ def test_example_configs_have_known_keys():
         assert {k for s in cp.sections() for k in cp[s]} <= known, f.name
 
 
-def test_quiet_flag_mutes_console(tiny_args, capfd):
+def test_quiet_flag_mutes_console(fast_args, capfd):
     from logger import set_quiet
     try:
-        ctx = run_pipeline(load_config(tiny_args + ["-q"]))
+        ctx = run_pipeline(load_config(fast_args + ["-q"]))
         out = capfd.readouterr()
         assert out.out == "" and out.err == ""
         assert (ctx.dirs.root / "logs" / "loopsage.log").stat().st_size > 0      # log file still written
@@ -111,16 +111,16 @@ def test_quiet_flag_mutes_console(tiny_args, capfd):
         set_quiet(False)
 
 
-def test_default_is_not_quiet(tiny_args, capfd):
-    ctx = run_pipeline(load_config(tiny_args))
+def test_default_is_not_quiet(fast_args, capfd):
+    ctx = run_pipeline(load_config(fast_args))
     assert "Run folder" in capfd.readouterr().out
 
 
-def test_same_seed_gives_the_same_run_and_random_runs_record_their_seed(tiny_args, tmp_path):
+def test_same_seed_gives_the_same_run_and_random_runs_record_their_seed(fast_args, tmp_path):
     """Same --seed: identical MC and MD results; without --seed a seed is drawn and written to the resolved config."""
     pytest.importorskip("openmm")
     import numpy as np
-    base = [a for a in tiny_args if a != "--no-run-MD"] + ["--run-MD", "--md-steps", "50", "--n-lef", "6", "--no-knots", "--threads", "1"]
+    base = [a for a in fast_args if a != "--no-run-MD"] + ["--run-MD", "--md-steps", "50", "--n-lef", "6", "--no-knots", "--threads", "1", "--platform", "CPU", "--no-render-3d", "--set", "tolerance=10"]
     runs = []
     for k in range(2):
         a = [x if x != str(tmp_path / "results") else str(tmp_path / f"r{k}") for x in base]

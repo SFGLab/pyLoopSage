@@ -56,6 +56,22 @@ def demo_bedpe(tmp_path_factory):
 
 
 @pytest.fixture
+def fast_args(tiny_args):
+    """tiny_args without figures: for tests that check numbers, files or logs, not pictures (a tiny run drops from about 30 s to 3 s)."""
+    return tiny_args + ["--no-figures"]
+
+
+@pytest.fixture(scope="session")
+def figure_run(demo_bedpe, tmp_path_factory):
+    """One tiny run WITH figures and report, shared by all tests that look at them."""
+    from pipeline.runner import run_pipeline
+    from settings.loader import load_config
+    out = tmp_path_factory.mktemp("figure_run")
+    return run_pipeline(load_config(["-f", str(demo_bedpe), "-r", "chr1:77000000-95000000", "-n", "120", "-o", str(out / "results"),
+                                     "--mc-steps", "2000", "--sample-every", "100", "--burnin", "400", "--no-run-MD", "--seed", "1"]))
+
+
+@pytest.fixture
 def tiny_args(demo_bedpe, tmp_path):
     """CLI arguments for a very small, fast run (no MD)."""
     return ["-f", str(demo_bedpe), "-r", "chr1:77000000-95000000", "-n", "120", "-o", str(tmp_path / "results"),

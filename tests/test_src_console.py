@@ -57,8 +57,8 @@ def test_banner_shows_one_rotating_quote():
     assert len(picks) > 1                                          # different quote on different runs
 
 
-def test_run_logs_each_stage(tiny_args):
-    ctx = run_pipeline(load_config(tiny_args))
+def test_run_logs_each_stage(fast_args):
+    ctx = run_pipeline(load_config(fast_args))
     log = ctx.dirs.log_file.read_text()
     for msg in ("Run folder", "[1/", "Reading the input", "Sampling", "Monte Carlo loop extrusion finished", "Preparing results",
                 "Writing report.html", "All done"):

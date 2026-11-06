@@ -13,10 +13,26 @@ def _det(a, b, c):
     return np.einsum("...i,...i->...", a, np.cross(b, c))
 
 
-def _cubic_roots(f):
-    """Roots in [0, 1] of the cubic through the 4 samples f (t = 0, 1/3, 2/3, 1)."""
-    r = np.roots(_V @ f)
-    return [float(x.real) for x in r if abs(x.imag) < 1e-9 and 0 <= x.real <= 1]
+_GRID = np.linspace(0, 1, 17)
+
+
+def _cubic_roots(f, iters: int = 30):
+    """Roots in [0, 1] of the cubics through the samples f (m, 4) at t = 0, 1/3, 2/3, 1: (row indices, roots).
+
+    The cubic is scanned on a grid; every sign change is refined by bisection (all rows at once).
+    """
+    c = f @ _V.T                                                       # coefficients, highest power first
+    poly = lambda t: ((c[:, :1] * t + c[:, 1:2]) * t + c[:, 2:3]) * t + c[:, 3:4]
+    v = poly(_GRID[None, :])
+    row, k = np.nonzero(((v[:, :-1] < 0) & (v[:, 1:] >= 0)) | ((v[:, :-1] > 0) & (v[:, 1:] <= 0)))
+    lo, hi, flo = _GRID[k].copy(), _GRID[k + 1].copy(), v[row, k]
+    cr = c[row]
+    for _ in range(iters):
+        mid = (lo + hi) / 2
+        fm = ((cr[:, 0] * mid + cr[:, 1]) * mid + cr[:, 2]) * mid + cr[:, 3]
+        left = np.sign(fm) == np.sign(flo)                             # root lies in the upper half
+        lo, hi = np.where(left, mid, lo), np.where(left, hi, mid)
+    return row, (lo + hi) / 2
 
 
 def crossings(prev, cur, min_sep: int = 2):
@@ -41,20 +57,24 @@ def crossings(prev, cur, min_sep: int = 2):
         p = pos(t)
         a0, a1, b0, b1 = p[i], p[i + 1], p[j], p[j + 1]
         f[:, k] = _det(a1 - a0, b0 - a0, b1 - a0)
-    out = []
-    for q in np.flatnonzero((f.min(1) < 0) & (f.max(1) > 0)):     # a sign change: the segments become coplanar
-        for t in _cubic_roots(f[q]):
-            p = pos(t)
-            a0, a1, b0, b1 = p[i[q]], p[i[q] + 1], p[j[q]], p[j[q] + 1]
-            d1, d2, w = a1 - a0, b1 - b0, b0 - a0
-            n = np.cross(d1, d2)
-            den = float(n @ n)
-            if den < 1e-18:
-                continue
-            s, u = float(np.cross(w, d2) @ n) / den, float(np.cross(w, d1) @ n) / den
-            if 0 <= s <= 1 and 0 <= u <= 1:
-                out.append((int(i[q]), int(j[q]), int(np.sign(f[q, -1] - f[q, 0])) or 1))
-    return out
+    q = np.flatnonzero((f.min(1) < 0) & (f.max(1) > 0))           # a sign change: the segments become coplanar
+    if not len(q):
+        return []
+    row, t = _cubic_roots(f[q])
+    q = q[row]
+    shift = (cur - prev)
+    P = lambda idx: prev[idx] + t[:, None] * shift[idx]                # bead positions at the root times
+    a0, a1, b0, b1 = P(i[q]), P(i[q] + 1), P(j[q]), P(j[q] + 1)
+    d1, d2, w = a1 - a0, b1 - b0, b0 - a0
+    n = np.cross(d1, d2)
+    den = np.einsum("ij,ij->i", n, n)
+    ok = den >= 1e-18
+    den = np.where(ok, den, 1.0)
+    s_ = np.einsum("ij,ij->i", np.cross(w, d2), n) / den
+    u_ = np.einsum("ij,ij->i", np.cross(w, d1), n) / den
+    keep = ok & (s_ >= 0) & (s_ <= 1) & (u_ >= 0) & (u_ <= 1)
+    sign = np.where(np.sign(f[q, -1] - f[q, 0]) == 0, 1, np.sign(f[q, -1] - f[q, 0])).astype(int)
+    return [(int(x), int(y), int(g)) for x, y, g in zip(i[q][keep], j[q][keep], sign[keep])]
 
 
 def barrier_kT(strength: float, power: float, temperature: float = 310.0, bond: float = 0.1, eps: float = 0.05, r_small: float = 0.1) -> float:

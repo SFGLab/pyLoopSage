@@ -66,6 +66,7 @@ PARAMS = (
     Param("quiet", "output", "bool", False, "Print nothing to the console (the log file and the report are still written)", flag="--quiet", short="-q"),
     Param("seed", "output", "int", None, "Random seed (empty = a random one, saved in the resolved config); the same seed repeats the run exactly, MD included only with --threads 1", flag="--seed"),
     Param("report", "output", "bool", True, "Write report.html", flag="--report"),
+    Param("figures", "output", "bool", True, "Draw and save the figures (off: tables and data only, much faster for big or repeated runs)", flag="--figures"),
     Param("save_metadata", "output", "bool", True, "Save map matrices (MC and MD heatmaps, distances, strengths) as .npy in data/metadata", flag="--metadata"),
     Param("save_ensemble", "output", "bool", True, "Save every MD frame as .cif", flag="--save-ensemble"),
     # ---- parallelism ----
@@ -81,9 +82,9 @@ PARAMS = (
     Param("n_lef", "monte_carlo", "int", None, "Loop extrusion factors (empty = N_anchors / 2)", "LEFs", flag="--n-lef"),
     Param("n_lef2", "monte_carlo", "int", 0, "Second LEF family (different speed)", "LEFs"),
     Param("device", "molecular_dynamics", "str", "", "Device index for CUDA or OpenCL (count from 0; empty = default)"),
-    Param("lef_drift", "monte_carlo", "bool", False, "Kept for compatibility with the original LoopSage (has no effect there either)"),
-    Param("lef_rw", "monte_carlo", "bool", True, "LEF legs slide as a random walk (True, original) or only extrude outward (False)", flag="--lef-rw"),
-    Param("lef_speed_dist", "monte_carlo", "str", "constant", "Initial LEF speeds: constant (all equal, original), maxwell (Maxwell-Boltzmann), "
+    Param("lef_drift", "monte_carlo", "bool", False, "Unused; accepted only so older config files still load"),
+    Param("lef_rw", "monte_carlo", "bool", True, "LEF legs slide as a random walk (True) or only extrude outward (False)", flag="--lef-rw"),
+    Param("lef_speed_dist", "monte_carlo", "str", "constant", "Initial LEF speeds: constant (all equal), maxwell (Maxwell-Boltzmann), "
           "lognormal, or two_state (slow and fast LEFs); mean speed is always 1", flag="--lef-speed", choices=("constant", "maxwell", "lognormal", "two_state")),
     Param("lef_speed_spread", "monte_carlo", "float", 0.5, "lognormal only: width (sigma of ln speed)", flag="--lef-speed-spread"),
     Param("lef_fast_fraction", "monte_carlo", "float", 0.2, "two_state only: fraction of fast LEFs", flag="--lef-fast-fraction"),
@@ -120,9 +121,9 @@ PARAMS = (
     Param("ev_ff_strength", "molecular_dynamics", "float", 100.0, "Excluded-volume strength", "kJ/mol"),
     Param("ev_ff_power", "molecular_dynamics", "float", 6.0, "Excluded-volume exponent (larger = harder, shorter-ranged wall; 6 keeps the chain from passing through itself without making it over-avoiding)"),
     Param("do_compartments", "molecular_dynamics", "bool", False, "Add block-copolymer compartment force (needs epi_coeff > 0)"),
-    Param("comp_strength", "molecular_dynamics", "float", 0.25, "Block-copolymer compartment attraction: scale of the interaction table (1 = the original strength; lower = softer, compartments stay open instead of collapsing)"),
-    Param("comp_range", "molecular_dynamics", "float", 0.03, "Block-copolymer attraction range in units of sqrt(N) nm (the original value was 0.05; smaller = shorter range)"),
-    Param("md_skip_burnin", "molecular_dynamics", "bool", False, "Simulate only post-burn-in MC snapshots (original LoopSage uses every snapshot)"),
+    Param("comp_strength", "molecular_dynamics", "float", 0.25, "Block-copolymer compartment attraction: scale of the interaction table (1 = full strength of the table; lower = softer, compartments stay open instead of collapsing)"),
+    Param("comp_range", "molecular_dynamics", "float", 0.03, "Block-copolymer attraction range in units of sqrt(N) nm; smaller = shorter range"),
+    Param("md_skip_burnin", "molecular_dynamics", "bool", False, "Simulate only post-burn-in MC snapshots (False: every snapshot)"),
     Param("forcefield_path", "molecular_dynamics", "str", DEFAULT_FORCEFIELD, "OpenMM force-field XML"),
     # ---- 3D structure ----
     Param("render_3d", "structure_3d", "bool", True, "Write 3d_viewer.html and videos of the 3D trajectory", flag="--render-3d"),
@@ -145,7 +146,7 @@ PARAMS = (
     Param("opt_interactive", "optimizer", "bool", True, "Pressing Enter during the optimizer shows the best parameters so far and asks whether to keep them and stop (only in a terminal)", flag="--opt-interactive"),
     Param("opt_patience", "optimizer", "int", 20, "Early stopping: evaluations without a real improvement (see opt_min_gain) before the optimizer stops", "evaluations", flag="--opt-patience"),
     Param("opt_min_gain", "optimizer", "float", 0.01, "Early stopping: smallest drop of the best loss that counts as an improvement (the loss is about 1-4 at the start)"),
-    Param("opt_steps", "optimizer", "int", 4000, "Monte Carlo steps of one optimizer evaluation (each step is a sweep over all LEFs; 25% burn-in, 200 snapshots; the final candidate check runs 3x longer)", "MC steps", flag="--opt-steps"),
+    Param("opt_steps", "optimizer", "int", 4000, "Monte Carlo steps of one optimizer evaluation (each step is a sweep over all LEFs; the first quarter is burn-in, 200 snapshots; the final candidate check runs 3x longer)", "MC steps", flag="--opt-steps"),
     Param("opt_max_beads", "optimizer", "int", 1500, "Largest region the optimizer simulates: bigger regions are optimized on the window of this many beads with most loops, and the number of LEFs is scaled back to the full region", "beads", flag="--opt-max-beads"),
 
     # ---- topology (optional, advanced: nothing here runs by default) ----

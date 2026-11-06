@@ -195,6 +195,8 @@ def surface_figure(w, geom):
     from reporting.explanations import EXPLAIN
     from reporting.report import REGISTRY
     from viz.surface3d import surface_html
+    if not REGISTRY.draw:
+        return
     kb = _kb(geom)
     x, y, F = free_energy_surface(w.length * kb, w.speed * kb, bins=(36, 26))
     fig, axs = make_fig(1, 1, cell=(9.0, 7.2))

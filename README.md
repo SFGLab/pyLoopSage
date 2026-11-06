@@ -31,7 +31,7 @@ conda install -c conda-forge "openmm>=8.5.1" pybigwig -y
 pip install -r requirements.txt && pip install -e .
 ```
 
-Then install the package (`pip install -e .`) to get the `loopsage` command (version 2.0.0).
+Then install the package (`pip install -e .`) to get the `loopsage` command (version 2.0.0rc1).
 
 ## Usage
 

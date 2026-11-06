@@ -59,9 +59,10 @@ class Registry:
     facts: list = field(default_factory=list)      # (label, value) headline numbers
     timings: list = field(default_factory=list)    # (stage, seconds)
     fig_dir: Path = None
+    draw: bool = True                              # False: figures are not drawn (cfg.figures = off)
 
-    def reset(self, fig_dir=None):
-        self.items, self.facts, self.timings, self.fig_dir = [], [], [], fig_dir
+    def reset(self, fig_dir=None, draw: bool = True):
+        self.items, self.facts, self.timings, self.fig_dir, self.draw = [], [], [], fig_dir, draw
 
     def add_table(self, title, columns, rows, caption, section):
         self.items.append(Tab(title, list(columns), rows, caption, section))

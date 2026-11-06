@@ -102,8 +102,8 @@ def test_no_hic_means_no_hic_output(tiny_args):
     assert ctx.hic is None and not (ctx.dirs.figures / "hic_validation.png").exists()
 
 
-def test_optimizer_uses_the_hic_map_as_target(tiny_args, fake_hic):
-    ctx = run_pipeline(load_config(tiny_args + ["--hic", fake_hic, "--optimize", "--opt-evals", "5", "--opt-steps", "500"]))
+def test_optimizer_uses_the_hic_map_as_target(fast_args, fake_hic):
+    ctx = run_pipeline(load_config(fast_args + ["--hic", fake_hic, "--optimize", "--opt-evals", "5", "--opt-steps", "500"]))
     html = (ctx.dirs.root / "report" / "report.html").read_text()
     assert ctx.optimization is not None and "Hi-C map denoised over" in html
 

@@ -46,7 +46,7 @@ $$
 U_{\mathrm{comp}}(r)=s\,E_{ab}\,e^{-r^2/2w^2},\qquad w=\texttt{comp\_range}\cdot\sqrt N\ \mathrm{nm}.
 $$
 
-$E_{ab}$ is a small table: it is non-zero only for two beads of the same state, and it is largest for state 0 (B) and weaker for the others, so that B beads aggregate more strongly than A beads. The scale $s$ is `comp_strength`: 1 is the original strength, lower values give softer compartments that stay open instead of collapsing into one dense ball. The states are updated in every frame, so compartments follow the Monte Carlo.
+$E_{ab}$ is a small table: it is non-zero only for two beads of the same state, and it is largest for state 0 (B) and weaker for the others, so that B beads aggregate more strongly than A beads. The scale $s$ is `comp_strength`: 1 is the full strength of the table, lower values give softer compartments that stay open instead of collapsing into one dense ball. The states are updated in every frame, so compartments follow the Monte Carlo.
 
 ## The integrator
 

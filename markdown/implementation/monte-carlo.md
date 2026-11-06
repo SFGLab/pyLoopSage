@@ -115,7 +115,7 @@ Sliding picks the LEF uniformly by default, so all LEFs are equally fast. With `
 
 | `lef_speed_dist` | Speeds |
 |---|---|
-| `constant` | all equal (the original LoopSage) |
+| `constant` | all equal |
 | `maxwell` | Maxwell&ndash;Boltzmann: the speed of a particle with a Gaussian velocity in 3D |
 | `lognormal` | $\ln v$ is Gaussian with width `lef_speed_spread` |
 | `two_state` | a fraction `lef_fast_fraction` of fast LEFs, `lef_fast_ratio` times faster than the others |

@@ -100,7 +100,7 @@ def test_topology_settings_are_optional_config_only_except_the_knots_flag():
 def test_topology_is_off_by_default_and_reports_when_asked(tiny_args):
     pytest.importorskip("openmm")
     from pipeline.runner import run_pipeline
-    base = [a for a in tiny_args if a != "--no-run-MD"] + ["--run-MD", "--md-steps", "300", "--n-lef", "8", "--no-render-3d"]
+    base = [a for a in tiny_args if a != "--no-run-MD"] + ["--run-MD", "--md-steps", "300", "--n-lef", "8", "--no-render-3d", "--set", "tolerance=10"]
     plain = run_pipeline(load_config(base))
     assert "topology" not in plain.md.meta and plain.links is None
     assert not (plain.dirs.figures / "crossings.png").exists()
@@ -110,3 +110,44 @@ def test_topology_is_off_by_default_and_reports_when_asked(tiny_args):
     assert (on.dirs.figures / "crossings.png").exists() and (on.dirs.figures / "links_time.png").exists()
     html = (on.dirs.root / "report" / "report.html").read_text()
     assert "Strand-crossing barrier" in html and "Chain crossings during the MD" in html
+
+
+def test_vectorised_crossing_detector_matches_a_slow_reference():
+    from knots.crossing import _V, crossings as fast
+
+    def slow(prev, cur, min_sep=2):
+        """Reference: every segment pair, roots with np.roots."""
+        n = len(prev)
+        out = []
+        for i in range(n - 1):
+            for j in range(i + min_sep, n - 1):
+                f = []
+                for t in (0, 1 / 3, 2 / 3, 1):
+                    p = prev + t * (cur - prev)
+                    f.append(np.dot(p[i + 1] - p[i], np.cross(p[j] - p[i], p[j + 1] - p[i])))
+                f = np.array(f)
+                if not (f.min() < 0 < f.max()):
+                    continue
+                for r in np.roots(_V @ f):
+                    if abs(r.imag) > 1e-9 or not 0 <= r.real <= 1:
+                        continue
+                    p = prev + r.real * (cur - prev)
+                    d1, d2, w = p[i + 1] - p[i], p[j + 1] - p[j], p[j] - p[i]
+                    nn = np.cross(d1, d2)
+                    den = nn @ nn
+                    if den < 1e-18:
+                        continue
+                    s, u = np.cross(w, d2) @ nn / den, np.cross(w, d1) @ nn / den
+                    if 0 <= s <= 1 and 0 <= u <= 1:
+                        out.append((i, j, int(np.sign(f[-1] - f[0])) or 1))
+        return sorted(out)
+
+    rng = np.random.default_rng(3)
+    found = 0
+    for _ in range(6):
+        prev = np.cumsum(rng.normal(size=(40, 3)), axis=0) * 0.1
+        cur = prev + rng.normal(size=prev.shape) * 0.15            # big moves: some bonds cross
+        ref = slow(prev, cur)
+        found += len(ref)
+        assert sorted(fast(prev, cur)) == ref
+    assert found > 0

@@ -223,7 +223,7 @@ def test_plain_bedpe_loads_with_or_without_orientation(demo_bedpe, tmp_path, nco
 def test_default_run_has_no_motif_step(demo_bedpe, tmp_path):
     f = _variant(demo_bedpe, tmp_path / "l7.bedpe", 7)
     cfg = load_config(["-f", str(f), "-r", "chr1:77000000-95000000", "-n", "120", "-o", str(tmp_path / "r"), "--mc-steps", "1500",
-                       "--sample-every", "100", "--burnin", "300", "--no-run-MD", "--seed", "1"])
+                       "--sample-every", "100", "--burnin", "300", "--no-run-MD", "--seed", "1", "--no-figures"])
     ctx = run_pipeline(cfg)
     assert ctx.motif is None and not (ctx.dirs.data / "loops_annotated.bedpe").exists()
     assert ctx.loops_file == str(f)

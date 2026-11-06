@@ -1,24 +1,22 @@
-# tests/test_correlation.py
+"""Signal normalisation and the correlation of two signals (zero/zero pairs are left out)."""
 import numpy as np
 
-def test_zero_exclusion_changes_result(random_matrix, test_data_dir):
-    """Excluding zero/zero pairs should produce a different correlation
-    than including them, for sparse data where many beads are untouched."""
-    # This is the exact class of bug we caught: zeros inflate r.
-    from loopsage.preproc import corr_exp_heat
+from common.utils import normalize_signal
+from validation.compare import correlate
 
-    pears = corr_exp_heat(
-        random_matrix,
-        str(test_data_dir / "tiny.bedpe"),
-        [0, 10000], "chr1", 50,
-        str(test_data_dir / "corr_output")
-    )
-    # We can't assert a specific value, but it should be finite
-    assert pears is None or np.isfinite(pears)
+
+def test_zero_exclusion_changes_result():
+    """Positions where both signals are zero agree trivially: counting them inflates r, so dropping them must change it."""
+    exp = np.r_[np.zeros(30), [1, 2, 3, 4, 5]]
+    sim = np.r_[np.zeros(30), [2, 1, 4, 3, 6]]
+    kept, dropped = correlate(exp, sim, drop_zero=False), correlate(exp, sim, drop_zero=True)
+    r = lambda d: next(v for k, v in d.items() if "pearson" in k.lower() and np.isscalar(v))
+    assert np.isfinite(r(kept)) and np.isfinite(r(dropped))
+    assert r(kept) > r(dropped)                                    # the shared zeros inflate the correlation
+
 
 def test_normalize_signal_zero_std():
-    """normalize_signal shouldn't crash on a constant vector."""
-    from loopsage.preproc import normalize_signal
-    result = normalize_signal(np.ones(10))
-    assert np.all(np.isfinite(result))
-    assert np.allclose(result, 0.0)  # mean-centered, zero variance
+    """A constant vector must not crash and gives zeros (mean-centred, no variance to divide by)."""
+    for log in (True, False):
+        out = normalize_signal(np.ones(10), log_transform=log)
+        assert np.all(np.isfinite(out)) and np.allclose(out, 0.0)

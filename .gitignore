@@ -46,6 +46,8 @@ htmlcov/
 # ---- LoopSage run results (one folder per run) ----
 results/
 *results*/
+output/
+*output*/
 *.dcd
 *.psf
 *.pid

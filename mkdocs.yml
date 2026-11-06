@@ -9,7 +9,7 @@ exclude_docs: |
 
 theme:
   name: material
-  logo: assets/favicon.svg
+  logo: assets/logo.svg
   favicon: assets/favicon.svg
   palette:
     scheme: default

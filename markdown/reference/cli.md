@@ -65,6 +65,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | `-q`, `--quiet` / `--no-quiet` | true / false | `False` | Print nothing to the console (the log file and the report are still written) |
 | `--seed` | integer | *(empty)* | Random seed (empty = a random one, saved in the resolved config); the same seed repeats the run exactly, MD included only with --threads 1 |
 | `--report` / `--no-report` | true / false | `True` | Write report.html |
+| `--figures` / `--no-figures` | true / false | `True` | Draw and save the figures (off: tables and data only, much faster for big or repeated runs) |
 | `--metadata` / `--no-metadata` | true / false | `True` | Save map matrices (MC and MD heatmaps, distances, strengths) as .npy in data/metadata |
 | `--save-ensemble` / `--no-save-ensemble` | true / false | `True` | Save every MD frame as .cif |
 
@@ -86,8 +87,8 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | `--t-final` | number (a.u.) | `1.0` | Final temperature (Annealing only) |
 | `--method` | text | `Annealing` | Sampling method |
 | `--n-lef` | integer (LEFs) | *(empty)* | Loop extrusion factors (empty = N_anchors / 2) |
-| `--lef-rw` / `--no-lef-rw` | true / false | `True` | LEF legs slide as a random walk (True, original) or only extrude outward (False) |
-| `--lef-speed` | text | `constant` | Initial LEF speeds: constant (all equal, original), maxwell (Maxwell-Boltzmann), lognormal, or two_state (slow and fast LEFs); mean speed is always 1 |
+| `--lef-rw` / `--no-lef-rw` | true / false | `True` | LEF legs slide as a random walk (True) or only extrude outward (False) |
+| `--lef-speed` | text | `constant` | Initial LEF speeds: constant (all equal), maxwell (Maxwell-Boltzmann), lognormal, or two_state (slow and fast LEFs); mean speed is always 1 |
 | `--lef-speed-spread` | number | `0.5` | lognormal only: width (sigma of ln speed) |
 | `--lef-fast-fraction` | number | `0.2` | two_state only: fraction of fast LEFs |
 | `--lef-fast-ratio` | number | `5.0` | two_state only: speed of fast LEFs relative to slow ones |
@@ -130,7 +131,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | `--opt-early-stop` / `--no-opt-early-stop` | true / false | `True` | Stop the optimizer early when the loss no longer improves |
 | `--opt-interactive` / `--no-opt-interactive` | true / false | `True` | Pressing Enter during the optimizer shows the best parameters so far and asks whether to keep them and stop (only in a terminal) |
 | `--opt-patience` | integer (evaluations) | `20` | Early stopping: evaluations without a real improvement (see opt_min_gain) before the optimizer stops |
-| `--opt-steps` | integer (MC steps) | `4000` | Monte Carlo steps of one optimizer evaluation (each step is a sweep over all LEFs; 25% burn-in, 200 snapshots; the final candidate check runs 3x longer) |
+| `--opt-steps` | integer (MC steps) | `4000` | Monte Carlo steps of one optimizer evaluation (each step is a sweep over all LEFs; the first quarter is burn-in, 200 snapshots; the final candidate check runs 3x longer) |
 | `--opt-max-beads` | integer (beads) | `1500` | Largest region the optimizer simulates: bigger regions are optimized on the window of this many beads with most loops, and the number of LEFs is scaled back to the full region |
 | `--target-smooth` | number (beads) | `0.8` | Smoothing of the optimizer target built from the input loops, so that the sparse loops look like a Hi-C map (0 = none) |
 | `--hic-denoise` | number (beads) | `1.0` | Denoising of the Hi-C target of the optimizer, to bring out the TAD pattern (0 = none); validation always uses the raw map |

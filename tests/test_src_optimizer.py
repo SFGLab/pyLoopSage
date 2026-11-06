@@ -96,7 +96,7 @@ def test_optimize_flag_changes_the_production_parameters(tiny_args):
 
 
 @pytest.mark.parametrize("mode", ["contrastive", "2D loop map", "preferential loading"])
-def test_optimizer_works_with_every_binding_mode(tiny_args, tmp_path, mode):
+def test_optimizer_works_with_every_binding_mode(fast_args, tmp_path, mode):
     """Contrastive binding, the 2D loop map and preferential LEF loading all run through --optimize and never worsen the start."""
     extra = {"contrastive": ["--binding-mode", "contrastive"], "2D loop map": ["--set", "data_loss_mode=1"]}.get(mode)
     if extra is None:
@@ -107,17 +107,17 @@ def test_optimizer_works_with_every_binding_mode(tiny_args, tmp_path, mode):
         f.addEntries("chr1", 77_000_000, values=[1 + np.sin(i / 5) for i in range(1800)], span=10_000, step=10_000)
         f.close()
         extra = ["--set", f"lef_track_file={bw}"]
-    ctx = run_pipeline(load_config(tiny_args + ["--optimize", "--opt-evals", "6", "--opt-steps", "500"] + extra))
+    ctx = run_pipeline(load_config(fast_args + ["--optimize", "--opt-evals", "6", "--opt-steps", "500"] + extra))
     r = ctx.optimization
     assert len(r.best["parts"]) == 4 and np.isfinite(r.best["loss"]) and r.best["loss"] <= r.start["loss"] + 1e-9
     assert ctx.mc.meta["n_lef"] == r.best["K"]
 
 
-def test_reported_map_is_the_one_the_optimizer_scored(tiny_args):
-    ctx = run_pipeline(load_config(tiny_args + ["--optimize", "--opt-evals", "5", "--opt-steps", "600"]))
+def test_reported_map_is_the_one_the_optimizer_scored(fast_args):
+    ctx = run_pipeline(load_config(fast_args + ["--optimize", "--opt-evals", "5", "--opt-steps", "600"]))
     same = loop_map(ctx.mc_ens, ctx.geom.n_beads, **COMMUNICATION)
     assert np.allclose(ctx.mc_map, same)                          # insulation and validation use the optimized map definition
-    plain = run_pipeline(load_config(tiny_args))
+    plain = run_pipeline(load_config(fast_args))
     assert np.allclose(plain.mc_map, loop_map(plain.mc_ens, plain.geom.n_beads))      # default runs are unchanged
 
 
@@ -151,14 +151,14 @@ def test_loops_only_stage_skips_the_eigenvector_term():
     assert loss_parts(m, t, 5, eig=False)[0] == 0.0 and loss_parts(m, t, 5)[0] > 0
 
 
-def test_potts_run_fits_the_loop_stage_first_and_then_the_potts_stage(tiny_args, tmp_path):
+def test_potts_run_fits_the_loop_stage_first_and_then_the_potts_stage(fast_args, tmp_path):
     pyBigWig = pytest.importorskip("pyBigWig")
     bw = str(tmp_path / "comp.bw")
     f = pyBigWig.open(bw, "w")
     f.addHeader([("chr1", 249250621)])
     f.addEntries("chr1", 77_000_000, values=[float(np.sign(np.sin(i / 20))) for i in range(1800)], span=10_000, step=10_000)
     f.close()
-    ctx = run_pipeline(load_config(tiny_args + ["--optimize", "--opt-evals", "6", "--opt-steps", "500", "--set", "epi_coeff=1.0", "--set", f"comp_bw_file={bw}"]))
+    ctx = run_pipeline(load_config(fast_args + ["--optimize", "--opt-evals", "6", "--opt-steps", "500", "--set", "epi_coeff=1.0", "--set", f"comp_bw_file={bw}"]))
     r = ctx.optimization
     assert r.potts and r.best["parts"][0] == 0.0                   # stage 1 has no eigenvector term; stage 2 has it, weighted
     assert 0.1 <= r.potts["best"]["p"] <= 0.9 and r.potts["best"]["loss"] <= r.potts["start"]["loss"] + 1e-9
@@ -190,8 +190,8 @@ def test_user_can_stop_the_search_and_keep_the_best(monkeypatch):
     assert res.best["loss"] <= res.start["loss"]
 
 
-def test_big_region_is_optimized_on_a_window_and_k_is_scaled_back(tiny_args):
-    ctx = run_pipeline(load_config(tiny_args + ["--optimize", "--opt-evals", "4", "--opt-steps", "500", "--opt-max-beads", "60"]))
+def test_big_region_is_optimized_on_a_window_and_k_is_scaled_back(fast_args):
+    ctx = run_pipeline(load_config(fast_args + ["--optimize", "--opt-evals", "4", "--opt-steps", "500", "--opt-max-beads", "60"]))
     b = ctx.optimization.best
     assert ctx.cfg.n_lef == b["K"] and b["K"] >= 1 and ctx.geom.n_beads == 120
     assert ctx.optimization.bounds["K"][1] >= b["K"] >= ctx.optimization.bounds["K"][0]

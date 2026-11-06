@@ -9,9 +9,31 @@ It tries many short simulations and keeps the parameters whose simulated contact
   <figcaption markdown="span">The optimizer. A short Monte Carlo run turns a parameter set <i>θ</i> into a loop map, the loss compares it with the target, and Nelder&ndash;Mead proposes the next <i>θ</i>. When the search stops, the best candidates are re-scored on longer runs and the winner is used for the production run.</figcaption>
 </figure>
 
-## The mathematics
+## Overview
 
-### What is fitted
+1. A parameter set $\theta=(K,f,b,T)$ is chosen.
+2. A short Monte Carlo run with $\theta$ produces loops, which are drawn as a contact map.
+3. The loss compares this map with the target map (compartments, decay, domains, loop size).
+4. Nelder&ndash;Mead proposes a better $\theta$, and steps 2 to 4 repeat until the search stops.
+5. The best few candidates are re-scored on longer runs, and the winner is used for the production run.
+
+
+## Quick start
+
+!!! note "In LoopSage"
+    The optimizer needs a target: a BEDPE loop file, or a Hi-C map (`--hic`). Run it with `--optimize`. The Monte Carlo stage then runs all its steps with the optimized values.
+
+```bash
+loopsage -c config.ini --optimize
+loopsage -c config.ini --optimize --opt-evals 40 --opt-steps 20000 --hic sample.hic
+```
+
+!!! tip "Prefer a Hi-C target"
+    A dense map such as Hi-C (`--hic`) constrains the decay, the domains and the compartments together, so the fitted values are reliable. Sparse loop data (ChIA-PET, HiChIP) hold only a few hundred dots and say little about loop length and folding; the search then tends towards small $f$ and short loops, which is an effect of sparsity, not of the chromatin.
+
+    With loop data alone, the insulation and decay profiles are taken from the loops themselves, not from the dot map: each loop counts on all beads between its anchors (its *coverage*, used as the insulation profile) and at all separations up to its length (the decay), for input and simulated loops alike. The profiles are smoothed over about 100 kb, so boundaries are less sharp. Check that $f$ and the loop sizes are plausible.
+
+## What is fitted
 
 The optimizer searches for four numbers, collected in the vector $\theta=(K,\ f,\ b,\ T)$:
 
@@ -22,13 +44,13 @@ The optimizer searches for four numbers, collected in the vector $\theta=(K,\ f,
 
 The search runs on $x=(K,\ln f,\ln b,\ln T)$, because $f$, $b$ and $T$ act multiplicatively: doubling $f$ matters equally at $f=0.1$ and at $f=1$. Every parameter stays in a box: $f\in[0.05,3]$, $b\in[0.25,3]$, $T\in[1,3]$, and $K$ between about a quarter and four times its start value $K_0$ (never above $N_{\mathrm{beads}}/3$). The start is $\theta_0=(K_0,f_0,b_0,1)$, with $f_0,b_0$ from the configuration.
 
-### The target and the simulated map
+## The target and the simulated map
 
 Both are $N\times N$ contact maps $M_{ij}$ between beads. The *simulated* map is built from the loops $(m,n)$ of a short Monte Carlo run: each loop gives a dot at $(m,n)$, a weaker enrichment inside it, and *communication* between loops that share an anchor (up to 6 loops in a chain, each step weaker by 0.6). The *target* map is either the denoised Hi-C map (`--hic`) or the input loops drawn in exactly the same way and smoothed over `target_smooth` beads. Each map is divided by the mean of its upper triangle, so only shape matters.
 
 Two quantities are used below. The *decay* $P(s)$ is the mean of the $s$-th diagonal of the map, i.e. the mean contact at separation $s$. The *observed/expected map* is $\tilde M_{ij}=M_{ij}/P(|i-j|)$: the decay is divided out, so only domains and loops remain.
 
-### The loss
+## The loss
 
 The loss measures how far the simulated map is from the target. It is $0$ for a perfect match and is a weighted sum of four terms,
 
@@ -45,7 +67,7 @@ We do not correlate the two heatmaps entry by entry. Instead we compare a few nu
 | $L_{\mathrm{ins}}$ | insulation profiles | TAD boundaries | $w_{\mathrm{ins}}$, falls with the region |
 | $L_{\mathrm{size}}$ | mean loop length | loops must not collapse | $1$ |
 
-#### Compartments (eigenvector term)
+### Compartments (eigenvector term)
 
 Take the correlation matrix of $\ln(\tilde M+0.2)$, where $\tilde M$ is the observed/expected map (each diagonal divided by its mean, so the decay drops out). Its *eigenvectors* are the directions along which the map varies most, and the first one is the familiar PC1 that separates compartments. Let $u^{\mathrm{sim}}_j$ and $u^{\mathrm{tgt}}_j$ be the first $k=3$ eigenvectors of the two maps, paired by the size of their eigenvalues. The sign of an eigenvector is arbitrary, so we take *absolute values* $|u|$ (entry by entry) and set
 
@@ -64,7 +86,7 @@ The fraction is the *cosine* of the angle between two vectors, between $0$ and $
 
     The Pearson correlation $r$ lies in $[-1,1]$, so the term runs from $0$ (same A/B pattern) to $1$ (mirror image). Without a reference the eigenvector comparison above is used.
 
-#### Decay with distance
+### Decay with distance
 
 $$
 L_P=\operatorname{Var}_s\big[\ln P^{\mathrm{sim}}(s)-\ln P^{\mathrm{tgt}}(s)\big],
@@ -72,7 +94,7 @@ $$
 
 with a small offset $0.02$ inside the logarithms. The variance is $0$ when the two decays differ only by a constant factor, so $L_P$ compares the *shape* of the decay, not its scale.
 
-#### Domain boundaries (insulation term)
+### Domain boundaries (insulation term)
 
 The *insulation* $I_i$ of bead $i$ is the mean contact in the diamond across it, with a half-width of 100 kb (at least 5 beads), so it is low at a boundary. Each profile is rescaled to $[0,1]$, $\hat I_i=(I_i-\min I)/(\max I-\min I)$, and
 
@@ -80,9 +102,9 @@ $$
 L_{\mathrm{ins}}=\operatorname{mean}_i\big|\hat I^{\mathrm{sim}}_i-\hat I^{\mathrm{tgt}}_i\big| ,
 $$
 
-a distance between $0$ (same profile) and $1$ (opposite). For a target made of loops (BEDPE) the insulation and the decay are not read from the drawn map but from the loops themselves; see [Prefer a Hi-C target](#using-the-optimizer).
+a distance between $0$ (same profile) and $1$ (opposite). For a target made of loops (BEDPE) the insulation and the decay are not read from the drawn map but from the loops themselves; see [the note on Hi-C targets](#quick-start).
 
-#### Loop size
+### Loop size
 
 $$
 L_{\mathrm{size}}=\max\!\Big(0,\ \Big|\log_2\frac{\tilde\ell^{\mathrm{sim}}}{\tilde\ell^{\mathrm{input}}}\Big|-1\Big),
@@ -90,7 +112,7 @@ $$
 
 with $\tilde\ell$ the *median* loop length. The term is zero while the simulated median is within a factor 2 of the input median, and grows by one for every further factor 2, in either direction. Sparse loop data hardly constrain the loop size, and without it the search can drift to tiny loops, or, with the folding coefficient at its upper limit and the binding weak, to loops stacked over the whole region. The median is used instead of the mean because input loop lengths have a long tail: the mean would ask for far more nesting than the extruders can supply.
 
-#### Weights follow the region size
+### Weights follow the region size
 
 The two weights $w_{\mathrm{eig}}$ and $w_{\mathrm{ins}}$ depend on the *length of the modelled region* $S$, because the two terms describe structures of different size. TADs are domains of about 0.1–1 Mb, so in a region of a few Mb the insulation is the informative term. Compartments are blocks of a few Mb: a 5 Mb region holds at most one or two of them, so PC1 says almost nothing there. It starts to carry information when the region contains 2–3 blocks (about 10 Mb) and dominates when it contains many (30 Mb up to a whole chromosome). The switch is sharp, not linear:
 
@@ -116,16 +138,7 @@ The weights used are printed in the log and shown in the report.
   <figcaption markdown="span"><b>a</b> The weight of the PC1 (eigenvector) term and of the insulation term against the length of the modelled region. <b>b</b> What a region of that size contains: TADs (triangles), A (red) and B (blue) compartment blocks, and a sketch of the chain. A small region holds a few TADs and at most one A/B block, so PC1 carries almost no information; a large region holds many blocks, which segregate in space into an A and a B cloud. <b>c</b> With the Potts model on, the loop-extrusion parameters are fitted first and the Potts parameters second.</figcaption>
 </figure>
 
-### With the Potts model: two stages
-
-When the Potts model is on and there is an A/B reference, the optimizer runs two searches in a row, so that the compartments do not disturb the fit of the loops:
-
-1. **Loop extrusion.** It fits $K$, $f$, $b$ and the temperature scale with the Potts model *off*, using only the insulation, the decay and the loop size ($w_{\mathrm{eig}}=0$).
-2. **Potts model.** It keeps those values and fits `epi_coeff` (searched within a factor 10 around its start) and `p_epigenetic` (between 0.1 and 0.9) with the *full* weighted loss. The field $h$ of the Potts model already carries the A/B pattern (from the compartment track or from the Hi-C eigenvector), so the correlation with the reference is easy to reach. What the search really decides is the balance: the coupling is increased only as far as it helps the compartments *and* does not harm the TAD terms. Because PC1 enters with the region-size weight, it hardly matters in a small region, where the coupling is then set mainly by not damaging the insulation.
-
-Stage 2 uses a third of the evaluations of stage 1 (at least 10). Without an A/B reference, `epi_coeff` is not optimized and a warning is printed.
-
-### The search: Nelder&ndash;Mead
+## The search: Nelder&ndash;Mead
 
 Every evaluation of $L$ is a Monte Carlo run. So $L$ has no formula and no gradient, one input ($K$) is an integer, and the value is *noisy*: two seeds give slightly different losses. A method that only needs *values* of $L$ fits well, and the optimizer uses the *Nelder&ndash;Mead simplex method* (Nelder and Mead, 1965; the SciPy implementation follows Gao and Han, 2012).
 
@@ -143,9 +156,13 @@ Every evaluation of $L$ is a Monte Carlo run. So $L$ has no formula and no gradi
 
 The factors $1$, $2$, $\tfrac12$ and $\tfrac12$ are the standard choices (reflection, expansion, contraction, shrink). In LoopSage, $K$ is rounded to an integer and every point is clipped to the box before it is evaluated.
 
-Each evaluation is a *short run* of `opt_steps` steps (the first quarter is burn-in, one replica, 200 snapshots, so about 150 equilibrium configurations) with a *new* random seed, never that of the production run. One step is a sweep over all LEFs, so the cost of an evaluation grows with the number of LEFs and the loss maps with the square of the number of beads. For a big region (above `opt_max_beads`, 1500 beads by default; 20 000 or 50 000 beads are common) the optimizer therefore simulates only the window of that many beads that holds most loops, with the LEF density kept, and the fitted number of LEFs is scaled back to the whole region. The production run then uses your own `n_steps` and sampling frequency.
+## One evaluation
 
-### When the search stops
+An evaluation is a *short run* of `opt_steps` steps (the first quarter is burn-in, one replica, 200 snapshots, so about 150 equilibrium configurations) with a *new* random seed, never that of the production run. One step is a sweep over all LEFs, so the cost of an evaluation grows with the number of LEFs and the loss maps with the square of the number of beads.
+
+**Large regions.** For a big region(above `opt_max_beads`, 1500 beads by default; 20 000 or 50 000 beads are common) the optimizer therefore simulates only the window of that many beads that holds most loops, with the LEF density kept, and the fitted number of LEFs is scaled back to the whole region. The production run then uses your own `n_steps` and sampling frequency.
+
+## When the search stops
 
 The search stops at the first of three events:
 
@@ -153,22 +170,20 @@ The search stops at the first of three events:
 - *Budget:* `opt_evals` evaluations have been used.
 - *Early stopping* (on by default): the best loss dropped by less than `opt_min_gain` (0.01) over the last `opt_patience` (20) evaluations. Because the loss is noisy, tiny gains do not count as progress, and the search is not wasted on noise.
 
-### The final check
+## The final check
 
 The lowest loss of a noisy search is often a lucky one (the *winner's curse*). So the best three distinct candidates and the starting point are re-scored with runs *three times longer* and new seeds, and the lowest long-run loss wins. The result is therefore never worse than the start on the long check; if the start wins, it is kept and the report says that the optimizer "gave up".
 
-## Using the optimizer
+## With the Potts model: two stages
 
-!!! note "In LoopSage"
-    The optimizer needs a target: a BEDPE loop file, or a Hi-C map (`--hic`). Run it with `--optimize`. The Monte Carlo stage then runs all its steps with the optimized values.
+When the Potts model is on and there is an A/B reference, the optimizer runs two searches in a row, so that the compartments do not disturb the fit of the loops:
 
-!!! tip "Prefer a Hi-C target"
-    Give the optimizer a `.hic` file (`--hic`), ideally a smooth experiment such as Hi-C, as the target. Sparse loop data (ChIA-PET, HiChIP) contain only a few hundred dots, so the map they draw says little about how long loops should be or how strongly the chain should fold. The search then tends to settle on small values of $f$ and on short loops. This is unrealistic, and it is a side effect of sparsity, not a property of the chromatin. A dense map constrains the decay, the domains and the compartments together, so the fitted values are more reliable. With loop data alone, the insulation and decay profiles are not read from the dot map but from the loops themselves: each loop counts on *all* beads between its anchors (the loop *coverage*, used as the insulation profile) and at all separations up to its length (the decay), for the input and the simulated loops alike. These profiles are smoothed over about the insulation window (100 kb), so that longer loops are not punished; the price is less sharp boundaries. Read the result with care and check that $f$ and the loop sizes are plausible.
+1. **Loop extrusion.** It fits $K$, $f$, $b$ and the temperature scale with the Potts model *off*, using only the insulation, the decay and the loop size ($w_{\mathrm{eig}}=0$).
+2. **Potts model.** It keeps those values and fits `epi_coeff` (searched within a factor 10 around its start) and `p_epigenetic` (between 0.1 and 0.9) with the *full* weighted loss. The field $h$ of the Potts model already carries the A/B pattern (from the compartment track or from the Hi-C eigenvector), so the correlation with the reference is easy to reach. What the search really decides is the balance: the coupling is increased only as far as it helps the compartments *and* does not harm the TAD terms. Because PC1 enters with the region-size weight, it hardly matters in a small region, where the coupling is then set mainly by not damaging the insulation.
 
-```bash
-loopsage -c config.ini --optimize
-loopsage -c config.ini --optimize --opt-evals 40 --opt-steps 20000 --hic sample.hic
-```
+Stage 2 uses a third of the evaluations of stage 1 (at least 10). Without an A/B reference, `epi_coeff` is not optimized and a warning is printed.
+
+## Settings
 
 | Key (option) | Default | Meaning |
 |---|---|---|
@@ -187,7 +202,7 @@ loopsage -c config.ini --optimize --opt-evals 40 --opt-steps 20000 --hic sample.
 
 The total cost is about $\texttt{opt\_steps}\times(\texttt{opt\_evals}+12)$ Monte Carlo steps: the evaluations of the search, plus four final checks of three times the length. Early stopping usually makes it shorter.
 
-### Where the code is
+## Where the code is
 
 | File | Role |
 |---|---|
@@ -195,7 +210,7 @@ The total cost is about $\texttt{opt\_steps}\times(\texttt{opt\_evals}+12)$ Mont
 | `src/optimizer/nelder_mead.py` | the search: bounds, Nelder&ndash;Mead, early stopping, final check |
 | `src/pipeline/stage_optimize.py` | the pipeline stage: reads the target, runs the search, writes the result and the report |
 
-### Outputs
+## Outputs
 
 The stage writes the chosen values into `config_resolved.ini`, marked with the source `optimizer`, and saves `optimized_parameters.json` (start and best parameters, loss terms, number of evaluations, whether the search converged). The report contains the table of the parameters before and after, the four loss terms, the best evaluations, and three figures: the convergence of the loss, the landscape explored by the search, and the target map next to the simulated one. A one-sentence verdict says whether the search converged, stopped early or used up its budget, and warns if a parameter sits at the edge of its range, because then the optimum may lie outside.
 
