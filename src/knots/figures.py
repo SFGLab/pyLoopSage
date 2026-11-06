@@ -99,6 +99,63 @@ def links_stills_figure(stills):
                 explain=_STILLS)
 
 
+def links_examples_figure(stills):
+    """Up to three examples of linked loops rendered by pyvista; stills = [(title, image)]."""
+    fig, axs = make_fig(1, len(stills), cell=(5.0, 5.0))
+    for ax, (title, img) in zip(axs, stills):
+        ax.imshow(img)
+        ax.set_title(title, fontsize=9)
+        ax.set(xticks=[], yticks=[])
+        ax.grid(False)
+        for sp in ax.spines.values():
+            sp.set_visible(False)
+    save_figure(fig, "links_examples", title="Examples of linked loops in 3D", section=SEC,
+                caption="Violet and black: the two linked loops (thin line: the chord that closes each). Gold marker: where they meet, the place of the link. Pale grey: the rest of the chain.",
+                explain=_EXAMPLES)
+
+
+def links_dynamics_figure(res):
+    """How long links last and how many form and dissolve between analysed frames."""
+    from knots.linking import link_dynamics
+    life, formed, dissolved = link_dynamics(res)
+    fig, axs = make_fig(1, 2)
+    top = int(life.max()) if len(life) else 1
+    axs[0].hist(life, bins=np.arange(1, top + 2) - 0.5, color=VIOLET, alpha=0.85, edgecolor="white")
+    axs[0].set(title="How long a link lasts", xlabel="Consecutive analysed frames", ylabel="Linked pairs", xticks=np.arange(1, top + 1) if top < 12 else None)
+    axs[1].plot(res.frames, formed, color=VIOLET, lw=1.8, label="newly linked")
+    axs[1].plot(res.frames, -dissolved, color=ORANGE, lw=1.8, label="no longer linked")
+    axs[1].axhline(0, color=MUTED, lw=1)
+    axs[1].set(title="Links forming and dissolving", xlabel="MD frame", ylabel="Pairs per analysed frame")
+    axs[1].legend()
+    save_figure(fig, "links_dynamics", title="Link lifetimes and turnover", section=SEC,
+                caption=f"Median lifetime {np.median(life) if len(life) else 0:.0f} analysed frame(s); analysed frames are {res.meta.get('stride', 1)} MD frames apart.",
+                explain=_DYNAMICS)
+
+
+def crossings_figure(topo, barrier, strengths, curve, target, current):
+    """Chain crossings per frame (leaks vs topoisomerase passages), the outcome of passage attempts, and the EV barrier curve."""
+    fig, axs = make_fig(1, 3)
+    f = np.arange(len(topo["leak"]))
+    axs[0].bar(f, topo["leak"], color=ORANGE, label="leak (EV on)", width=1.0)
+    axs[0].bar(f, topo["passage"], bottom=topo["leak"], color=VIOLET, label="topoisomerase passage", width=1.0)
+    axs[0].set(title="Chain crossings per frame", xlabel="MD frame", ylabel="Crossings")
+    axs[0].legend()
+    names = ["attempts", "undone", "links\ncreated", "links\nremoved"]
+    vals = [sum(topo["events"]), sum(topo["rejected"]), sum(topo["created"]), sum(topo["removed"])]
+    axs[1].bar(names, vals, color=[MUTED, MAGENTA, ORANGE, VIOLET], width=0.6)
+    axs[1].set_yscale("symlog")
+    axs[1].set(title="Passage attempts" + ("" if topo.get("mode") == "local" else " (off: 'random' mode)"), ylabel="Count (all frames)")
+    axs[2].plot(strengths, curve, color=VIOLET, lw=2.2)
+    axs[2].axhline(5, color=MUTED, ls=":", lw=1)
+    axs[2].axhline(target, color=ORANGE, ls="--", lw=1.4, label=f"target {target:g} kT")
+    axs[2].scatter([current], [barrier], color="black", zorder=5, label=f"now: {barrier:.1f} kT")
+    axs[2].set(title="Barrier against EV strength", xlabel="ev_ff_strength (kJ/mol)", ylabel="Crossing barrier (kT)", yscale="log")
+    axs[2].legend()
+    save_figure(fig, "crossings", title="Chain crossings and the excluded-volume barrier", section=SEC,
+                caption=f"{sum(topo['leak'])} leaks and {sum(topo['passage'])} passages in {len(f)} frames; the crossing barrier is {barrier:.1f} kT.",
+                explain=_CROSSINGS)
+
+
 _TIME = ("Two loops are <em>linked</em> when one passes through the other like rings of a chain. Each loop is closed by "
          "a straight line between its two anchors, and the Gauss <em>linking number</em> Lk (an integer) counts how often the two "
          "rings wind around each other; pairs with |Lk| &ge; 1 are linked. Left: linked pairs in each analysed frame (line: "
@@ -114,3 +171,15 @@ _APPROACH = ("Even when no loops are linked, this shows how close they come. Lef
              "a steep rise at small distances indicates crowded loops at risk of entanglement.")
 _STILLS = ("Snapshots of the frame with the most links (left) and one with few or none (right). The grey line is the whole chain; "
            "thick coloured stretches are loops that are linked with another loop, so you can see how they interlock.")
+
+_EXAMPLES = ("Up to three different linked pairs, the largest |Lk| first. The two linked loops are drawn thick (violet and black); the thin line of the same colour is the "
+           "chord that closes each loop, because linking is computed on the closed rings. The gold marker sits where the two loops come closest, i.e. at the place of the link. "
+           "The rest of the chain is faded.")
+_DYNAMICS = ("Left: a link is followed over consecutive analysed frames; the bars show for how many frames the same pair of loops stayed linked. Short lives mean links come and go; "
+             "long lives mean they are trapped. Right: how many pairs became linked (up) or stopped being linked (down) compared with the previous analysed frame. Loops are also "
+             "created and removed by the Monte Carlo, so a pair can disappear without the chains passing through each other.")
+_CROSSINGS = ("<b>Crossings</b> are events in which two bonds of the chain pass through each other between two checks of the MD. If the excluded volume (EV) were a perfect wall there would be none. "
+              "<b>Leaks</b> (orange) happen while the EV is on: the EV is too soft or the time step too large to keep strands apart. <b>Passages</b> (violet) involve a bead whose EV the topoisomerase "
+              "switched off. Middle: passage attempts of the 'local' topoisomerase, how many were undone by the topology-simplifying rule (topo_keep), and how many links they created or removed. "
+              "Right: the energy barrier for two bonds to cross, in units of kT (thermal energy), as a function of the EV strength; a barrier of a few kT is crossed easily, about 10 kT or more keeps the chain intact. "
+              "The black dot is the current setting.")

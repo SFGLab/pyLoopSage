@@ -101,6 +101,22 @@ def loop_counts(res, n_beads: int) -> np.ndarray:
     return a + a.T
 
 
+def loop_coverage(c) -> np.ndarray:
+    """Loop weight spanning each bead: every loop counts on all beads between its anchors (from a symmetric loop-count matrix)."""
+    up = np.triu(c, 1)
+    return np.cumsum(up.sum(axis=1) - up.sum(axis=0))            # +w at the left anchor, -w at the right one
+
+
+def loop_decay(c) -> np.ndarray:
+    """Decay profile of the loops: at separation s, the loop weight spanning pairs s beads apart (a loop of length L covers L - s such pairs)."""
+    n = len(c)
+    hist = np.bincount(np.abs(np.subtract.outer(np.arange(n), np.arange(n)))[np.triu_indices(n, 1)], weights=np.triu(c, 1)[np.triu_indices(n, 1)], minlength=n)
+    s = np.arange(n)
+    w_above = hist[::-1].cumsum()[::-1] - hist                   # weight of loops longer than s
+    l_above = (hist * s)[::-1].cumsum()[::-1] - hist * s
+    return np.maximum(l_above - s * w_above, 0) / np.maximum(n - s, 1)
+
+
 def loop_map(res, n_beads: int, dot=1.0, domain=0.1, hop=0.4, depth=3, sigma=0.8, base=0.3) -> np.ndarray:
     """Contact map from loops, built from snapshot-averaged loop counts (fast: a few N x N operations).
 

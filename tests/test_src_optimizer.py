@@ -45,9 +45,9 @@ def test_sparse_targets_get_smoothed_profiles():
 
 
 def test_weights_follow_the_region_size():
-    tad, mid, comp = loss_weights(5e5), loss_weights(4.5e6), loss_weights(5e7)
+    tad, mid, comp = loss_weights(1e6), loss_weights(3e7), loss_weights(2e8)
     assert tad[2] > 3 * tad[0] and comp[0] > 3 * comp[2]            # insulation dominates TAD regions, eigenvectors compartment regions
-    assert abs(mid[0] - mid[2]) < 0.05 and loss_weights(1e6) == tad
+    assert abs(mid[0] - mid[2]) < 0.05 and loss_weights(5e6)[0] < 0.02 < loss_weights(2e7)[0] < loss_weights(6e7)[0]   # PC1 ~ 0 for TADs, then grows
     assert weighted([0, 0, 0, 1], mid) > 0
 
 
@@ -119,3 +119,47 @@ def test_reported_map_is_the_one_the_optimizer_scored(tiny_args):
     assert np.allclose(ctx.mc_map, same)                          # insulation and validation use the optimized map definition
     plain = run_pipeline(load_config(tiny_args))
     assert np.allclose(plain.mc_map, loop_map(plain.mc_ens, plain.geom.n_beads))      # default runs are unchanged
+
+
+def test_loop_coverage_and_decay_count_the_whole_area_between_anchors():
+    from analysis.maps import loop_coverage, loop_decay
+    c = np.zeros((10, 10)); c[2, 6] = c[6, 2] = 2.0
+    cov, dec = loop_coverage(c), loop_decay(c)
+    assert list(cov) == [0, 0, 2, 2, 2, 2, 0, 0, 0, 0]
+    assert np.allclose(dec[1:6] * (10 - np.arange(1, 6)), [6, 4, 2, 0, 0])      # loop of length 4: 2 x (4 - s) pairs at separation s
+    m, t = _map(seed=1), _map(seed=5)
+    z = np.zeros(len(m) - 10)
+    prof = (np.r_[cov, z], np.r_[dec, z] + 1e-3)
+    assert loss_parts(m, t, 5, cover=(prof, prof))[2] < 1e-9
+
+
+def test_potts_search_stays_in_bounds_and_finds_the_optimum():
+    from optimizer.nelder_mead import optimize_potts
+
+    def obj(e, p, longer=1):
+        obj.parts = [0.1]
+        return (np.log(e) - np.log(2.0)) ** 2 + (p - 0.3) ** 2
+
+    r = optimize_potts(obj, 1.0, 0.5, max_evals=40)
+    lo, hi = r["bounds"]["epi"]
+    assert lo <= r["best"]["epi"] <= hi and 0.1 <= r["best"]["p"] <= 0.9
+    assert r["best"]["loss"] <= r["start"]["loss"] and abs(r["best"]["epi"] - 2.0) < 1.0
+
+
+def test_loops_only_stage_skips_the_eigenvector_term():
+    m, t = _map(), _map(seed=5)
+    assert loss_parts(m, t, 5, eig=False)[0] == 0.0 and loss_parts(m, t, 5)[0] > 0
+
+
+def test_potts_run_fits_the_loop_stage_first_and_then_the_potts_stage(tiny_args, tmp_path):
+    pyBigWig = pytest.importorskip("pyBigWig")
+    bw = str(tmp_path / "comp.bw")
+    f = pyBigWig.open(bw, "w")
+    f.addHeader([("chr1", 249250621)])
+    f.addEntries("chr1", 77_000_000, values=[float(np.sign(np.sin(i / 20))) for i in range(1800)], span=10_000, step=10_000)
+    f.close()
+    ctx = run_pipeline(load_config(tiny_args + ["--optimize", "--opt-evals", "6", "--opt-steps", "500", "--set", "epi_coeff=1.0", "--set", f"comp_bw_file={bw}"]))
+    r = ctx.optimization
+    assert r.potts and r.best["parts"][0] == 0.0                   # stage 1 has no eigenvector term; stage 2 has it, weighted
+    assert 0.1 <= r.potts["best"]["p"] <= 0.9 and r.potts["best"]["loss"] <= r.potts["start"]["loss"] + 1e-9
+    assert ctx.cfg.epi_coeff == r.potts["best"]["epi"]

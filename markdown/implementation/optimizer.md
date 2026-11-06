@@ -53,11 +53,25 @@ L_{\mathrm{eig}}=\frac{1-r}{2},\qquad r=\operatorname{corr}\big(\langle s\rangle
 $$
 The Pearson correlation $r$ lies in $[-1,1]$, so the term runs from $0$ (same A/B pattern) to $1$ (mirror image). Without a reference, or with the Potts model off, the eigenvector comparison above is used.
 
-The weights $w_{\mathrm{eig}}$ and $w_{\mathrm{ins}}$ depend on the *size of the region*, because the two terms describe structures of different size. TADs are domains of a few hundred kb, so in a short region the insulation is the informative term and the eigenvectors, which describe the large-scale (compartment) pattern, say little. In a region of tens of Mb the compartments are what the map shows. With $S$ the length of the modelled region in bp, let
+The weights $w_{\mathrm{eig}}$ and $w_{\mathrm{ins}}$ depend on the *size of the region*, because the two terms describe structures of different size. TADs are domains of about 0.1–1 Mb, so in a region of a few Mb (a handful of TADs) the insulation is the informative term. The eigenvectors describe the A/B compartment pattern, whose blocks are a few Mb long: a region of 5 Mb holds at most one or two of them, so the first eigenvector (PC1) says almost nothing there. It starts to carry information when the region contains 2–3 blocks (about 10 Mb) and becomes statistically dominant when it contains many (30 Mb up to a whole chromosome). The switch is therefore sharp, not linear: with $S$ the length of the modelled region,
 $$
-x=\operatorname{clip}\!\Big(\frac{\ln(S/1\,\mathrm{Mb})}{\ln(20)},\,0,\,1\Big),\qquad w_{\mathrm{eig}}=0.5\cdot4^{x},\qquad w_{\mathrm{ins}}=2\cdot4^{-x}.
+s=\frac{1}{1+(S_0/S)^{3}},\qquad w_{\mathrm{eig}}=2s,\qquad w_{\mathrm{ins}}=\max\big(2(1-s),\,0.25\big),\qquad S_0=30\,\mathrm{Mb}.
 $$
-So $x=0$ (a region of 1 Mb or less) gives $(w_{\mathrm{eig}},w_{\mathrm{ins}})=(0.5,2)$, insulation dominant; $x=1$ (20 Mb or more) gives $(2,0.5)$, eigenvectors dominant; and $x=\tfrac12$ (about 4.5 Mb) gives $(1,1)$, a balance. The decay weight stays $0.5$ and the size weight $1$. The weights used are shown in the report and in the log.
+Here $s$ is a smooth switch that goes from 0 (small regions) to 1 (large ones), and $S_0$ is where both weights equal 1. For example, $(w_{\mathrm{eig}},w_{\mathrm{ins}})$ is about $(0.01,2)$ at 5 Mb, $(0.3,1.7)$ at 17 Mb, $(1,1)$ at 30 Mb and $(1.95,0.25)$ at 100 Mb. The decay weight stays $0.5$ and the size weight $1$. The weights used are shown in the report and in the log.
+
+<figure markdown>
+  ![Loss weights, region content and the two stages](../assets/theory/optimizer_scale.svg){ width="700" }
+  <figcaption><b>a</b> The weight of the PC1 (eigenvector) term and of the insulation term against the length of the modelled region. <b>b</b> What a region of that size contains: TADs (triangles), A (red) and B (blue) compartment blocks, and a sketch of the chain. A small region holds a few TADs and at most one A/B block, so PC1 carries almost no information; a large region holds many blocks, which segregate in space into an A and a B cloud. <b>c</b> With the Potts model on, the loop-extrusion parameters are fitted first and the Potts parameters second.</figcaption>
+</figure>
+
+### With the Potts model: two stages
+
+When the Potts model is on and there is an A/B reference, the optimizer runs two searches in a row, so that the compartments do not disturb the fit of the loops:
+
+1. **Loop extrusion.** It fits $K$, $f$, $b$ and the temperature scale with the Potts model *off*, using only the insulation, the decay and the loop size ($w_{\mathrm{eig}}=0$).
+2. **Potts model.** It keeps those values and fits `epi_coeff` (searched within a factor 10 around its start) and `p_epigenetic` (between 0.1 and 0.9) with the *full* weighted loss. The field $h$ of the Potts model already carries the A/B pattern (from the compartment track or from the Hi-C eigenvector), so the correlation with the reference is easy to reach. What the search really decides is the balance: the coupling is increased only as far as it helps the compartments *and* does not harm the TAD terms. Because PC1 enters with the region-size weight, it hardly matters in a small region, where the coupling is then set mainly by not damaging the insulation.
+
+Stage 2 uses a third of the evaluations of stage 1 (at least 10). Without an A/B reference, `epi_coeff` is not optimized and a warning is printed.
 
 ### The search: Nelder&ndash;Mead
 
@@ -97,7 +111,7 @@ The lowest loss of a noisy search is often a lucky one (the *winner's curse*). S
     The optimizer needs a target: a BEDPE loop file, or a Hi-C map (`--hic`). Run it with `--optimize`. The Monte Carlo stage then runs all its steps with the optimized values.
 
 !!! tip "Prefer a Hi-C target"
-    Give the optimizer a `.hic` file (`--hic`), ideally a smooth experiment such as Hi-C, as the target. Sparse loop data (ChIA-PET, HiChIP) contain only a few hundred dots, so the map they draw says little about how long loops should be or how strongly the chain should fold. The search then tends to settle on small values of $f$ and on short loops. This is unrealistic, and it is a side effect of sparsity, not a property of the chromatin. A dense map constrains the decay, the domains and the compartments together, so the fitted values are more reliable. With loop data alone, the target's insulation and decay profiles are smoothed more strongly (over about the insulation window, 100 kb), so that longer loops are not punished; the price is less sharp boundaries. Read the result with care and check that $f$ and the loop sizes are plausible.
+    Give the optimizer a `.hic` file (`--hic`), ideally a smooth experiment such as Hi-C, as the target. Sparse loop data (ChIA-PET, HiChIP) contain only a few hundred dots, so the map they draw says little about how long loops should be or how strongly the chain should fold. The search then tends to settle on small values of $f$ and on short loops. This is unrealistic, and it is a side effect of sparsity, not a property of the chromatin. A dense map constrains the decay, the domains and the compartments together, so the fitted values are more reliable. With loop data alone, the insulation and decay profiles are not read from the dot map but from the loops themselves: each loop counts on *all* beads between its anchors (the loop *coverage*, used as the insulation profile) and at all separations up to its length (the decay), for the input and the simulated loops alike. These profiles are smoothed over about the insulation window (100 kb), so that longer loops are not punished; the price is less sharp boundaries. Read the result with care and check that $f$ and the loop sizes are plausible.
 
 ```bash
 loopsage -c config.ini --optimize
