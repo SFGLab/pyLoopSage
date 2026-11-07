@@ -60,6 +60,22 @@ loopsage -h
 
 Detailed documentation of the model, parameters and outputs: **[sfglab.github.io/pyLoopSage](https://sfglab.github.io/pyLoopSage/)** (sources in [`markdown/`](markdown/)).
 
+## Use from Python
+
+After `pip install pyLoopSage` the package is imported as `loopsage`:
+
+```python
+import loopsage as ls
+
+sim = ls.Simulation("config.ini", n_steps=20000)   # or keyword arguments instead of a file
+sim.run()                                          # same as the `loopsage` command
+mc = sim.monte_carlo()                             # or run one step at a time
+
+import loopsage.monte_carlo as mc                  # every module can be imported on its own
+```
+
+See the [Python interface](https://sfglab.github.io/pyLoopSage/reference/python/) page of the documentation.
+
 ## Tests
 
 Run the whole suite in parallel, with a per-module report:

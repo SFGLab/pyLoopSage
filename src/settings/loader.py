@@ -111,13 +111,13 @@ def write_ini(path, values: dict, source: dict) -> None:
 
 # ---- Sanity checks on the final configuration ------------------------------
 
-def validate(cfg) -> None:
-    """Raise ValueError with a clear message for the first problem found."""
-    if not cfg.interaction_file:
+def validate(cfg, need_file: bool = True) -> None:
+    """Raise ValueError with a clear message for the first problem found (need_file=False: loops come from Python variables)."""
+    if need_file and not cfg.interaction_file:
         raise ValueError("an input file is required (-f FILE or interaction_file in config.ini)")
-    if not Path(cfg.interaction_file).is_file():
+    if cfg.interaction_file and not Path(cfg.interaction_file).is_file():
         raise ValueError(f"input file not found: {cfg.interaction_file}")
-    if Path(cfg.interaction_file).suffix.lower() not in (".bedpe", ".bed", ".narrowpeak"):
+    if cfg.interaction_file and Path(cfg.interaction_file).suffix.lower() not in (".bedpe", ".bed", ".narrowpeak"):
         raise ValueError("unsupported input format (use .bedpe, .bed or .narrowPeak)")
     if not cfg.chrom:
         raise ValueError("a chromosome is required (-r CHR:START-END or chrom in config.ini)")
@@ -232,6 +232,29 @@ def _apply(values, source, raw, origin, notes):
                 values[key], source[key] = BY_NAME[key].default, "default"
 
 
+def _build(cli: dict, ini_path, sets, verbose: int, command: str, need_file: bool = True) -> Config:
+    """Defaults < ini file < explicit values (raises ValueError / FileNotFoundError)."""
+    values = {p.name: p.default for p in PARAMS}
+    source = {p.name: "default" for p in PARAMS}
+    notes = []
+    if ini_path:
+        _apply(values, source, read_ini(ini_path), "ini", notes)
+    cli = dict(cli)
+    if cli.get("region"):
+        cli.update(parse_region(cli.pop("region")))
+    cli.pop("region", None)
+    for item in sets or []:
+        key, _, val = item.partition("=")
+        cli[key.strip()] = val
+    _apply(values, source, cli, "cli", notes)
+    cfg = Config(**values)
+    cfg.source, cfg.notes, cfg.config_file = source, notes, ini_path
+    cfg.verbosity = verbose or int(values["verbosity"] or 0)           # -v wins over the ini
+    cfg.command = command
+    validate(cfg, need_file)
+    return cfg
+
+
 def load_config(argv=None, default_config: bool = False) -> Config:
     """Parse argv; with default_config, fall back to ./config.ini when no input is given."""
     parser = build_parser()
@@ -239,28 +262,32 @@ def load_config(argv=None, default_config: bool = False) -> Config:
     if argv is None and len(sys.argv) == 1 and not default_config:
         parser.print_help()
         sys.exit(0)
-
-    values = {p.name: p.default for p in PARAMS}
-    source = {p.name: "default" for p in PARAMS}
-    notes = []
     ini_path = ns.config
     if ini_path is None and default_config and not getattr(ns, "interaction_file", None) and Path("config.ini").exists():
         ini_path = "config.ini"
+    cli = {k: v for k, v in vars(ns).items() if k in BY_NAME}
+    cli["region"] = ns.region
+    command = "loopsage " + " ".join(shlex.quote(a) for a in (sys.argv[1:] if argv is None else argv))
     try:
-        if ini_path:
-            _apply(values, source, read_ini(ini_path), "ini", notes)
-        cli = {k: v for k, v in vars(ns).items() if k in BY_NAME}
-        if ns.region:
-            cli.update(parse_region(ns.region))
-        for item in ns.set or []:
-            key, _, val = item.partition("=")
-            cli[key.strip()] = val
-        _apply(values, source, cli, "cli", notes)
-        cfg = Config(**values)
-        cfg.source, cfg.notes, cfg.config_file = source, notes, ini_path
-        cfg.verbosity = ns.verbose or int(values["verbosity"] or 0)      # -v on the command line wins over the ini
-        cfg.command = "loopsage " + " ".join(shlex.quote(a) for a in (sys.argv[1:] if argv is None else argv))
-        validate(cfg)
+        return _build(cli, ini_path, ns.set, ns.verbose, command)
     except (ValueError, FileNotFoundError) as e:
         parser.error(str(e))
-    return cfg
+
+
+def make_config(config=None, region=None, verbose: int = 0, **params) -> Config:
+    """Config from Python: `config` is an .ini path, a Config or a dict; `params` are parameters by name and win over it.
+
+    Errors raise ValueError (no usage message, no exit), so a script can catch them.
+    """
+    if isinstance(config, Config):
+        ini, base = config.config_file, config.as_dict()
+    elif isinstance(config, dict):
+        ini, base = None, dict(config)
+    else:
+        ini, base = (str(config) if config else None), {}
+    region = region or base.pop("region", None)                      # a dict may carry the region too
+    cli = {**base, **params}
+    shown = " ".join(f"--set {k}={shlex.quote(str(v))}" for k, v in params.items())
+    command = " ".join(x for x in ("loopsage", f"-c {shlex.quote(ini)}" if ini else "", f"-r {region}" if region else "", shown) if x)
+    cli["region"] = region
+    return _build(cli, ini, None, verbose, command, need_file=False)      # loops may come from Python variables

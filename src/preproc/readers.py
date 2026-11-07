@@ -158,15 +158,9 @@ def _stats(J, centers):
 
 def vectors_from_bedpe(path, geom, smooth=False, contrastive=True, sigma=1.0, loss_sigma=0.0) -> LoopData:
     """Build model inputs from a BEDPE file for the region in `geom` (loss_sigma > 0: J_loss becomes a smooth field)."""
-    n = geom.n_beads
     df = read_region_table(path, geom, paired=True)
     x = np.asarray(geom.bead_of(((df[1] + df[2]) // 2).to_numpy()))
     y = np.asarray(geom.bead_of(((df[4] + df[5]) // 2).to_numpy()))
-    keep = x != y                                    # drop loops inside a single bead
-    x, y, df = x[keep], y[keep], df[keep].reset_index(drop=True)
-    if len(df) == 0:
-        raise ValueError(f"no loops with distinct anchors found in {geom.label}")
-
     p1 = p2 = None
     if df.shape[1] > 8:
         a, b = numeric_col(df, 7, -1), numeric_col(df, 8, -1)
@@ -174,7 +168,19 @@ def vectors_from_bedpe(path, geom, smooth=False, contrastive=True, sigma=1.0, lo
             p1, p2 = a, b
         else:
             log.warning("Columns 8/9 are not valid orientation probabilities: ignored.")
-    L, R, J_loss = _accumulate(x, y, numeric_col(df, 6, 1.0), p1, p2, n)
+    return loops_from_beads(geom, x, y, numeric_col(df, 6, 1.0), p1, p2, smooth, contrastive, sigma, loss_sigma)
+
+
+def loops_from_beads(geom, x, y, w, p1=None, p2=None, smooth=False, contrastive=True, sigma=1.0, loss_sigma=0.0) -> LoopData:
+    """Loops given as bead pairs (x, y) with weights w (and optional reverse-orientation probabilities p1, p2) -> LoopData."""
+    n = geom.n_beads
+    x, y, w = np.asarray(x, dtype=int), np.asarray(y, dtype=int), np.asarray(w, dtype=float)
+    keep = x != y                                    # drop loops inside a single bead
+    x, y, w = x[keep], y[keep], w[keep]
+    p1, p2 = (None, None) if p1 is None else (np.asarray(p1, dtype=float)[keep], np.asarray(p2, dtype=float)[keep])
+    if len(x) == 0:
+        raise ValueError(f"no loops with distinct anchors found in {geom.label}")
+    L, R, J_loss = _accumulate(x, y, w, p1, p2, n)
 
     J = np.zeros((n, n))
     J[x, y] = J[y, x] = 1.0
@@ -187,7 +193,7 @@ def vectors_from_bedpe(path, geom, smooth=False, contrastive=True, sigma=1.0, lo
     if loss_sigma > 0:                               # smooth 2D landscape for the loop-map data energy
         J_loss = gaussian_filter(J_loss, loss_sigma)
     L, R = mean_scale(L), mean_scale(R)
-    cover = contrast_cover(loop_cover(np.minimum(x, y), np.maximum(x, y), numeric_col(df, 6, 1.0), n, sigma if smooth else 0.0)) if contrastive else None
+    cover = contrast_cover(loop_cover(np.minimum(x, y), np.maximum(x, y), w, n, sigma if smooth else 0.0)) if contrastive else None
 
     lengths, stats = _stats(J, (x + y) // 2)
     log.step("Input: %d unique loops (%d anchors) in %s", stats["n_loops"], stats["n_anchors"], geom.label)

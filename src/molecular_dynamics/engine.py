@@ -5,6 +5,7 @@
 """
 import json
 import os
+import tempfile
 from pathlib import Path
 from dataclasses import dataclass, field
 
@@ -108,6 +109,8 @@ class LoopMD:
 
     def __init__(self, cfg, geom, mc, dirs):
         self.cfg, self.mc, self.dirs, self.n = cfg, mc, dirs, geom.n_beads
+        self._scratch = None if cfg.save_ensemble else tempfile.TemporaryDirectory(prefix="loopsage_struct_")    # OpenMM needs the files; off = they go to a temporary folder
+        self.struct_dir = dirs.structures if cfg.save_ensemble else Path(self._scratch.name)
         self.comps = cfg.do_compartments and mc.meta["epi_on"]
         if cfg.do_compartments and not self.comps:
             log.warning("do_compartments needs epi_coeff > 0 in the MC stage: compartments disabled.")
@@ -169,11 +172,11 @@ class LoopMD:
 
     def build(self):
         """Initial structure, force field, minimisation."""
-        cfg, d = self.cfg, self.dirs
+        cfg = self.cfg
         log.info("MD: building the initial %s structure and force field (%d beads)", cfg.initial_structure_type, self.n)
-        write_mmcif(make_structure(self.n, cfg.initial_structure_type), d.structures / "init_structure.cif")
-        write_psf(self.n, d.structures / "topology.psf")
-        pdb = PDBxFile(str(d.structures / "init_structure.cif"))
+        write_mmcif(make_structure(self.n, cfg.initial_structure_type), self.struct_dir / "init_structure.cif")
+        write_psf(self.n, self.struct_dir / "topology.psf")
+        pdb = PDBxFile(str(self.struct_dir / "init_structure.cif"))
         self.topology = pdb.topology
         self.system = ForceField(cfg.forcefield_path).createSystem(pdb.topology, nonbondedCutoff=1 * u.nanometer)
         self.ev = forces.add_excluded_volume(self.system, self.n, cfg.ev_ff_strength, cfg.ev_ff_power)
@@ -193,7 +196,7 @@ class LoopMD:
         self.sim.minimizeEnergy(tolerance=cfg.tolerance * kj / u.nanometer)
         e1 = self.sim.context.getState(getEnergy=True).getPotentialEnergy().value_in_unit(kj)
         log.step("MD: energy minimized (%.3g -> %.3g kJ/mol)", e0, e1)
-        self.sim.reporters.append(DCDReporter(str(d.structures / "trajectory.dcd"), cfg.sim_step))
+        self.sim.reporters.append(DCDReporter(str(self.struct_dir / "trajectory.dcd"), cfg.sim_step))
 
     def _update(self, i):
         """Move the context to MC snapshot i (loops, compartments, topoisomerase)."""
@@ -303,6 +306,9 @@ class LoopMD:
                     temperature_K=cfg.sim_temp, contact_radius_nm=cfg.contact_radius)
         if self.local or self.track:                                             # optional topology bookkeeping, one number per frame
             meta["topology"] = dict(self.topo_log, mode=cfg.topo_mode, ev_p=cfg.ev_p, keep=cfg.topo_keep, track_every=cfg.track_every)
+        if self._scratch is not None:
+            self.sim.reporters.clear()
+            self._scratch.cleanup()
         return MDResult(coords, maps.mean, maps.std, rg, epot, self.frames, meta, dists.mean, dists.std)
 
 

@@ -100,6 +100,18 @@ CLI_TAIL = """
 Every run gets its own folder, `results/<chrom>_<start>_<end>_<run>/`, with the report in `report/report.html`, the figures in `visualizations/`, the 3D structures in `structures/`, and the numerical results in `data/` (matrices in `data/metadata/` as `.npy` files).
 Use `-o` to choose another results folder and `--run N` to fix the run number.
 
+**Everything is saved by default**, from the command line and from a config file. Each kind of output has its own switch to turn it off (`--no-...`, or `... = False` in the config file):
+
+| Output | Where | Switch to turn it off |
+|---|---|---|
+| HTML report | `report/report.html` | `--no-report` |
+| Figures (PNG and SVG) | `visualizations/` | `--no-figures` |
+| Matrices as `.npy` (contact maps, distances, strengths) | `data/metadata/` | `--no-metadata` |
+| 3D structures: every MD frame as `.cif`, start structure, topology, trajectory | `structures/` | `--no-save-ensemble` |
+| 3D viewer and videos | `visualizations/3d/` | `--no-render-3d` |
+
+The results of the stages (`data/*.npz`), the log and `config_resolved.ini` are always written, because the stages and the repeatability of a run depend on them. From [Python](python.md), `ls.simulate` and `ls.simulate_md` write nothing; `ls.run` and `ls.Simulation` write the same run folder as the command.
+
 ## Run only some stages
 
 The pipeline has seven stages: reading the input, Monte Carlo, molecular dynamics, 3D structure analysis, validation, linking analysis and the report.
@@ -134,7 +146,7 @@ region_start = 77000000                ; in base pairs
 region_end = 95000000
 
 [monte_carlo]
-mc_steps = 20000
+n_steps = 20000
 method = Annealing
 
 [molecular_dynamics]
@@ -154,6 +166,21 @@ Rules:
 
 !!! tip "Check what was used"
     Each run saves the full list of settings it used in `config_resolved.ini` inside the run folder, so any run can be reproduced from its own folder.
+
+## Using the configuration from Python
+
+The same keys work in Python, written by name (`n_steps`, not the option `--mc-steps`):
+
+```python
+import loopsage as ls
+
+cfg = ls.config("config.ini", n_steps=5000, run_md=False)    # a validated Config; keyword arguments win over the file
+sim = ls.Simulation(cfg)                                     # or Simulation("config.ini", n_steps=5000)
+sim.run()
+mc = ls.simulate(cfg, loops=dict(left=left, right=right))    # or loops as variables, results back as variables, no files
+```
+
+Values are converted exactly as in a config file, a wrong key or value raises `ValueError`, and `cfg.as_dict()` lists every setting. The full description (loops and tracks as variables, results as variables without any file, single steps, importing any module) is on the page [Python interface](python.md).
 
 ## All keys
 

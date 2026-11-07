@@ -108,7 +108,7 @@ comp_strength   = 0.25       # scale of the interaction table
 comp_range      = 0.03       # range in units of sqrt(N) nm
 
 md_skip_burnin  = False      # only use snapshots after the Monte Carlo burn-in
-save_ensemble   = True       # write every frame as .cif                       (CLI: --save-ensemble)
+save_ensemble   = True       # write the structures (frames as .cif, trajectory)  (CLI: --save-ensemble)
 
 [analysis]
 contact_radius  = 1.0        # nm, for the MD contact maps

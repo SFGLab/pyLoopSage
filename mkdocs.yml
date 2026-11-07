@@ -70,5 +70,6 @@ nav:
   - Reference:
       - Overview: reference/index.md
       - Command-line interface: reference/cli.md
+      - Python interface: reference/python.md
       - Config files: reference/config.md
   - Acknowledgments: acknowledgments/index.md

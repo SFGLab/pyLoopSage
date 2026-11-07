@@ -132,3 +132,19 @@ def test_same_seed_gives_the_same_run_and_random_runs_record_their_seed(fast_arg
     free = base[:k] + base[k + 2:]                                     # same run without a seed
     ctx = run_pipeline(load_config(free + ["--no-run-MD"]))
     assert ctx.cfg.seed is not None and f"seed = {ctx.cfg.seed}" in ctx.dirs.config.read_text()
+
+
+def test_every_output_is_saved_by_default_and_each_has_a_switch(fast_args, tmp_path):
+    """CLI: metadata and the 3D structures are written unless switched off."""
+    pytest.importorskip("openmm")
+    md = [a for a in fast_args if a != "--no-run-MD"] + ["--run-MD", "--md-steps", "20", "--n-lef", "5", "--no-knots", "--threads", "1",
+                                                          "--platform", "CPU", "--no-render-3d", "--set", "tolerance=10"]
+    on = run_pipeline(load_config([x if x != str(tmp_path / "results") else str(tmp_path / "on") for x in md]))
+    assert (on.dirs.data / "metadata" / "md_avg_distance.npy").exists() and (on.dirs.data / "metadata" / "mc_contact_map.npy").exists()
+    assert all((on.dirs.structures / f).exists() for f in ("init_structure.cif", "topology.psf", "trajectory.dcd"))
+    assert any(on.dirs.ensemble.glob("MDLE_*.cif"))
+    off = run_pipeline(load_config([x if x != str(tmp_path / "results") else str(tmp_path / "off") for x in md]
+                                   + ["--no-metadata", "--no-save-ensemble"]))
+    assert off.md is not None                                                          # the simulation itself still runs
+    assert not (off.dirs.data / "metadata").exists() or not any((off.dirs.data / "metadata").iterdir())
+    assert not any(off.dirs.structures.iterdir())

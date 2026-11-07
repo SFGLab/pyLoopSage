@@ -21,7 +21,7 @@ region_start = 77000000                ; in base pairs
 region_end = 95000000
 
 [monte_carlo]
-mc_steps = 20000
+n_steps = 20000
 method = Annealing
 
 [molecular_dynamics]
@@ -41,6 +41,21 @@ Rules:
 
 !!! tip "Check what was used"
     Each run saves the full list of settings it used in `config_resolved.ini` inside the run folder, so any run can be reproduced from its own folder.
+
+## Using the configuration from Python
+
+The same keys work in Python, written by name (`n_steps`, not the option `--mc-steps`):
+
+```python
+import loopsage as ls
+
+cfg = ls.config("config.ini", n_steps=5000, run_md=False)    # a validated Config; keyword arguments win over the file
+sim = ls.Simulation(cfg)                                     # or Simulation("config.ini", n_steps=5000)
+sim.run()
+mc = ls.simulate(cfg, loops=dict(left=left, right=right))    # or loops as variables, results back as variables, no files
+```
+
+Values are converted exactly as in a config file, a wrong key or value raises `ValueError`, and `cfg.as_dict()` lists every setting. The full description (loops and tracks as variables, results as variables without any file, single steps, importing any module) is on the page [Python interface](python.md).
 
 ## All keys
 
@@ -84,7 +99,7 @@ Rules:
 | `report`<br>`--report` | true / false | `True` | Write report.html |
 | `figures`<br>`--figures` | true / false | `True` | Draw and save the figures (off: tables and data only, much faster for big or repeated runs) |
 | `save_metadata`<br>`--metadata` | true / false | `True` | Save map matrices (MC and MD heatmaps, distances, strengths) as .npy in data/metadata |
-| `save_ensemble`<br>`--save-ensemble` | true / false | `True` | Save every MD frame as .cif |
+| `save_ensemble`<br>`--save-ensemble` | true / false | `True` | Save the 3D structures: every MD frame as .cif, plus the start structure, topology and trajectory (structures/) |
 
 ## `[parallel]`: Parallelism and replicas
 

@@ -67,7 +67,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | `--report` / `--no-report` | true / false | `True` | Write report.html |
 | `--figures` / `--no-figures` | true / false | `True` | Draw and save the figures (off: tables and data only, much faster for big or repeated runs) |
 | `--metadata` / `--no-metadata` | true / false | `True` | Save map matrices (MC and MD heatmaps, distances, strengths) as .npy in data/metadata |
-| `--save-ensemble` / `--no-save-ensemble` | true / false | `True` | Save every MD frame as .cif |
+| `--save-ensemble` / `--no-save-ensemble` | true / false | `True` | Save the 3D structures: every MD frame as .cif, plus the start structure, topology and trajectory (structures/) |
 
 ### Parallelism and replicas
 
@@ -146,6 +146,18 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 
 Every run gets its own folder, `results/<chrom>_<start>_<end>_<run>/`, with the report in `report/report.html`, the figures in `visualizations/`, the 3D structures in `structures/`, and the numerical results in `data/` (matrices in `data/metadata/` as `.npy` files).
 Use `-o` to choose another results folder and `--run N` to fix the run number.
+
+**Everything is saved by default**, from the command line and from a config file. Each kind of output has its own switch to turn it off (`--no-...`, or `... = False` in the config file):
+
+| Output | Where | Switch to turn it off |
+|---|---|---|
+| HTML report | `report/report.html` | `--no-report` |
+| Figures (PNG and SVG) | `visualizations/` | `--no-figures` |
+| Matrices as `.npy` (contact maps, distances, strengths) | `data/metadata/` | `--no-metadata` |
+| 3D structures: every MD frame as `.cif`, start structure, topology, trajectory | `structures/` | `--no-save-ensemble` |
+| 3D viewer and videos | `visualizations/3d/` | `--no-render-3d` |
+
+The results of the stages (`data/*.npz`), the log and `config_resolved.ini` are always written, because the stages and the repeatability of a run depend on them. From [Python](python.md), `ls.simulate` and `ls.simulate_md` write nothing; `ls.run` and `ls.Simulation` write the same run folder as the command.
 
 ## Run only some stages
 

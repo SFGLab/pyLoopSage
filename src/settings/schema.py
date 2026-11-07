@@ -68,7 +68,7 @@ PARAMS = (
     Param("report", "output", "bool", True, "Write report.html", flag="--report"),
     Param("figures", "output", "bool", True, "Draw and save the figures (off: tables and data only, much faster for big or repeated runs)", flag="--figures"),
     Param("save_metadata", "output", "bool", True, "Save map matrices (MC and MD heatmaps, distances, strengths) as .npy in data/metadata", flag="--metadata"),
-    Param("save_ensemble", "output", "bool", True, "Save every MD frame as .cif", flag="--save-ensemble"),
+    Param("save_ensemble", "output", "bool", True, "Save the 3D structures: every MD frame as .cif, plus the start structure, topology and trajectory (structures/)", flag="--save-ensemble"),
     # ---- parallelism ----
     Param("threads", "parallel", "int", 1, "Worker threads for the numba sampler, OpenMM CPU and numba kernels (0 = all cores)", "threads", flag="--threads", short="-t"),
     Param("replicas", "parallel", "int", 1, "Independent Monte Carlo chains (seed, seed+1, ...) run in parallel; the ensemble is pooled", "chains", flag="--n-replicas"),
