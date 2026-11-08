@@ -110,7 +110,7 @@ Use `-o` to choose another results folder and `--run N` to fix the run number.
 | 3D structures: every MD frame as `.cif`, start structure, topology, trajectory | `structures/` | `--no-save-ensemble` |
 | 3D viewer and videos | `visualizations/3d/` | `--no-render-3d` |
 
-The results of the stages (`data/*.npz`), the log and `config_resolved.ini` are always written, because the stages and the repeatability of a run depend on them. From [Python](python.md), `ls.simulate` and `ls.simulate_md` write nothing; `ls.run` and `ls.Simulation` write the same run folder as the command.
+The results of the stages (`data/*.npz`), the log and `config_resolved.ini` are always written, because the stages and the repeatability of a run depend on them. From [Python](python.md), the step functions (`ls.run_mc`, `ls.run_md`, ...) write nothing; `ls.run` writes the same run folder as the command.
 
 ## Run only some stages
 
@@ -175,12 +175,12 @@ The same keys work in Python, written by name (`n_steps`, not the option `--mc-s
 import loopsage as ls
 
 cfg = ls.config("config.ini", n_steps=5000, run_md=False)    # a validated Config; keyword arguments win over the file
-sim = ls.Simulation(cfg)                                     # or Simulation("config.ini", n_steps=5000)
-sim.run()
-mc = ls.simulate(cfg, loops=dict(left=left, right=right))    # or loops as variables, results back as variables, no files
+geom = ls.geometry(cfg)
+inputs = ls.read_inputs(cfg, geom, loops="loops.bedpe")      # inputs as file paths
+mc = ls.run_mc(cfg, inputs, geom)                            # one function per step, results as Python objects
 ```
 
-Values are converted exactly as in a config file, a wrong key or value raises `ValueError`, and `cfg.as_dict()` lists every setting. The full description (loops and tracks as variables, results as variables without any file, single steps, importing any module) is on the page [Python interface](python.md).
+Values are converted exactly as in a config file, a wrong key or value raises `ValueError`, and `cfg.as_dict()` lists every setting. The full description (inputs, optimizer, Monte Carlo, molecular dynamics, results, figures, the sandbox) is on the page [Python interface](python.md).
 
 ## All keys
 

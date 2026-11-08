@@ -195,7 +195,7 @@ def validation_summary(by_source):
         y = len(groups) - 1 - k
         for j, (src, r) in enumerate(g.items()):
             dy, col = (j - (n - 1) / 2) * 0.28, colors[src]
-            ax.errorbar(r["pearson"], y - dy, xerr=[[r["pearson"] - r["ci_lo"]], [r["ci_hi"] - r["pearson"]]], fmt="o", color=col, ecolor=col, capsize=3, ms=8, lw=1.6)
+            ax.errorbar(r["pearson"], y - dy, xerr=[[max(r["pearson"] - r["ci_lo"], 0.0)], [max(r["ci_hi"] - r["pearson"], 0.0)]], fmt="o", color=col, ecolor=col, capsize=3, ms=8, lw=1.6)
             ax.text(min(r["ci_hi"], 0.97) + 0.03, y - dy, f"{r['pearson']:.2f}", va="center", fontsize=8, color=col)
     ax.axvline(0, color=MUTED, lw=0.8)
     first = lambda g: next(iter(g.values()))

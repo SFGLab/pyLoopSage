@@ -50,12 +50,12 @@ The same keys work in Python, written by name (`n_steps`, not the option `--mc-s
 import loopsage as ls
 
 cfg = ls.config("config.ini", n_steps=5000, run_md=False)    # a validated Config; keyword arguments win over the file
-sim = ls.Simulation(cfg)                                     # or Simulation("config.ini", n_steps=5000)
-sim.run()
-mc = ls.simulate(cfg, loops=dict(left=left, right=right))    # or loops as variables, results back as variables, no files
+geom = ls.geometry(cfg)
+inputs = ls.read_inputs(cfg, geom, loops="loops.bedpe")      # inputs as file paths
+mc = ls.run_mc(cfg, inputs, geom)                            # one function per step, results as Python objects
 ```
 
-Values are converted exactly as in a config file, a wrong key or value raises `ValueError`, and `cfg.as_dict()` lists every setting. The full description (loops and tracks as variables, results as variables without any file, single steps, importing any module) is on the page [Python interface](python.md).
+Values are converted exactly as in a config file, a wrong key or value raises `ValueError`, and `cfg.as_dict()` lists every setting. The full description (inputs, optimizer, Monte Carlo, molecular dynamics, results, figures, the sandbox) is on the page [Python interface](python.md).
 
 ## All keys
 
@@ -74,7 +74,7 @@ Values are converted exactly as in a config file, a wrong key or value raises `V
 | `region_end`<br>*ini only* | integer (bp) | *(empty)* | Region end (empty = chromosome end) |
 | `genome`<br>`--genome` | text | `hg38` | Genome assembly for chromosome sizes |
 | `n_beads`<br>`--n-beads` | integer (beads) | *(empty)* | Number of simulation beads (empty = region / 2 kb) |
-| `smoothing_input`<br>*ini only* | true / false | `True` | Smooth the anchor/peak signal with a Gaussian (sigma = n_beads/300 beads, at least 1.5) |
+| `smoothing_input`<br>*ini only* | true / false | `True` | Smooth the anchor/peak signal and the BigWig binding tracks with a Gaussian (sigma = n_beads/300 beads, at least 1.5) |
 | `bw_files`<br>*ini only* | list of text | *(empty)* | BigWig tracks for extra binding energy (comma-separated) |
 | `bw_strengths`<br>*ini only* | list of numbers | *(empty)* | Strength r per BigWig track (empty = -N_beads/10 each) |
 | `lef_track_file`<br>`--lef-track` | text | *(empty)* | BigWig of LEF loading preference (cohesin/condensin ChIP) |
@@ -188,7 +188,7 @@ Values are converted exactly as in a config file, a wrong key or value raises `V
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
 | `corr_smooth`<br>*ini only* | number (beads) | `1.5` | Gaussian smoothing (beads) applied to per-position signals before the extra validation correlations (0 = off) |
-| `track_smooth`<br>`--track-smooth` | number (beads) | `7.0` | Gaussian smoothing of the Hi-C insulation score and of the eigenvector (A/B track) used as input and for validation (0 = off) |
+| `track_smooth`<br>`--track-smooth` | number (beads) | `7.0` | Gaussian smoothing of the Hi-C insulation score and of the A/B track (Hi-C eigenvector or compartment BigWig) used as input and for validation (0 = off) |
 | `contact_radius`<br>*ini only* | number (nm) | `1.0` | Contact distance for MD contact maps |
 | `zoom_snapshots`<br>*ini only* | integer (snapshots) | `120` | Snapshots shown in the zoomed kymograph (window near equilibrium) |
 | `zoom_start`<br>*ini only* | integer (snapshot) | *(empty)* | First snapshot of the zoom window (empty = middle of production) |

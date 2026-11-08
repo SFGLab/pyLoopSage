@@ -89,6 +89,23 @@ def loop_cover(x, y, w, n, sigma=0.0) -> np.ndarray:
     return gaussian_filter1d(c, sigma, mode="nearest") if sigma > 0 else c
 
 
+def binding_track(v, sigma: float = 0.0, name: str = "track") -> np.ndarray:
+    """Per-bead signal of a binding-energy track: Gaussian smoothing (sigma in beads, 0 = off), then negative values set to 0.
+
+    The energy rewards the share of the track's total signal that sits under the LEF legs, so the signal must be
+    non-negative and not empty.
+    """
+    v = np.asarray(v, dtype=float)
+    if sigma > 0:
+        v = gaussian_filter1d(v, sigma, mode="nearest")
+    if (v < 0).any():
+        log.warning("Track '%s' has negative values: they are set to 0 (the binding energy needs a non-negative signal).", name)
+        v = np.clip(v, 0, None)
+    if not v.sum() > 0:
+        raise ValueError(f"track '{name}' has no signal in the region")
+    return v
+
+
 def smooth_sparse(v, sigma: float) -> np.ndarray:
     """Gaussian smoothing, with sigma capped so sparse peaks are not erased."""
     nz = np.flatnonzero(v > 0)
@@ -98,8 +115,8 @@ def smooth_sparse(v, sigma: float) -> np.ndarray:
 
 # ---- BigWig signal tracks -> one value per bead ----------------------------
 
-def bigwig_to_beads(path, geom, roll: bool = False, scale_pm1: bool = False) -> np.ndarray:
-    """Mean signal per bead; roll = blur +/-3 beads, scale_pm1 = rescale to [-1, 1]."""
+def bigwig_to_beads(path, geom, roll: bool = False, scale_pm1: bool = False, smooth: float = 0.0) -> np.ndarray:
+    """Mean signal per bead; smooth = Gaussian sigma in beads, roll = blur +/-3 beads, scale_pm1 = rescale to [-1, 1]."""
     import pyBigWig                                   # optional dependency, imported lazily
     bw = pyBigWig.open(str(path))
     try:
@@ -112,6 +129,8 @@ def bigwig_to_beads(path, geom, roll: bool = False, scale_pm1: bool = False) -> 
     usable = min(len(raw) // step, n)
     w = np.zeros(n)
     w[:usable] = raw[:usable * step].reshape(usable, step).mean(axis=1)
+    if smooth > 0:
+        w = gaussian_filter1d(w, smooth, mode="nearest")
     if roll:
         w = (np.roll(w, 3) + np.roll(w, -3)) / 2
     if scale_pm1:

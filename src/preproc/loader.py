@@ -14,7 +14,7 @@ from scipy.interpolate import UnivariateSpline
 
 from common.genome import CHROM_LENGTHS, DEFAULT_RESOLUTION_BP, Geometry
 from logger import get_logger
-from preproc.readers import LoopData, bigwig_to_beads, vectors_from_bed, vectors_from_bedpe, vectors_from_narrowpeak
+from preproc.readers import binding_track, LoopData, bigwig_to_beads, vectors_from_bed, vectors_from_bedpe, vectors_from_narrowpeak
 
 
 # ---- Containers for preprocessed model inputs (with disk cache) ------------
@@ -125,7 +125,7 @@ _READERS = {".bedpe": vectors_from_bedpe, ".bed": vectors_from_bed, ".narrowpeak
 
 def _compartments(cfg, geom):
     if cfg.comp_bw_file:
-        return bigwig_to_beads(cfg.comp_bw_file, geom, scale_pm1=True), "bigwig"
+        return bigwig_to_beads(cfg.comp_bw_file, geom, scale_pm1=True, smooth=float(cfg.track_smooth)), "bigwig"
     if cfg.comp_bed_file:
         return load_compartments_bed(cfg.comp_bed_file, geom, spline_s=geom.n_beads / 100), "bed"
     return None, ""
@@ -142,7 +142,8 @@ def load_inputs(cfg, geom, path=None) -> InputData:
                           contrastive=cfg.binding_mode == "contrastive", sigma=max(1.5, geom.n_beads / 300), **extra)
     if cfg.binding_mode == "contrastive" and loops.cover is None:
         log.warning("binding_mode = contrastive needs loops (a BEDPE file): with peaks only it changes nothing.")
-    bws = [bigwig_to_beads(f, geom) for f in cfg.bw_files]
+    sigma = max(1.5, geom.n_beads / 300) if cfg.smoothing_input else 0.0                # the same width as for L and R
+    bws = [binding_track(bigwig_to_beads(f, geom), sigma, Path(f).name) for f in cfg.bw_files]
     lef = None
     if cfg.lef_track_file:
         lef = np.clip(bigwig_to_beads(cfg.lef_track_file, geom, roll=True), 0, None)

@@ -120,7 +120,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 
 | Option | Type (unit) | Default | What it does |
 |---|---|---|---|
-| `--track-smooth` | number (beads) | `7.0` | Gaussian smoothing of the Hi-C insulation score and of the eigenvector (A/B track) used as input and for validation (0 = off) |
+| `--track-smooth` | number (beads) | `7.0` | Gaussian smoothing of the Hi-C insulation score and of the A/B track (Hi-C eigenvector or compartment BigWig) used as input and for validation (0 = off) |
 
 ### Parameter optimizer (--optimize)
 
@@ -157,7 +157,7 @@ Use `-o` to choose another results folder and `--run N` to fix the run number.
 | 3D structures: every MD frame as `.cif`, start structure, topology, trajectory | `structures/` | `--no-save-ensemble` |
 | 3D viewer and videos | `visualizations/3d/` | `--no-render-3d` |
 
-The results of the stages (`data/*.npz`), the log and `config_resolved.ini` are always written, because the stages and the repeatability of a run depend on them. From [Python](python.md), `ls.simulate` and `ls.simulate_md` write nothing; `ls.run` and `ls.Simulation` write the same run folder as the command.
+The results of the stages (`data/*.npz`), the log and `config_resolved.ini` are always written, because the stages and the repeatability of a run depend on them. From [Python](python.md), the step functions (`ls.run_mc`, `ls.run_md`, ...) write nothing; `ls.run` writes the same run folder as the command.
 
 ## Run only some stages
 

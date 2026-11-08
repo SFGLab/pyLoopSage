@@ -62,16 +62,19 @@ Detailed documentation of the model, parameters and outputs: **[sfglab.github.io
 
 ## Use from Python
 
-After `pip install pyLoopSage` the package is imported as `loopsage`:
+After `pip install pyLoopSage` the package is imported as `loopsage`. Each step is a function:
 
 ```python
 import loopsage as ls
 
-sim = ls.Simulation("config.ini", n_steps=20000)   # or keyword arguments instead of a file
-sim.run()                                          # same as the `loopsage` command
-mc = sim.monte_carlo()                             # or run one step at a time
+cfg = ls.config(region="chr1:77000000-95000000", n_beads=120, n_steps=20000)
+geom = ls.geometry(cfg)
+inputs = ls.read_inputs(cfg, geom, loops="loops.bedpe")   # inputs are file paths
+mc = ls.run_mc(cfg, inputs, geom)                         # Monte Carlo
+ls.results.mean_loop_length(mc, geom)                     # results as arrays and tables
+md = ls.run_md(cfg, mc, geom)                             # 3D structures
 
-import loopsage.monte_carlo as mc                  # every module can be imported on its own
+import loopsage.monte_carlo as mc                         # every module can be imported on its own
 ```
 
 See the [Python interface](https://sfglab.github.io/pyLoopSage/reference/python/) page of the documentation.

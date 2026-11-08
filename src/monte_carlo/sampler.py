@@ -34,6 +34,8 @@ def build_params(cfg, inputs, n_beads: int, n_lef: int) -> MCParams:
     fold = -n_beads / (n_tot * np.log(n_beads / n_tot))
     n_bw = inputs.BWs.shape[0]
     r = np.array(cfg.bw_strengths, float) if cfg.bw_strengths else np.full(n_bw, -n_beads / 10)
+    if len(r) != n_bw:
+        raise ValueError(f"bw_strengths has {len(r)} values but there are {n_bw} tracks")
     track = inputs.lef_track
     step = int(lo.loop_lengths.min()) if cfg.variable_sliding_step and len(lo.loop_lengths) else 1
     f64 = lambda a: np.ascontiguousarray(a, dtype=np.float64)

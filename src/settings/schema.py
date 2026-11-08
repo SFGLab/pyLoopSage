@@ -47,7 +47,7 @@ PARAMS = (
     Param("region_end", "input", "int", None, "Region end (empty = chromosome end)", "bp"),
     Param("genome", "input", "str", "hg38", "Genome assembly for chromosome sizes", flag="--genome", choices=("hg38", "hg19")),
     Param("n_beads", "input", "int", None, "Number of simulation beads (empty = region / 2 kb)", "beads", flag="--n-beads", short="-n"),
-    Param("smoothing_input", "input", "bool", True, "Smooth the anchor/peak signal with a Gaussian (sigma = n_beads/300 beads, at least 1.5)"),
+    Param("smoothing_input", "input", "bool", True, "Smooth the anchor/peak signal and the BigWig binding tracks with a Gaussian (sigma = n_beads/300 beads, at least 1.5)"),
     Param("bw_files", "input", "strs", [], "BigWig tracks for extra binding energy (comma-separated)"),
     Param("bw_strengths", "input", "floats", [], "Strength r per BigWig track (empty = -N_beads/10 each)"),
     Param("lef_track_file", "input", "str", None, "BigWig of LEF loading preference (cohesin/condensin ChIP)", flag="--lef-track"),
@@ -136,7 +136,7 @@ PARAMS = (
     Param("max_video_frames", "structure_3d", "int", 240, "Maximum frames per video", "frames"),
     # ---- analysis ----
     Param("corr_smooth", "analysis", "float", 1.5, "Gaussian smoothing (beads) applied to per-position signals before the extra validation correlations (0 = off)", "beads"),
-    Param("track_smooth", "analysis", "float", 7.0, "Gaussian smoothing of the Hi-C insulation score and of the eigenvector (A/B track) used as input and for validation (0 = off)", "beads", flag="--track-smooth"),
+    Param("track_smooth", "analysis", "float", 7.0, "Gaussian smoothing of the Hi-C insulation score and of the A/B track (Hi-C eigenvector or compartment BigWig) used as input and for validation (0 = off)", "beads", flag="--track-smooth"),
     Param("contact_radius", "analysis", "float", 1.0, "Contact distance for MD contact maps", "nm"),
     Param("zoom_snapshots", "analysis", "int", 120, "Snapshots shown in the zoomed kymograph (window near equilibrium)", "snapshots"),
     Param("zoom_start", "analysis", "int", None, "First snapshot of the zoom window (empty = middle of production)", "snapshot"),

@@ -51,6 +51,7 @@ nav:
   - Intro:
       - Home: intro/index.md
       - Installation: intro/installation.md
+      - Inspiration: intro/inspiration.md
   - Theory:
       - Overview: theory/index.md
       - Scope: theory/scope.md

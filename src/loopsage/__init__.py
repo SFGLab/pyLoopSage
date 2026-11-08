@@ -1,10 +1,14 @@
-"""LoopSage as a Python library.
+"""LoopSage as a Python library: one function per step.
 
     import loopsage as ls
-    sim = ls.Simulation("config.ini", n_steps=20000)      # or ls.Simulation(interaction_file=..., region="chr1:1-2000000")
-    sim.run()                                             # the whole pipeline, same as the `loopsage` command
+    cfg = ls.config(region="chr1:77000000-95000000", n_beads=120, n_steps=20000)
+    geom = ls.geometry(cfg)
+    inputs = ls.read_inputs(cfg, geom, loops="loops.bedpe")      # files are given as paths
+    mc = ls.run_mc(cfg, inputs, geom)                             # Monte Carlo
+    ls.results.mean_loop_length(mc, geom)                         # results as arrays and tables
+    ls.plots.energy_traces(mc)                                    # figures as matplotlib objects
 
-    import loopsage.monte_carlo as mc                     # every sub-package is importable from here
+    import loopsage.monte_carlo as mc                             # every sub-package is importable from here
     from loopsage.preproc.loader import load_inputs
 
 Importing `loopsage` is cheap: the heavy modules load when first used.
@@ -21,18 +25,18 @@ _SUBMODULES = ("analysis", "common", "knots", "molecular_dynamics", "monte_carlo
                "preproc", "reporting", "settings", "validation", "viz", "viz3d", "logger")
 # public names of the top-level API: name -> (module, attribute)
 _API = {
-    "Simulation": ("loopsage.api", "Simulation"),
-    "run": ("loopsage.api", "run"),
-    "simulate": ("loopsage.api", "simulate"),
-    "simulate_md": ("loopsage.api", "simulate_md"),
-    "contact_map": ("loopsage.api", "contact_map"),
-    "geometry": ("preproc.arrays", "geometry"),
-    "inputs_from_arrays": ("preproc.arrays", "inputs_from_arrays"),
-    "loops_from_arrays": ("preproc.arrays", "loops_from_arrays"),
-    "sites_from_arrays": ("preproc.arrays", "sites_from_arrays"),
-    "main": ("loopsage.api", "main"),
     "config": ("loopsage.api", "config"),
     "parameters": ("loopsage.api", "parameters"),
+    "geometry": ("loopsage.api", "geometry"),
+    "read_inputs": ("loopsage.api", "read_inputs"),
+    "read_hic": ("loopsage.api", "read_hic"),
+    "optimize": ("loopsage.api", "optimize"),
+    "apply_optimum": ("loopsage.api", "apply_optimum"),
+    "run_mc": ("loopsage.api", "run_mc"),
+    "run_md": ("loopsage.api", "run_md"),
+    "run": ("loopsage.api", "run"),
+    "main": ("loopsage.api", "main"),
+    "Sandbox": ("loopsage.sandbox", "Sandbox"),
     "load_config": ("settings.loader", "load_config"),
     "Config": ("settings.loader", "Config"),
     "write_ini": ("settings.loader", "write_ini"),
@@ -66,10 +70,12 @@ if not any(isinstance(f, _Alias) for f in sys.meta_path):
 
 
 def __getattr__(name):
-    """Lazy attributes: ls.Simulation, ls.run, ls.load_config, ls.monte_carlo, ..."""
+    """Lazy attributes: ls.run_mc, ls.results, ls.plots, ls.load_config, ls.monte_carlo, ..."""
     if name in _API:
         mod, attr = _API[name]
         value = getattr(importlib.import_module(mod), attr)
+    elif name in ("results", "plots"):
+        value = importlib.import_module(f"loopsage.{name}")
     elif name in _SUBMODULES:
         value = importlib.import_module(f"loopsage.{name}")
     else:
@@ -82,4 +88,4 @@ def __dir__():
     return sorted(set(globals()) | set(_API) | set(_SUBMODULES))
 
 
-__all__ = ["__version__", *_API, *_SUBMODULES]
+__all__ = ["__version__", *_API, "results", "plots", *_SUBMODULES]

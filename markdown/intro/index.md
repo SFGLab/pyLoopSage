@@ -1,16 +1,16 @@
 ![LoopSage](../assets/logo.svg){ .home-banner }
 
 <p align="center">
-  <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
-  <img alt="OpenMM" src="https://img.shields.io/badge/OpenMM-8.5%2B-6a3de8">
-  <img alt="Numba" src="https://img.shields.io/badge/Numba-JIT%20sampler-00A3E0?logo=numba&logoColor=white">
-  <img alt="PyVista" src="https://img.shields.io/badge/PyVista-3D%20viewer-FF7F00">
-  <img alt="Docker" src="https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white">
-  <img alt="NumPy" src="https://img.shields.io/badge/NumPy-013243?logo=numpy&logoColor=white">
-  <img alt="SciPy" src="https://img.shields.io/badge/SciPy-8CAAE6?logo=scipy&logoColor=white">
-  <img alt="MDTraj" src="https://img.shields.io/badge/MDTraj-trajectories-1a1a1f">
-  <img alt="pytest" src="https://img.shields.io/badge/tested%20with-pytest-0A9EDC?logo=pytest&logoColor=white">
-  <img alt="GPL v3 license" src="https://img.shields.io/badge/License-GPL%20v3-blue">
+  <a href="https://www.python.org"><img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white"></a>
+  <a href="https://openmm.org"><img alt="OpenMM" src="https://img.shields.io/badge/OpenMM-8.5%2B-6a3de8"></a>
+  <a href="https://numba.pydata.org"><img alt="Numba" src="https://img.shields.io/badge/Numba-JIT%20sampler-00A3E0?logo=numba&logoColor=white"></a>
+  <a href="https://pyvista.org"><img alt="PyVista" src="https://img.shields.io/badge/PyVista-3D%20viewer-FF7F00"></a>
+  <a href="https://www.docker.com"><img alt="Docker" src="https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white"></a>
+  <a href="https://numpy.org"><img alt="NumPy" src="https://img.shields.io/badge/NumPy-013243?logo=numpy&logoColor=white"></a>
+  <a href="https://scipy.org"><img alt="SciPy" src="https://img.shields.io/badge/SciPy-8CAAE6?logo=scipy&logoColor=white"></a>
+  <a href="https://mdtraj.org"><img alt="MDTraj" src="https://img.shields.io/badge/MDTraj-trajectories-1a1a1f"></a>
+  <a href="https://github.com/SFGLab/pyLoopSage/tree/main/tests"><img alt="pytest" src="https://img.shields.io/badge/tested%20with-pytest-0A9EDC?logo=pytest&logoColor=white"></a>
+  <a href="https://www.gnu.org/licenses/gpl-3.0.html"><img alt="GPL v3 license" src="https://img.shields.io/badge/License-GPL%20v3-blue"></a>
 </p>
 
 # What is LoopSage?
@@ -66,7 +66,7 @@ loopsage -f loops.bedpe -r chr1:77000000-95000000
 ```
 
 Then open `results/chr1_77000000_95000000_1/report/report.html` in a browser.
-Install the program first: see [Installation](installation.md). All options are listed in the [Reference](../reference/index.md).
+Install the program first: see [Installation](installation.md). To learn why LoopSage is built the way it is, read the [Inspiration](inspiration.md). All options are listed in the [Reference](../reference/index.md).
 
 ## Citation
 

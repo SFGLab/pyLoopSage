@@ -90,7 +90,7 @@ where $c_k$ is the coverage of bead $k$ and $\bar c$ its mean. So $\hat c_k=-1$ 
 
 ## Extra tracks
 
-Any BigWig signal (for example RNA polymerase II, H3K27ac or another cohesin ChIP) can add a binding term. Each track is averaged over the beads, and a leg placed on a bead with a high signal is rewarded or penalised according to the strength you give the track (a negative strength rewards; the default is $-N/10$ per track). A separate BigWig can describe where extruders *load* on the chromatin (for example NIPBL or cohesin ChIP): the rebinding move then picks the new loop position in proportion to this track instead of uniformly.
+Any BigWig signal (for example RNA polymerase II, H3K27ac or another cohesin ChIP) can add a binding term. Each track is averaged over the beads and smoothed with the same Gaussian as the anchor profiles $L$ and $R$ (width $\sigma=\max(1.5,\,N/300)$ beads, switched by `smoothing_input`). Negative values are set to 0, because the energy rewards the share of the track's total signal under the legs, and a track without any signal is an error. A leg placed on a bead with a high signal is rewarded or penalised according to the strength you give the track (a negative strength rewards; the default is $-N/10$ per track, a gentle pull next to the loops, and a larger magnitude such as $-300$ pulls the legs clearly onto the signal). A separate BigWig can describe where extruders *load* on the chromatin (for example NIPBL or cohesin ChIP): the rebinding move then picks the new loop position in proportion to this track instead of uniformly.
 
 ```ini
 [input]
@@ -123,7 +123,7 @@ hic_resolution = 0           # bp; 0 = automatic, closest to the bead size
 
 The Potts field $h_k$ tells the epigenetic model which beads are A (positive) and which are B (negative). It comes from the first source that is available:
 
-1. a BigWig of the A/B signal (`comp_bw_file`), rescaled to $[-1,1]$;
+1. a BigWig of the A/B signal (`comp_bw_file`), smoothed with `track_smooth` beads like the Hi-C eigenvector and rescaled to $[-1,1]$;
 2. a BED of compartments or sub-compartments (`comp_bed_file`): A labels count positive and B negative, deeper sub-compartments (A.2 against A.1) count a bit more, and a score column, if present, is used as $2s-1$;
 3. the Hi-C map itself, when the epigenetic model is on (`epi_coeff` greater than 0) and no track is given.
 

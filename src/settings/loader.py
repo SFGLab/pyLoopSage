@@ -149,7 +149,7 @@ def validate(cfg, need_file: bool = True) -> None:
         raise ValueError("motif_pvalue must be between 0 and 1")
     if (cfg.min_pet or cfg.motif_genome) and Path(cfg.interaction_file).suffix.lower() != ".bedpe":
         raise ValueError("min_pet and motif_genome apply to .bedpe input only")
-    if cfg.bw_strengths and len(cfg.bw_strengths) != len(cfg.bw_files):
+    if need_file and cfg.bw_strengths and len(cfg.bw_strengths) != len(cfg.bw_files):
         raise ValueError("bw_strengths must have one value per bw_files entry")
 
 

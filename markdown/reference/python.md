@@ -7,234 +7,218 @@ pip install pyLoopSage           # add --pre while the release is a release cand
 python -c "import loopsage as ls; print(ls.__version__)"
 ```
 
-This installs the `loopsage` command and the `loopsage` Python package together. Everything the command does is available from Python, with the same parameters and the same results. The difference is where things come from and go to: in Python, the **inputs can be variables** (arrays, lists, data frames) and the **outputs are returned as variables**, so a simulation can run without reading or writing any file.
+The Python interface is a set of **independent functions, one per step**: read the inputs, optimize, run the Monte Carlo, run the molecular dynamics, extract results, draw figures. You call them like any other Python functions and get Python objects back (arrays, tables, figures). **Nothing is written to disk** unless you pass a folder or call `ls.run`. The `loopsage` command and the config file work independently of this interface.
 
-## Which way to use it
-
-| You want | Use | Files written |
+| Step | Function | Returns |
 |---|---|---|
-| loops and tracks from variables, results as variables | [`ls.simulate`](#run-a-simulation-and-get-variables), [`ls.simulate_md`](#3d-structures) | none |
-| the full pipeline with figures and the HTML report | [`ls.run`, `ls.Simulation`](#the-simulation-class-files-and-report) | a run folder |
-| exactly the `loopsage` command | [`ls.main`](#the-command-from-python) or `python -m loopsage` | a run folder |
-| one internal piece (a reader, the sampler, a map function) | [`import loopsage.<module>`](#import-any-module) | none |
+| settings | `ls.config(...)` | a `Config` |
+| grid | `ls.geometry(cfg)` | region and bead grid |
+| inputs | `ls.read_inputs(cfg, geom, loops=...)` | `InputData` |
+| Hi-C target (optional) | `ls.read_hic(cfg, geom, path)` | `(matrix, info)` |
+| optimizer (optional) | `ls.optimize(cfg, inputs, geom)` and `ls.apply_optimum(cfg, result)` | `OptResult`, a new `Config` |
+| loop extrusion | `ls.run_mc(cfg, inputs, geom)` | `MCResult` |
+| 3D structures | `ls.run_md(cfg, mc, geom)` | `MDResult` |
+| results | `ls.results.<function>(mc, geom)` | arrays and tables |
+| figures | `ls.plots.<function>(...)` | matplotlib figures |
+| the whole command | `ls.run(...)`, `ls.main([...])` | the run folder is written |
 
-All four share the same parameters, described next.
-
-## A first example, without files
+## A first example
 
 ```python
-import numpy as np
 import loopsage as ls
 
-# loops as arrays: genomic positions (bp) of the left and right anchors, and a weight per loop
-left   = np.array([77_500_000, 80_000_000, 83_000_000, 88_000_000])
-right  = left + np.array([3_000_000, 4_000_000, 2_500_000, 5_000_000])
-weight = [10, 20, 5, 8]                                   # e.g. PET counts
+cfg = ls.config(region="chr1:77000000-95000000", n_beads=120, n_steps=20000, seed=1)   # all the settings in one Config object
+geom = ls.geometry(cfg)                                          # the bead grid: 120 beads of 150 kb
+inputs = ls.read_inputs(cfg, geom, loops="loops.bedpe")          # a file path: the loops (BEDPE)
 
-mc = ls.simulate(loops=dict(left=left, right=right, weight=weight),
-                 region="chr1:77000000-95000000", n_beads=120,
-                 n_steps=20000, seed=1)                   # the Monte Carlo runs in memory
+mc = ls.run_mc(cfg, inputs, geom)                                # Monte Carlo loop extrusion
 
-mc.Ms, mc.Ns                  # left and right leg of every LEF at every snapshot
-mc.Es                         # energy at every snapshot
-cmap = ls.contact_map(mc)     # 120 x 120 contact map implied by the loops
+ls.results.mean_loop_length(mc, geom)                            # average loop length (kb) at every snapshot
+ls.results.trajectories(mc, geom, "mb")                          # positions of the cohesin legs over time
+ls.plots.energy_traces(mc)                                       # a matplotlib figure
 ```
 
-Nothing is written to disk. The pieces are explained in the sections below.
+Each line is a separate call, so a notebook can run them one at a time, repeat one with other settings, or stop after any of them.
 
-## Parameters as Python variables
+## Settings
 
-Every parameter of a [config file](config.md) is a keyword argument, by its **key name** (`n_steps`, `folding_coeff`, `run_md`). The command-line option can have another name: `--mc-steps` sets `n_steps`, `--md-steps` sets `sim_step`. The tables of the [command line](cli.md) and the [config file](config.md) show both names side by side.
+All settings of a run live in one object, a **`Config`**. In Python there is no config file to edit: you create the object with `ls.config(...)` and pass it to the functions. The same object is used by every step, so the inputs, the optimizer, the Monte Carlo and the molecular dynamics always see the same settings.
+
+### Create it
+
+Every parameter is a keyword argument, by its key name (`n_steps`, `folding_coeff`, `run_md`). Anything you leave out has its default value.
 
 ```python
-ls.simulate(loops=..., region="chr1:77000000-95000000", n_steps=20000, folding_coeff=1.5, seed=3)
+cfg = ls.config(
+    region="chr1:77000000-95000000",     # the genomic region in bp (shortcut for chrom, region_start, region_end)
+    n_beads=120,                         # resolution: the region is cut into 120 beads
+    n_steps=20000,                       # Monte Carlo steps
+    n_lef=8,                             # number of loop extruders
+    folding_coeff=1.5,                   # strength of the folding energy
+    seed=1,                              # random seed: the same seed gives the same result
+)
 ```
 
-**Find a parameter.** `ls.parameters()` returns every parameter as `{name: (default, help)}`, and a search text keeps the matching ones:
+A command-line option can have a different name than the key: `--mc-steps` sets `n_steps` and `--md-steps` sets `sim_step`. The tables of the [command line](cli.md) and the [config file](config.md) show both names side by side, with the default of every parameter.
+
+### Read it
+
+Every parameter is an attribute. `cfg.source` says where each value came from: `default` for the values you left out, `cli` for the ones you gave as arguments, and `cfg.as_dict()` returns everything as a dictionary.
 
 ```python
-ls.parameters("md steps")        # {'sim_step': (100, 'MD steps between two frames ...'), ...}
-ls.parameters()["n_steps"][0]    # default of one parameter: 20000
-```
-
-**Values.** They are converted like in a config file, so numbers, `True` / `False`, lists and units work: `integrator_step="100 fs"`, `bw_files=["a.bw", "b.bw"]`, `run_md="yes"`. A wrong name or value raises `ValueError` with a clear message (the command line prints a usage message and exits instead), so a script or notebook can catch it.
-
-**Region.** `region="chr1:77000000-95000000"` (in bp) is a shortcut for `chrom`, `region_start` and `region_end`. `n_beads` sets the resolution; without it, one bead is about 2 kb.
-
-**A configuration object.** `ls.config(...)` checks the settings once and returns a `Config` that can be reused and changed:
-
-```python
-cfg = ls.config("config.ini", n_steps=5000)         # a config file with some keys overridden
-cfg = ls.config(region="chr1:1-9000000", n_beads=100, run_md=False)   # or no file at all
-cfg2 = ls.config(cfg, seed=7)                       # a copy with one change
-
-cfg.n_steps                  # every parameter is an attribute
+cfg.n_steps                  # 20000
+cfg.n_lef                    # 8
+cfg.burnin                   # a default value
+cfg.source["n_steps"]        # where n_steps came from
 cfg.as_dict()                # all parameters as a dictionary
-cfg.source["n_steps"]        # where the value came from: default, ini or cli
-ls.write_ini("used.ini", cfg.as_dict(), cfg.source)  # save it as a config file, if you want to
 ```
 
-Wherever a function takes `config`, it accepts a path to a `.ini` file, a `Config`, or a dictionary. Keyword arguments always win over it. The next example uses all three.
+### Change it
+
+To change settings, make a copy with new values. `ls.config(cfg, ...)` checks the new values and leaves `cfg` untouched, which makes it easy to compare settings:
 
 ```python
-ls.simulate(cfg, loops=...)                         # a Config
-ls.simulate("config.ini", loops=..., seed=2)        # a file, with the seed changed
-ls.simulate({"n_steps": 3000, "burnin": 500, "region": "chr1:77000000-95000000"}, loops=...)   # a dictionary
+cfg_long = ls.config(cfg, n_steps=100000, seed=2)      # a validated copy with two changes
+cfg_nomd = ls.config(cfg, run_md=False)
+
+for f in (0.5, 1.0, 2.0):                              # a parameter scan
+    mc = ls.run_mc(ls.config(cfg, folding_coeff=f), inputs, geom)
 ```
 
-## Inputs as Python variables
+You can also assign an attribute directly (`cfg.n_steps = 5000`), but this is not checked: a misspelled name silently creates a new attribute that is ignored, and an invalid value is found only later. Use `ls.config(cfg, ...)` when in doubt.
 
-The model needs the loops (or binding sites) and, optionally, extra tracks, all at **bead resolution**. Instead of a BEDPE or BigWig file, give them as arrays. Positions are either genomic coordinates in bp (`units="bp"`, the default) or bead numbers (`units="bead"`). Anything outside the region is ignored.
-
-### Loops
+### Find a parameter
 
 ```python
-ls.simulate(loops=dict(left=left, right=right, weight=weight), ...)
-ls.simulate(loops=(left, right, weight), ...)          # the same, as a tuple
+ls.parameters("md steps")        # search by name or description: {name: (default, help)}
+ls.parameters()["n_steps"][0]    # the default of one parameter: 20000
 ```
 
-| Key | Meaning |
-|---|---|
-| `left`, `right` | positions of the two anchors of every loop (1D arrays of equal length) |
-| `weight` | strength of each loop, such as the number of read pairs (default 1) |
-| `left_reverse`, `right_reverse` | probability that the CTCF at each anchor is in the reverse orientation, between 0 and 1 (`-1` = unknown); leave out when unknown, then the weight is split evenly between the left and right roles |
-| `units` | `"bp"` or `"bead"` |
-| `smooth`, `contrastive`, `loss_sigma` | the same switches as `smoothing_input`, `binding_mode` and `loss_sigma` in the config |
+### Values and errors
 
-From a data frame, take its columns:
+Values are converted as in a config file: `run_md="yes"`, `integrator_step="100 fs"` and `bw_files=["a.bw", "b.bw"]` all work. A wrong name or an invalid value (for example a burn-in larger than the number of steps) raises `ValueError` with a clear message, so a script can catch it.
+
+### From a config file or a dictionary
+
+A config file is optional. If you already have one, `ls.config` reads it, and your keyword arguments win over its values. A dictionary works the same way.
 
 ```python
-import pandas as pd
-df = pd.read_csv("loops.bedpe", sep="\t", header=None)
-loops = dict(left=(df[1] + df[2]) // 2, right=(df[4] + df[5]) // 2, weight=df[6])     # anchor centres
+cfg = ls.config("config.ini", n_steps=5000)                    # the file, with one key overridden
+cfg = ls.config({"region": "chr1:1-9000000", "n_beads": 100}, seed=3)     # a dictionary
+ls.write_ini("used.ini", cfg.as_dict(), cfg.source)            # save the settings as a config file (optional)
 ```
 
-### Binding sites (peaks) instead of loops
+### The grid
+
+`ls.geometry(cfg)` turns the region and `n_beads` into the bead grid used by all steps. It has `chrom`, `start`, `end`, `n_beads`, `bp_per_bead` and `bead_of(bp)`, which gives the bead that holds a genomic position. Without `n_beads`, one bead is about 2 kb.
+
+## Inputs
+
+Inputs are given as **strings with the path of the file**, the same files the command uses:
 
 ```python
-ls.simulate(sites=dict(position=peak_centres, weight=signal, reverse=prob_reverse), ...)
+inputs = ls.read_inputs(
+    cfg, geom,
+    loops="loops.bedpe",                        # loops: BEDPE with anchors, score and optional CTCF orientation
+    compartments="compartments.bw",             # A/B signal: .bw or .bed
+    tracks=["h3k27ac.bw", "rad21.bw"],          # extra binding tracks: one path or a list
+    lef_track="loading.bw",                     # where LEFs prefer to load
+)
 ```
 
-Sites give the anchor profiles `L` and `R` only. There are no loops, so `binding_mode = contrastive` has nothing to count.
+Use `sites="peaks.narrowPeak"` instead of `loops` for binding sites without loop pairs. Without `loops` or `sites`, the config key `interaction_file` is used, so `ls.config("config.ini")` followed by `ls.read_inputs(cfg, geom)` reads the inputs named in the config file.
 
-### Extra tracks
+The result `InputData` has `loops` (the profiles `L`, `R`, the loop matrix `J`, `cover`), `BWs` (tracks, one row per track), `lef_track`, `comp` (compartments in [-1, 1]) and `comp_source`.
 
-All of these are one value per bead (arrays of length `n_beads`):
+**Hi-C reference.** `ls.read_hic(cfg, geom, "map.hic")` returns `(matrix, info)`: the Hi-C map on the bead grid. It is the optimizer target.
+
+**Inputs as arrays.** For synthetic data, give arrays instead of paths: `loops=(left, right, weight)` with positions in bp, `sites=dict(position=..., weight=..., reverse=...)`, and per-bead arrays (one value per bead) for `tracks`, `lef_track` and `compartments`. Compartment values must lie between -1 and 1 (A positive, B negative); other values raise `ValueError`. The [sandbox](#sandbox-synthetic-systems) builds such arrays conveniently.
+
+## Optimizer
+
+The optimizer searches the number of LEFs `n_lef`, the folding coefficient, the binding coefficient and the temperature by Nelder&ndash;Mead, so the simulated map matches a target: the Hi-C map when given, otherwise the loops in `inputs`.
 
 ```python
-ls.simulate(loops=..., tracks=[pol2, h3k27ac], track_names=["Pol2", "H3K27ac"],   # extra binding tracks
-            lef_track=nipbl,                                                      # where LEFs prefer to load (>= 0)
-            compartments=pc1,                                                     # A/B signal, B negative
-            ...)
+hic = ls.read_hic(cfg, geom, "map.hic")                         # optional target
+result = ls.optimize(cfg, inputs, geom, hic=hic)                # a search of cfg.opt_evals evaluations
+result.best                                                     # {'K': ..., 'f': ..., 'b': ..., 'T': ...}
+cfg_opt = ls.apply_optimum(cfg, result)                         # a copy of cfg with the optimized values
+mc = ls.run_mc(cfg_opt, inputs, geom)
+ls.plots.convergence_figure(result)                             # how the search converged
 ```
 
-`compartments` is rescaled to [-1, 1] when it is outside that range. To resample a signal that is not on the bead grid, use `geom.bead_of(positions_bp)` to find the bead of each position and average within beads.
-
-### Build the inputs once, reuse them
-
-`ls.simulate` builds the inputs on every call. To keep them, or to compare several settings on the same input, build them first and pass `inputs=`:
+## Monte Carlo
 
 ```python
-geom = ls.geometry("chr1", 77_000_000, 95_000_000, n_beads=120)
-inputs = ls.inputs_from_arrays(geom, loops=dict(left=left, right=right, weight=weight), tracks=[pol2])
-
-inputs.loops.L, inputs.loops.R        # anchor profiles per bead (scaled to mean 1)
-inputs.loops.cover                    # loop coverage per bead in [-1, 1] (contrastive binding)
-inputs.loops.stats                    # number of loops, loop lengths, ...
-
-for f in (0.5, 1.0, 2.0):
-    mc = ls.simulate(inputs=inputs, region="chr1:77000000-95000000", n_beads=120, folding_coeff=f)
+mc = ls.run_mc(cfg, inputs, geom)
+mc.Ms, mc.Ns        # left and right leg (bead number) of every LEF, arrays (LEFs, snapshots)
+mc.Es               # energy at every snapshot
+mc.chains           # all replicas (cfg.replicas), each with the same fields
 ```
 
-`ls.loops_from_arrays(geom, left, right, ...)` and `ls.sites_from_arrays(geom, position, ...)` build only the loop or site part, as a `LoopData`. You can pass it directly as `loops=`.
+A snapshot is saved every `mc_step` steps; the first `burnin` steps are the equilibration. The same `seed` gives the same result.
 
-## Run a simulation and get variables
+## Results
+
+Functions that turn an `MCResult` into the quantities one usually needs. `geom` gives the genomic coordinates. Series cover all snapshots; `production=True` keeps the snapshots after the burn-in. `units` is `bead`, `bp`, `kb` or `mb`.
 
 ```python
-mc = ls.simulate(config=None, region=None, loops=..., **parameters)
+r = ls.results
+left, right = r.trajectories(mc, geom, "mb")        # cohesin legs over time, arrays (LEFs, snapshots)
+r.loop_lengths(mc, geom, "kb")                      # loop length of every LEF, (LEFs, snapshots)
+r.mean_loop_length(mc, geom, "kb", production=True) # average loop length per snapshot
+r.energies(mc)                                      # table: step, total, folding, binding, crossing, temperature, unfolded_fraction
+r.loops_table(mc, geom)                             # the loops of the last snapshot as a table (anchors in beads and bp)
+r.loop_coverage(mc, geom)                           # average number of loops spanning each bead
+r.leg_density(mc, geom)                             # average number of LEF legs on each bead
+r.contact_map(mc, geom)                             # contact map implied by the loops, (beads, beads)
+r.steps(mc)                                         # Monte Carlo step of every snapshot
 ```
-
-The result is an `MCResult` with these arrays (a *snapshot* is the state saved every `mc_step` steps; there are `n_steps / mc_step` of them):
-
-| Field | Shape | Meaning |
-|---|---|---|
-| `mc.Ms`, `mc.Ns` | LEFs x snapshots | bead of the left and right leg of every LEF |
-| `mc.Es` | snapshots | total energy |
-| `mc.Fs`, `mc.Bs`, `mc.Ks` | snapshots | folding, binding and crossing parts of the energy |
-| `mc.Ts` | snapshots | temperature (changes with annealing) |
-| `mc.ufs` | snapshots | share of the chain that is not inside any loop |
-| `mc.epi` | beads x snapshots | epigenetic state of each bead (Potts model) |
-| `mc.acc` | 3 x 2 | proposed and accepted moves: rebind, slide, state change |
-| `mc.meta` | dictionary | number of beads and LEFs, steps, seed, run time, ... |
-| `mc.replicas` | list | the other independent chains when `replicas > 1` (`mc` itself is chain 0) |
-
-The first `burnin` steps are the warm-up; `mc.production(mc.Ms)` returns only the snapshots after it, and `mc.pooled()` joins all chains.
-
-```python
-ms, ns = mc.production(mc.Ms), mc.production(mc.Ns)
-loop_lengths = np.abs(ns - ms)                     # in beads, for every LEF and snapshot
-print(loop_lengths.mean() * geom.bp_per_bead / 1e3, "kb on average")
-
-import matplotlib.pyplot as plt
-plt.plot(mc.Es); plt.xlabel("snapshot"); plt.ylabel("energy")       # did it settle?
-plt.imshow(ls.contact_map(mc), cmap="Reds"); plt.show()
-```
-
-`ls.contact_map(mc)` is the contact map implied by the loops (production snapshots of all chains), as an `n_beads x n_beads` array. The same seed gives the same result, and `seed=None` (the default) draws a random one, stored in `mc.meta["seed"]`. The first call compiles the sampler (a few seconds) and later calls reuse it.
-
-Save and load a result as a file only if you want to: `mc.save("mc.npz")` and `ls.monte_carlo.simulation.MCResult.load("mc.npz")`.
 
 ## 3D structures
 
 ```python
-md = ls.simulate_md(mc, region="chr1:77000000-95000000", n_beads=120, sim_step=500)
+md = ls.run_md(cfg, mc, geom)                       # OpenMM molecular dynamics from the Monte Carlo loops
+md.coords                                           # positions in nm, (frames, beads, 3)
+
+r.coordinates(md, frame=0)                          # one frame, (beads, 3)
+r.radius_of_gyration(md)                            # radius of gyration (nm) of every frame
+r.distance(md, geom, 80_000_000, 85_000_000, units="bp")   # distance (nm) between two positions in every frame
+r.contact_map_md(md)                                # average contact map of the structures, (beads, beads)
 ```
 
-It takes the loops of the snapshots in `mc` and builds one 3D structure per snapshot with OpenMM. The settings are the usual `molecular_dynamics` parameters (`sim_step` = steps per frame, `platform`, `ev_ff_strength`, ...). The result is an `MDResult`:
+The platform, steps and force-field settings are config keys (`platform`, `sim_step`, `tolerance`, ...). Without `folder`, `run_md` writes nothing; `ls.run_md(cfg, mc, geom, folder="structures_out")` also saves the structures and maps there.
 
-| Field | Shape | Meaning |
-|---|---|---|
-| `md.coords` | frames x beads x 3 | positions in nm |
-| `md.avg_map`, `md.std_map` | beads x beads | mean and spread of the contact strength over the frames |
-| `md.avg_dist`, `md.std_dist` | beads x beads | mean and spread of the pairwise distances (nm) |
-| `md.rg` | frames | radius of gyration (nm) |
-| `md.epot` | frames | potential energy (kJ/mol) |
-| `md.frame_idx` | frames | index of the Monte Carlo snapshot each frame came from |
+## Figures
 
-OpenMM needs a few scratch files; they are put in a temporary folder that is deleted when the function returns, so nothing is left behind. The settings that must match the Monte Carlo run (region, `n_beads`) are best taken from one shared dictionary:
+Each figure function of LoopSage is available by name and **returns a matplotlib figure** (white background) to show or save:
 
 ```python
-kw = dict(region="chr1:77000000-95000000", n_beads=120, n_steps=20000, seed=1)
-mc = ls.simulate(loops=loops, **kw)
-md = ls.simulate_md(mc, **kw, sim_step=500)
+fig = ls.plots.energy_traces(mc)                    # energy and its components over time
+fig.savefig("energy.png", dpi=200)
+
+ls.plots.kymograph(mc, geom, inputs)                # LEF positions over time
+ls.plots.loop_landscape(mc, geom, inputs)           # loops as arcs
+ls.plots.lef_trajectories(mc, geom)                 # tracks of single LEFs
+ls.plots.binding_profiles(inputs, geom)             # the binding profiles L and R
+ls.plots.loop_matrices(inputs, geom)                # the loop matrices of the inputs
+ls.plots.convergence_figure(result)                 # optimizer convergence
 ```
 
-## The `Simulation` class: files and report
+All figure functions of the modules in `loopsage.viz` (`mc_figs`, `map_figs`, `input_figs`, `optimizer_figs`, `structure_figs`, ...) can be called this way.
 
-When you want what the command produces (run folder, figures, `report.html`), use `ls.Simulation`. It takes the same `config`, `region` and parameters:
+## Saving
+
+Functions write nothing by default. To keep results, save what you want: `np.save("map.npy", r.contact_map(mc, geom))`, `r.energies(mc).to_csv("energies.csv")`, `fig.savefig(...)`, or `mc.save("mc.npz")` and `md.save("md.npz")` for the full result objects (load them again with `MCResult.load` from `loopsage.monte_carlo.simulation` and `MDResult.load` from `loopsage.molecular_dynamics.engine`).
+
+To write a complete run folder (report, figures, structures, data, exactly like the command), use `ls.run`:
 
 ```python
-sim = ls.Simulation("config.ini", n_steps=20000)      # or interaction_file="loops.bedpe", region=..., ...
-sim.run()                                             # every enabled stage and the report
-ls.run("config.ini", n_steps=20000)                   # the same in one call
+ctx = ls.run("config.ini", n_steps=20000)            # the pipeline of the command; ctx.dirs.root is the run folder
+ctx = ls.run(interaction_file="loops.bedpe", region="chr1:77000000-95000000", out_path="results")
 ```
 
-The pipeline can also run **one step at a time**. A step first runs the steps it needs and keeps their results, so nothing is computed twice:
-
-| Method | What it does | Result (also `sim.<name>`) |
-|---|---|---|
-| `sim.preprocess()` | read the loops, tracks and optional motif search onto the bead grid | `inputs` |
-| `sim.optimize()` | fit the number of LEFs, $f$, $b$ and the temperature (Nelder&ndash;Mead) | `optimization` |
-| `sim.monte_carlo()` | loop extrusion Monte Carlo | `mc` |
-| `sim.molecular_dynamics()` | 3D structures | `md` |
-| `sim.structure()` | 3D structure analysis and viewer | `structure` |
-| `sim.analyze()` | compare the simulated maps with the experiment | `validation`, `features` |
-| `sim.links()` | linking numbers of loops (needs `topoly`) | `links` |
-| `sim.report()` | write `report.html` | path of the report |
-
-`sim.run_dir` is the folder of the run, `sim.cfg` the configuration used. A `Simulation` writes into one numbered run folder (like the command); call `run()` only on a fresh one.
-
-**With inputs as variables.** `Simulation(loops=..., sites=..., tracks=..., inputs=...)` takes the same arguments as `ls.simulate`. Then `preprocess()`, `monte_carlo()` and `molecular_dynamics()` are available and return their results, while `optimize`, `analyze`, `links`, `report` and `run` raise a `ValueError`, because they compare with the loops *file*. They need `interaction_file`. If you only want the arrays back and no run folder, use `ls.simulate` and `ls.simulate_md`.
+`ls.run` takes the same arguments as `ls.config` and returns the run context (`ctx.mc`, `ctx.md`, `ctx.inputs`, ...). Like the command, it saves every output unless it is switched off, for example with `report=False` or `figures=False` (the [output switches](cli.md) list them all).
 
 ## The command from Python
 
@@ -242,9 +226,9 @@ The pipeline can also run **one step at a time**. A step first runs the steps it
 ls.main(["-c", "config.ini", "-vv"])        # exactly `loopsage -c config.ini -vv`
 ```
 
-`python -m loopsage -c config.ini` does the same from a shell. `main` takes the list of command-line words and runs the whole pipeline. Mistakes in the options print the usual usage message and exit.
+`python -m loopsage -c config.ini` does the same from a shell. `main` takes the list of command-line words; mistakes in the options print the usual usage message and exit.
 
-## Import any module
+## Importing modules
 
 Every part of LoopSage is importable under the name `loopsage`, for example `import loopsage.monte_carlo as mc` or `from loopsage.preproc.loader import load_inputs`:
 
@@ -254,265 +238,168 @@ Every part of LoopSage is importable under the name `loopsage`, for example `imp
 | `loopsage.preproc` | reading loops, peaks, tracks and `.hic` files; `arrays` builds inputs from variables |
 | `loopsage.motif_finder` | CTCF motif search and orientation |
 | `loopsage.monte_carlo` | energies, moves and the sampler (`simulation.run_mc`) |
-| `loopsage.optimizer` | loss and Nelder&ndash;Mead search |
+| `loopsage.optimizer` | loss functions and the Nelder&ndash;Mead search |
 | `loopsage.molecular_dynamics` | OpenMM 3D simulation |
 | `loopsage.analysis`, `loopsage.validation` | maps, features and the comparison with experiment |
 | `loopsage.knots` | linking numbers |
 | `loopsage.viz`, `loopsage.viz3d`, `loopsage.reporting` | figures, the viewer and the report |
 | `loopsage.pipeline` | the stages and the runner |
 
-For example, the sampler can be called directly with the objects it works on:
+The functions above are thin wrappers over these modules, which can be used directly when more control is needed:
 
 ```python
 from loopsage.settings.loader import make_config
-from loopsage.preproc.arrays import geometry, inputs_from_arrays
+from loopsage.preproc.loader import build_geometry, load_inputs
 from loopsage.monte_carlo.simulation import run_mc
 from loopsage.analysis.maps import loop_map
 
 cfg = make_config(region="chr1:77000000-95000000", n_beads=120, n_steps=20000, seed=1)
-geom = geometry("chr1", 77_000_000, 95_000_000, 120)
-inputs = inputs_from_arrays(geom, loops=(left, right, weight))
+geom = build_geometry(cfg)
+inputs = load_inputs(cfg, geom, "loops.bedpe")
 mc = run_mc(cfg, inputs, geom, quiet=True)
 cmap = loop_map(mc, geom.n_beads)
 ```
 
-`import loopsage` itself is fast: the heavy modules (Numba, OpenMM, plotting) load when you first use them. The names are the same objects as in the source tree, so `loopsage.monte_carlo` and `monte_carlo` are one module, not two copies.
-
-## Recipes
-
-**A parameter scan in memory.**
-
-```python
-results = {}
-for f in (0.5, 1.0, 2.0):
-    mc = ls.simulate(inputs=inputs, region="chr1:77000000-95000000", n_beads=120, folding_coeff=f, seed=1)
-    results[f] = ls.contact_map(mc)
-```
-
-**Several independent chains** for convergence checks: `replicas=4` gives `mc.replicas`, and `mc.chains` lists all four.
-
-**Reproducible runs.** Set `seed`. Two calls with the same inputs, parameters and seed return identical arrays.
-
-**Less output.** `quiet=True` removes the progress bars and messages; `verbosity=2` (or `-vv` on the command line) shows more.
-
-**Notebooks.** The functions work in Jupyter as they are. If a run is interrupted, nothing is left half-written, because `ls.simulate` writes no files.
+`import loopsage` is fast: the heavy modules (Numba, OpenMM, plotting) load when you first use them. The names are the same objects as in the source tree, so `loopsage.monte_carlo` and `monte_carlo` are one module.
 
 ## Function reference
 
-The most important functions of each part. Every function below is available as `ls.<name>` after `import loopsage as ls`. Types: *array* means a NumPy array or anything NumPy can convert (list, pandas column). *config* is explained in [Parameters as Python variables](#parameters-as-python-variables): an `.ini` path, a `Config` or a dictionary. `**parameters` are any [config keys](config.md) by name.
-
-### `ls.simulate`
-
-```python
-ls.simulate(config=None, region=None, *, loops=None, sites=None, tracks=None, track_names=None,
-            lef_track=None, compartments=None, inputs=None, **parameters) -> MCResult
-```
-
-Runs the loop extrusion Monte Carlo entirely in memory. No folder, file or figure is written.
-
-| Input | Meaning |
-|---|---|
-| `config` | settings from an `.ini` file, a `Config` or a dictionary (optional) |
-| `region` | `"chr1:77000000-95000000"` in bp; or give `chrom`, `region_start`, `region_end` |
-| `loops` | the loops, as `dict(left=..., right=..., weight=...)` or the tuple `(left, right[, weight])`; see [Loops](#loops) |
-| `sites` | binding sites instead of loops: `dict(position=..., weight=..., reverse=...)` |
-| `tracks`, `track_names` | extra binding tracks, array `(n_tracks, n_beads)` and their names |
-| `lef_track` | per-bead preference for loading a LEF (array, `n_beads`) |
-| `compartments` | per-bead A/B signal (array, `n_beads`; B negative) |
-| `inputs` | ready inputs from `ls.inputs_from_arrays`, instead of `loops`, `sites`, ... |
-| `**parameters` | any config key, e.g. `n_beads`, `n_steps`, `mc_step`, `burnin`, `n_lef`, `folding_coeff`, `bind_coeff`, `seed`, `replicas` |
-
-**Returns** an [`MCResult`](#mcresult). Without `loops`, `sites` or `inputs`, the input file of the configuration (`interaction_file`) is read.
-
-```python
-mc = ls.simulate(loops=(left, right, weight), region="chr1:77000000-95000000",
-                 n_beads=120, n_steps=20000, mc_step=100, burnin=4000, replicas=2, seed=1)
-print(mc.n_samples, mc.meta["n_lef"])           # 200 snapshots, number of LEFs
-```
-
-### `ls.simulate_md`
-
-```python
-ls.simulate_md(mc, config=None, region=None, **parameters) -> MDResult
-```
-
-Builds a 3D structure for every snapshot of a Monte Carlo result with OpenMM. Scratch files go to a temporary folder that is deleted afterwards.
-
-| Input | Meaning |
-|---|---|
-| `mc` | the `MCResult` from `ls.simulate` |
-| `config`, `region`, `**parameters` | as for `ls.simulate`; `region` and `n_beads` must be the same as for `mc` |
-
-Useful parameters: `sim_step` (MD steps per frame), `platform` (`CPU`, `CUDA`, `OpenCL`), `ev_ff_strength` and `ev_ff_power` (excluded volume), `md_skip_burnin`, `threads`.
-
-**Returns** an [`MDResult`](#mdresult).
-
-```python
-md = ls.simulate_md(mc, region="chr1:77000000-95000000", n_beads=120, sim_step=500, platform="CPU")
-md.coords.shape            # (frames, 120, 3)
-```
-
-### `ls.contact_map`
-
-```python
-ls.contact_map(mc, n_beads=None, **options) -> ndarray
-```
-
-Contact map implied by the loops of `mc` (production snapshots of all chains).
-
-| Input | Meaning |
-|---|---|
-| `mc` | an `MCResult` |
-| `n_beads` | size of the map (default: the number of beads of `mc`) |
-| `**options` | map shape: `dot`, `domain`, `hop`, `depth`, `sigma`, `base` (see `loopsage.analysis.maps.loop_map`) |
-
-**Returns** a symmetric array `(n_beads, n_beads)`, scaled so that a loop is about 1.
-
-```python
-cmap = ls.contact_map(mc)
-plt.imshow(np.log(cmap + 1e-3), cmap="Reds")
-```
-
-### `ls.geometry`
-
-```python
-ls.geometry(chrom, start, end, n_beads=None) -> Geometry
-```
-
-The region and the bead grid. `start`, `end` in bp; `n_beads` defaults to about one bead per 2 kb.
-
-A `Geometry` has the fields `chrom`, `start`, `end`, `n_beads` and:
-
-| Member | Meaning |
-|---|---|
-| `bp_per_bead` | bases in one bead |
-| `bead_of(bp)` | bead index of one or many genomic positions (clipped to the region) |
-| `beads_to_bp(n)` | beads to bp |
-| `axis_mb()` | centre of every bead in Mb, for plot axes |
-| `label` | text such as `chr1:77,000,000-95,000,000` |
-
-```python
-geom = ls.geometry("chr1", 77_000_000, 95_000_000, 120)
-geom.bp_per_bead                      # 150000
-geom.bead_of([77_500_000, 90_000_000])    # array([ 3, 86])
-```
-
-### `ls.inputs_from_arrays`
-
-```python
-ls.inputs_from_arrays(geom, loops=None, sites=None, tracks=None, track_names=None,
-                      lef_track=None, compartments=None, **options) -> InputData
-```
-
-Builds all model inputs from variables.
-
-| Input | Meaning |
-|---|---|
-| `geom` | a `Geometry` |
-| `loops` | `dict(left, right, weight, left_reverse, right_reverse, units)`, a tuple `(left, right[, weight])`, or a `LoopData` |
-| `sites` | used when there are no loops: `dict(position, weight, reverse, units)` |
-| `tracks` | extra tracks `(n_tracks, n_beads)`; `track_names` names them |
-| `lef_track`, `compartments` | per-bead arrays, see [Extra tracks](#extra-tracks) |
-| `**options` | `smooth`, `contrastive`, `sigma`, `loss_sigma`, `units`, passed to the loop builder |
-
-**Returns** an [`InputData`](#inputdata). Raises `ValueError` for arrays of the wrong length, probabilities outside [0, 1], or when neither loops nor sites are given.
-
-```python
-inputs = ls.inputs_from_arrays(geom, loops=dict(left=left, right=right, weight=weight), tracks=[pol2])
-```
-
-### `ls.config` and `ls.parameters`
+### config
 
 ```python
 ls.config(config=None, region=None, **parameters) -> Config
-ls.parameters(search=None) -> dict
 ```
 
-`ls.config` merges defaults, the optional `config`, and the keyword arguments (they win), converts the values, checks them, and returns a `Config`. It raises `ValueError` on an unknown key or a bad value.
+| Input | Meaning |
+|---|---|
+| `config` | `.ini` path, a `Config` or a dictionary (optional) |
+| `region` | `"chr1:77000000-95000000"` (bp) |
+| `**parameters` | any config key, e.g. `n_beads`, `n_steps`, `seed`; they override `config` |
 
-A `Config` has every parameter as an attribute (`cfg.n_steps`), `cfg.as_dict()` for all of them, `cfg.source[key]` (`default`, `ini` or `cli`), and `cfg.notes` for warnings such as ignored keys.
-
-`ls.parameters(search)` returns `{name: (default, help)}` for all parameters whose name or help contains `search` (all when `None`).
+Output: a validated `Config`. Raises `ValueError` for unknown names or invalid values.
 
 ```python
-cfg = ls.config("config.ini", n_steps=5000)
-ls.parameters("temperature")       # {'t_init': (...), 't_final': (...), 'sim_temp': (...), ...}
+cfg = ls.config(region="chr1:1-9000000", n_beads=100, run_md=False)
 ```
 
-### `ls.Simulation`, `ls.run` and `ls.main`
+### read_inputs
 
 ```python
-ls.Simulation(config=None, region=None, *, inputs=None, loops=None, sites=None, tracks=None,
-              track_names=None, lef_track=None, compartments=None, **parameters)
-ls.run(config=None, region=None, **parameters) -> Simulation
-ls.main(argv=None)
+ls.read_inputs(cfg, geom=None, loops=None, sites=None, compartments=None,
+               tracks=None, track_names=None, lef_track=None) -> InputData
 ```
 
-`Simulation` is one run with its folder, figures and report. `ls.run(...)` is `Simulation(...).run()`; `ls.main(argv)` is the command (it takes the list of command-line words).
-
-| Member | Meaning |
+| Input | Meaning |
 |---|---|
-| `sim.run()` | all enabled stages and the report; returns `sim` |
-| `sim.preprocess()` ... `sim.report()` | single steps, see [the table above](#the-simulation-class-files-and-report) |
-| `sim.cfg` | the `Config` used |
-| `sim.run_dir` | the run folder |
-| `sim.geometry` | the `Geometry` of the run |
-| `sim.inputs`, `sim.mc`, `sim.md`, `sim.optimization`, `sim.validation`, `sim.features`, `sim.links`, `sim.report_path` | results of the steps that have run |
+| `loops` | `.bedpe` path, or arrays `(left, right, weight)` / `dict(left, right, weight, left_reverse, right_reverse)` in bp |
+| `sites` | `.bed` / `.narrowPeak` path, or `dict(position, weight, reverse)`; `reverse` is the probability that the CTCF points right (0 forward, 1 reverse, -1 unknown) |
+| `compartments` | `.bw` / `.bed` path, or one value per bead in [-1, 1] |
+| `tracks`, `track_names` | a `.bw` path or list of paths, or per-bead arrays |
+| `lef_track` | `.bw` path, or one non-negative value per bead |
+
+Output: `InputData` (`loops.L`, `loops.R`, `loops.J`, `BWs`, `lef_track`, `comp`).
 
 ```python
-sim = ls.Simulation("config.ini", n_steps=20000, run_md=False)
-mc = sim.monte_carlo()
-print(sim.run_dir, mc.n_samples)
-sim.analyze(); sim.report()          # compare with the experiment and write report.html
+inputs = ls.read_inputs(cfg, geom, loops="loops.bedpe", compartments="comp.bw")
 ```
 
-### Result and input objects
+### optimize and apply_optimum
 
-#### `MCResult`
+```python
+ls.optimize(cfg, inputs, geom=None, hic=None) -> OptResult
+ls.apply_optimum(cfg, result) -> Config
+```
 
-Returned by `ls.simulate` and `sim.monte_carlo()`. A *snapshot* is a state saved every `mc_step` steps.
+`hic` is the target from `ls.read_hic`; without it the loops of `inputs` (from a BEDPE file) are the target. Settings: `opt_evals`, `opt_steps`, `opt_patience`. The result has `best`, `start` and `potts` (when the epigenetic model is fitted). `apply_optimum` returns a copy of `cfg` with `n_lef`, `folding_coeff`, `bind_coeff`, `t_init`, `t_final` (and `epi_coeff`, `p_epigenetic`) set.
 
-| Member | Meaning |
+### run_mc
+
+```python
+ls.run_mc(cfg, inputs, geom=None) -> MCResult
+```
+
+Fields of the result (arrays have one column per snapshot):
+
+| Field | Content |
 |---|---|
-| `Ms`, `Ns` | `(LEFs, snapshots)` left and right leg bead of every LEF |
-| `Es`, `Fs`, `Bs`, `Ks` | `(snapshots)` total, folding, binding and crossing energy |
-| `Ts` | `(snapshots)` temperature |
-| `ufs` | `(snapshots)` share of the chain outside all loops |
-| `epi` | `(beads, snapshots)` epigenetic state (Potts model) |
-| `acc` | `(3, 2)` proposed and accepted moves: rebind, slide, state change |
-| `meta` | dictionary: `n_beads`, `n_lef`, `n_steps`, `mc_step`, `burnin`, `seed`, `runtime_s`, ... |
-| `n_samples` | number of snapshots |
-| `production(a)` | the part of an array `a` (last axis) after the burn-in |
-| `pooled()` | one `MCResult` with the production snapshots of all chains |
-| `chains`, `replicas` | all independent chains / the ones besides this one |
-| `save(path)`, `MCResult.load(path)` | optional `.npz` file |
+| `Ms`, `Ns` | left and right leg of every LEF, `(LEFs, snapshots)` |
+| `Es`, `Fs`, `Bs`, `Ks` | total, folding, binding and crossing energy |
+| `Ts`, `ufs` | temperature and fraction of unfolded beads |
+| `chains` | all replicas (`replicas` in the config) |
+| `production(a)` | the snapshots of `a` after the burn-in |
+| `pooled()` | all replicas joined |
 
-#### `MDResult`
+### run_md
 
-Returned by `ls.simulate_md` and `sim.molecular_dynamics()`.
+```python
+ls.run_md(cfg, mc, geom=None, folder=None) -> MDResult
+```
 
-| Member | Meaning |
+Runs the 3D simulation on the pooled Monte Carlo loops. Fields: `coords` (frames, beads, 3 in nm), `avg_map` (average contact map), `rg` (radius of gyration), `epot` (potential energy). With `folder`, structures and maps are saved there.
+
+### results
+
+```python
+ls.results.<function>(mc, geom, ...)
+```
+
+| Function | Output |
 |---|---|
-| `coords` | `(frames, beads, 3)` positions in nm |
-| `avg_map`, `std_map` | `(beads, beads)` mean and spread of the contact strength |
-| `avg_dist`, `std_dist` | `(beads, beads)` mean and spread of distances in nm |
-| `rg` | `(frames)` radius of gyration in nm |
-| `epot` | `(frames)` potential energy in kJ/mol |
-| `frame_idx` | `(frames)` Monte Carlo snapshot of each frame |
-| `meta` | dictionary: platform, run time, time step, steps per frame, ... |
-| `save(path)`, `MDResult.load(path)` | optional `.npz` file |
+| `trajectories(mc, geom, units="bead", production=False, chain=0)` | `(left, right)` arrays `(LEFs, snapshots)` |
+| `loop_lengths(mc, geom, units="kb", ...)` | array `(LEFs, snapshots)` |
+| `mean_loop_length(mc, geom, units="kb", ...)` | array `(snapshots,)` |
+| `energies(mc, production=False, chain=0)` | `DataFrame` |
+| `loops_table(mc, geom, snapshot=-1)` | `DataFrame` of one snapshot |
+| `loop_coverage(mc, geom)`, `leg_density(mc, geom)` | arrays `(beads,)` |
+| `contact_map(mc, geom)` | array `(beads, beads)` |
+| `coordinates(md, frame=None)`, `radius_of_gyration(md)`, `distance(md, geom, a, b, units="bead")`, `contact_map_md(md)` | 3D results |
 
-#### `InputData` and `LoopData`
+### plots
 
-Returned by `ls.inputs_from_arrays` and `sim.preprocess()`. Besides the inputs of the model they let you inspect what was read.
+```python
+ls.plots.<name>(...) -> Figure
+```
 
-| Member | Meaning |
+Calls the figure function `<name>` of `loopsage.viz` and returns the matplotlib figure (a list when the function draws several).
+
+## Sandbox
+
+The sandbox builds a small artificial system by hand and feeds the same functions. It is useful to test an idea: what does a single CTCF pair do, what do compartments change?
+
+```python
+import numpy as np
+import loopsage as ls
+
+box = ls.Sandbox("chr1:0-3000000", n_beads=100)          # 3 Mb, 100 beads of 30 kb
+
+# CTCF motifs: position (bp), orientation and strength
+box.add_ctcf(300_000, "forward", strength=10)            # forward motif: left anchor of a loop
+box.add_ctcf(900_000, "reverse", strength=8)             # reverse motif: right anchor
+box.add_ctcfs([1_500_000, 2_400_000], ["forward", "reverse"], [6, 9])      # several at once
+box.add_ctcf(2_000_000, 0.3)                             # or a probability of pointing right
+
+# compartments: your own array, one value per bead between -1 (B) and 1 (A)
+box.set_compartments(np.sin(np.linspace(0, 12, 100)))
+box.add_compartment(0, 500_000, "B")                     # or set a block by hand
+# box.random_compartments(mean_block_mb=0.8, seed=1)     # or random alternating blocks
+
+cfg = box.config(n_steps=20000, n_lef=6, seed=2)         # config for this region and resolution
+geom = ls.geometry(cfg)
+inputs = ls.read_inputs(cfg, geom, **box.arrays())       # the sandbox as inputs
+mc = ls.run_mc(cfg, inputs, geom)                        # then everything works as above
+ls.plots.kymograph(mc, geom, inputs)
+```
+
+| Method | What it does |
 |---|---|
-| `inputs.loops` | a `LoopData` with the loops |
-| `inputs.BWs`, `inputs.bw_names` | extra tracks `(n_tracks, n_beads)` and their names |
-| `inputs.lef_track`, `inputs.comp` | LEF loading preference and A/B signal per bead, or `None` |
-| `loops.L`, `loops.R` | left and right anchor profiles per bead (mean 1) |
-| `loops.cover` | loop coverage per bead in [-1, 1] (contrastive binding), or `None` |
-| `loops.stats` | number of loops and loop-length statistics |
+| `add_ctcf(position, orientation, strength)` | one CTCF motif; orientation is `"forward"`, `"reverse"`, `"unknown"` or a probability of reverse in [0, 1] |
+| `add_ctcfs(positions, orientation, strength)` | several motifs; orientation and strength are one value or one per position |
+| `add_loop(left, right, weight)` | a fixed loop between two positions, instead of single motifs |
+| `set_compartments(values)` | your array, one value per bead in [-1, 1]; other lengths or ranges raise `ValueError` |
+| `add_compartment(start, end, state)` | A (`"A"` = 1), B (`"B"` = -1) or a number in [-1, 1] on a block |
+| `random_compartments(mean_block_mb, seed)` | alternating A and B blocks of random length |
+| `ctcf_sites`, `compartments` | the motifs (table) and the signal (array) defined so far |
+| `config(**parameters)` | a `Config` for the region and resolution |
+| `arrays()` | the keyword arguments for `ls.read_inputs` |
 
-`ls.loops_from_arrays(geom, left, right, weight, ...)` and `ls.sites_from_arrays(geom, position, weight, ...)` build only the `LoopData` part, with the same arguments as the `loops` and `sites` dictionaries.
+Use either CTCF motifs or loops in one sandbox, not both.
