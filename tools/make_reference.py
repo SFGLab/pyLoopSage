@@ -6,6 +6,10 @@ from pathlib import Path
 
 from settings.schema import PARAMS, SECTIONS
 
+HEADING = {"input": "Input data", "output": "Output", "parallel": "Parallelism", "monte_carlo": "Monte Carlo", "energy": "Energy",
+           "molecular_dynamics": "Molecular dynamics", "structure_3d": "3D structures", "analysis": "Analysis", "optimizer": "Optimizer",
+           "topology": "Topology"}      # short headings for the tables of contents
+
 OUT = Path(__file__).resolve().parents[1] / "markdown" / "reference"
 TYPES = dict(int="integer", float="number", bool="true / false", str="text", floats="list of numbers", strs="list of text")
 
@@ -38,7 +42,7 @@ def cli_page() -> str:
         rows = [[flag_text(p), TYPES[p.kind] + (f" ({p.unit})" if p.unit else ""), show(p.default), p.help]
                 for p in PARAMS if p.section == sec and p.flag]
         if rows:
-            parts.append(f"### {title}\n\n" + table(["Option", "Type (unit)", "Default", "What it does"], rows))
+            parts.append(f"### {HEADING[sec]}\n\n{title}.\n\n" + table(["Option", "Type (unit)", "Default", "What it does"], rows))
     return "\n".join(parts) + CLI_TAIL
 
 
@@ -47,7 +51,7 @@ def config_page() -> str:
     for sec, title in SECTIONS.items():
         rows = [[f"`{p.name}`<br>" + (f"`{p.flag}`" if p.flag else "*ini only*"), TYPES[p.kind] + (f" ({p.unit})" if p.unit else ""), show(p.default), p.help]
                 for p in PARAMS if p.section == sec]
-        parts.append(f"## `[{sec}]`: {title}\n\n" + table(["Key / CLI option", "Type (unit)", "Default", "What it does"], rows))
+        parts.append(f"### {HEADING[sec]}\n\n{title}. Section `[{sec}]` of the config file.\n\n" + table(["Key / CLI option", "Type (unit)", "Default", "What it does"], rows))
     return "\n".join(parts)
 
 
@@ -167,7 +171,7 @@ Rules:
 !!! tip "Check what was used"
     Each run saves the full list of settings it used in `config_resolved.ini` inside the run folder, so any run can be reproduced from its own folder.
 
-## Using the configuration from Python
+## Using the settings from Python
 
 The same keys work in Python, written by name (`n_steps`, not the option `--mc-steps`):
 

@@ -76,7 +76,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | `-t`, `--threads` | integer (threads) | `1` | Worker threads for the numba sampler, OpenMM CPU and numba kernels (0 = all cores) |
 | `--n-replicas` | integer (chains) | `1` | Independent Monte Carlo chains (seed, seed+1, ...) run in parallel; the ensemble is pooled |
 
-### Monte Carlo (loop extrusion) sampler
+### Monte Carlo
 
 | Option | Type (unit) | Default | What it does |
 |---|---|---|---|
@@ -99,7 +99,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 |---|---|---|---|
 | `--binding-mode` | text | `preferential` | Anchor binding mode: preferential = LEFs are attracted to the anchor profiles (non-negative), loop-free regions cost nothing; contrastive = in addition, loops are penalised for spanning loop-free regions and rewarded for spanning regions the input loops cover (needs loops) |
 
-### Molecular dynamics (3D structures)
+### Molecular dynamics
 
 | Option | Type (unit) | Default | What it does |
 |---|---|---|---|
@@ -122,7 +122,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 |---|---|---|---|
 | `--track-smooth` | number (beads) | `7.0` | Gaussian smoothing of the Hi-C insulation score and of the A/B track (Hi-C eigenvector or compartment BigWig) used as input and for validation (0 = off) |
 
-### Parameter optimizer (--optimize)
+### Parameter optimizer
 
 | Option | Type (unit) | Default | What it does |
 |---|---|---|---|
@@ -136,7 +136,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | `--target-smooth` | number (beads) | `0.8` | Smoothing of the optimizer target built from the input loops, so that the sparse loops look like a Hi-C map (0 = none) |
 | `--hic-denoise` | number (beads) | `1.0` | Denoising of the Hi-C target of the optimizer, to bring out the TAD pattern (0 = none); validation always uses the raw map |
 
-### Topology: topoisomerase, chain crossings and linking (optional, advanced)
+### Topology
 
 | Option | Type (unit) | Default | What it does |
 |---|---|---|---|

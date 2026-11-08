@@ -42,7 +42,7 @@ Rules:
 !!! tip "Check what was used"
     Each run saves the full list of settings it used in `config_resolved.ini` inside the run folder, so any run can be reproduced from its own folder.
 
-## Using the configuration from Python
+## Using the settings from Python
 
 The same keys work in Python, written by name (`n_steps`, not the option `--mc-steps`):
 
@@ -61,7 +61,9 @@ Values are converted exactly as in a config file, a wrong key or value raises `V
 
 **Type** tells how to write the value. Under each key is the equivalent command-line option, or *ini only* when the key has none.
 
-## `[input]`: Input data and genomic region
+### Input data and genomic region
+
+Section `[input]` of the config file.
 
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
@@ -87,7 +89,9 @@ Values are converted exactly as in a config file, a wrong key or value raises `V
 | `motif_pseudocount`<br>*ini only* | number | `0.8` | Pseudocount added to the PFM counts (avoids impossible bases) |
 | `motif_pad`<br>*ini only* | integer (bp) | `0` | Extend every anchor by this many bp on both sides before the motif search |
 
-## `[output]`: Output and reproducibility
+### Output and reproducibility
+
+Section `[output]` of the config file.
 
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
@@ -101,14 +105,18 @@ Values are converted exactly as in a config file, a wrong key or value raises `V
 | `save_metadata`<br>`--metadata` | true / false | `True` | Save map matrices (MC and MD heatmaps, distances, strengths) as .npy in data/metadata |
 | `save_ensemble`<br>`--save-ensemble` | true / false | `True` | Save the 3D structures: every MD frame as .cif, plus the start structure, topology and trajectory (structures/) |
 
-## `[parallel]`: Parallelism and replicas
+### Parallelism and replicas
+
+Section `[parallel]` of the config file.
 
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
 | `threads`<br>`--threads` | integer (threads) | `1` | Worker threads for the numba sampler, OpenMM CPU and numba kernels (0 = all cores) |
 | `replicas`<br>`--n-replicas` | integer (chains) | `1` | Independent Monte Carlo chains (seed, seed+1, ...) run in parallel; the ensemble is pooled |
 
-## `[monte_carlo]`: Monte Carlo (loop extrusion) sampler
+### Monte Carlo
+
+Section `[monte_carlo]` of the config file.
 
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
@@ -129,7 +137,9 @@ Values are converted exactly as in a config file, a wrong key or value raises `V
 | `variable_sliding_step`<br>*ini only* | true / false | `False` | Sliding step uniform in [1, shortest loop] beads |
 | `p_epigenetic`<br>*ini only* | number | `0.5` | Epigenetic model only: probability that a step changes a bead's epigenetic state instead of moving a LEF |
 
-## `[energy]`: Energy model coefficients
+### Energy model coefficients
+
+Section `[energy]` of the config file.
 
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
@@ -146,7 +156,9 @@ Values are converted exactly as in a config file, a wrong key or value raises `V
 | `loss_sigma`<br>*ini only* | number (beads) | `2.0` | Gaussian width of the 2D loop map J_loss when data_loss_mode = 1, so LEF legs feel a smooth landscape (advanced, config.ini only) |
 | `binding_mode`<br>`--binding-mode` | text | `preferential` | Anchor binding mode: preferential = LEFs are attracted to the anchor profiles (non-negative), loop-free regions cost nothing; contrastive = in addition, loops are penalised for spanning loop-free regions and rewarded for spanning regions the input loops cover (needs loops) |
 
-## `[molecular_dynamics]`: Molecular dynamics (3D structures)
+### Molecular dynamics
+
+Section `[molecular_dynamics]` of the config file.
 
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
@@ -170,7 +182,9 @@ Values are converted exactly as in a config file, a wrong key or value raises `V
 | `md_skip_burnin`<br>*ini only* | true / false | `False` | Simulate only post-burn-in MC snapshots (False: every snapshot) |
 | `forcefield_path`<br>*ini only* | text | `src/molecular_dynamics/forcefields/classic_sm_ff.xml` | OpenMM force-field XML |
 
-## `[structure_3d]`: 3D structure analysis and rendering
+### 3D structure analysis and rendering
+
+Section `[structure_3d]` of the config file.
 
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
@@ -183,7 +197,9 @@ Values are converted exactly as in a config file, a wrong key or value raises `V
 | `video_size`<br>*ini only* | integer (px) | `640` | Video width and height |
 | `max_video_frames`<br>*ini only* | integer (frames) | `240` | Maximum frames per video |
 
-## `[analysis]`: Analysis
+### Analysis
+
+Section `[analysis]` of the config file.
 
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
@@ -193,7 +209,9 @@ Values are converted exactly as in a config file, a wrong key or value raises `V
 | `zoom_snapshots`<br>*ini only* | integer (snapshots) | `120` | Snapshots shown in the zoomed kymograph (window near equilibrium) |
 | `zoom_start`<br>*ini only* | integer (snapshot) | *(empty)* | First snapshot of the zoom window (empty = middle of production) |
 
-## `[optimizer]`: Parameter optimizer (--optimize)
+### Parameter optimizer
+
+Section `[optimizer]` of the config file.
 
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
@@ -208,7 +226,9 @@ Values are converted exactly as in a config file, a wrong key or value raises `V
 | `target_smooth`<br>`--target-smooth` | number (beads) | `0.8` | Smoothing of the optimizer target built from the input loops, so that the sparse loops look like a Hi-C map (0 = none) |
 | `hic_denoise`<br>`--hic-denoise` | number (beads) | `1.0` | Denoising of the Hi-C target of the optimizer, to bring out the TAD pattern (0 = none); validation always uses the raw map |
 
-## `[topology]`: Topology: topoisomerase, chain crossings and linking (optional, advanced)
+### Topology
+
+Section `[topology]` of the config file.
 
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
