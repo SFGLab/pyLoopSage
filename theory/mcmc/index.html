@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -430,6 +430,34 @@
     
   
     Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/inspiration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspiration
   
 
     
@@ -1165,6 +1193,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/data-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/cli/" class="md-nav__link">
         
   
@@ -1193,6 +1249,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/config/" class="md-nav__link">
         
   
@@ -1201,6 +1285,34 @@
     
   
     Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/sensitivity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sensitivity scans
   
 
     
@@ -1361,33 +1473,37 @@
 
 
 <h1 id="markov-chain-monte-carlo">Markov chain Monte Carlo<a class="headerlink" href="#markov-chain-monte-carlo" title="Permanent link">&para;</a></h1>
-<p>The sum <span class="arithmatex">\(Z=\sum_x e^{-E(x)/T}\)</span> over <em>all</em> sets of loops is far too large to compute, and so is any average over the Boltzmann distribution. <strong>Markov chain Monte Carlo</strong> (MCMC) avoids it: it produces a long random sequence of states whose frequencies approach the Boltzmann probabilities, and averages are taken along the sequence. This page explains why that works and how to tell whether it worked.</p>
+<p>The sum <span class="arithmatex">\(Z=\sum_x e^{-E(x)/T}\)</span> over <em>all</em> sets of loops is far too large to compute, and so is any average over the Boltzmann distribution. <strong>Markov chain Monte Carlo</strong> (MCMC) avoids the problem. It produces a long random sequence of states whose frequencies approach the Boltzmann probabilities, and then takes averages along the sequence. This page explains why that works and how to tell whether it worked in your run.</p>
 <h2 id="stochastic-process-and-markov-chain">Stochastic process and Markov chain<a class="headerlink" href="#stochastic-process-and-markov-chain" title="Permanent link">&para;</a></h2>
-<p>A <strong>stochastic process</strong> is a sequence of random states <span class="arithmatex">\(X_0,X_1,X_2,\dots\)</span>, one per time step. In general each state could depend on the whole past. A <strong>Markov chain</strong> is a process with a short memory: the next state depends only on the present one,</p>
+<p>A <strong>stochastic process</strong> is a sequence of random states <span class="arithmatex">\(X_0,X_1,X_2,\dots\)</span>, one for each time step. In general, each state could depend on the whole past. A <strong>Markov chain</strong> is a process with a short memory: the next state depends only on the present one,</p>
 <div class="arithmatex">\[
 P(X_{t+1}\mid X_t,X_{t-1},\dots,X_0)=P(X_{t+1}\mid X_t).
 \]</div>
-<p>The chain is described by its <strong>transition probabilities</strong> <span class="arithmatex">\(P_{ij}=P(X_{t+1}=j\mid X_t=i)\)</span>. In LoopSage a state is the whole set of loops, and a step is one attempted move (slide, rebind or an epigenetic change). The past matters only through the current loops, which is what makes the chain Markov. The <em>samples</em> are nevertheless correlated, because consecutive states differ by one move; this is the subject of the autocorrelation section.</p>
+<p>The chain is described by its <strong>transition probabilities</strong> <span class="arithmatex">\(P_{ij}=P(X_{t+1}=j\mid X_t=i)\)</span>. In LoopSage a state is the whole set of loops, and a step is one attempted move (a slide, a rebinding or an epigenetic change). The past matters only through the current loops, which is what makes the chain Markov. The <em>samples</em> are nevertheless correlated, because consecutive states differ by only one move. We return to this in the section on autocorrelation.</p>
 <h2 id="which-distribution-does-the-chain-reach">Which distribution does the chain reach?<a class="headerlink" href="#which-distribution-does-the-chain-reach" title="Permanent link">&para;</a></h2>
-<p>A <strong>stationary distribution</strong> <span class="arithmatex">\(\pi\)</span> is one that does not change under a step: if <span class="arithmatex">\(X_t\sim\pi\)</span> then <span class="arithmatex">\(X_{t+1}\sim\pi\)</span>. The <strong>initial distribution</strong> is the distribution of <span class="arithmatex">\(X_0\)</span>: in LoopSage, a random start with loops placed at random. We want a chain whose stationary distribution is the Boltzmann law <span class="arithmatex">\(\pi_i\propto e^{-E_i/T}\)</span> and which forgets its start.</p>
-<p><strong>Detailed balance</strong> is a convenient way to guarantee the first part. If <span class="arithmatex">\(\pi_iP_{ij}=\pi_jP_{ji}\)</span> for every pair, then <span class="arithmatex">\(\pi\)</span> is stationary. The <strong>Metropolis rule</strong> does this: propose a move to <span class="arithmatex">\(j\)</span> with a symmetric proposal and accept it with probability</p>
+<p>A <strong>stationary distribution</strong> <span class="arithmatex">\(\pi\)</span> is one that does not change under a step: if <span class="arithmatex">\(X_t\sim\pi\)</span>, then <span class="arithmatex">\(X_{t+1}\sim\pi\)</span>. The <strong>initial distribution</strong> is the distribution of <span class="arithmatex">\(X_0\)</span>; in LoopSage it is a random start with loops placed at random. We want a chain whose stationary distribution is the Boltzmann law, <span class="arithmatex">\(\pi_i\propto e^{-E_i/T}\)</span>, and which forgets its start.</p>
+<p><strong>Detailed balance</strong> is a convenient way to guarantee the first part. If <span class="arithmatex">\(\pi_iP_{ij}=\pi_jP_{ji}\)</span> for every pair of states, then <span class="arithmatex">\(\pi\)</span> is stationary. The <strong>Metropolis rule</strong> achieves this: propose a move to state <span class="arithmatex">\(j\)</span> with a symmetric proposal, and accept it with probability</p>
 <div class="arithmatex">\[
 \min\!\big(1,\,\pi_j/\pi_i\big)=\min\!\big(1,\,e^{-\Delta E/T}\big),\qquad \Delta E=E_j-E_i .
 \]</div>
-<p>Moves that lower the energy are always accepted, moves that raise it with a probability that falls with <span class="arithmatex">\(\Delta E\)</span> and rises with <span class="arithmatex">\(T\)</span>. Only the <em>difference</em> of energies enters, so <span class="arithmatex">\(Z\)</span> is never needed.</p>
+<p>Moves that lower the energy are always accepted. Moves that raise it are accepted with a probability that falls as <span class="arithmatex">\(\Delta E\)</span> grows and rises as <span class="arithmatex">\(T\)</span> grows. Only the <em>difference</em> of energies enters, so the partition function <span class="arithmatex">\(Z\)</span> is never needed.</p>
+<div class="admonition tip">
+<p class="admonition-title">Intuition</p>
+<p>Think of a hiker who wants to visit places in proportion to how comfortable they are. The hiker always accepts a step downhill, and sometimes accepts a step uphill, more willingly when it is only a small climb or when the weather is warm (high <span class="arithmatex">\(T\)</span>). Walking like this for long enough, the time spent at each place matches its Boltzmann probability, even though the hiker never sees the whole map.</p>
+</div>
 <figure>
 <p><img alt="Markov chain, convergence and Metropolis rule" src="../../assets/theory/mcmc_markov.svg" width="780" />
   </p>
 <figcaption><b>a</b> A three-state Markov chain and its transition probabilities. <b>b</b> A chain started in one state approaches the target distribution (dots). <b>c</b> The Metropolis acceptance as a function of <span class="arithmatex">\(\Delta E\)</span> for three temperatures.</figcaption>
 </figure>
 <h2 id="ergodicity">Ergodicity<a class="headerlink" href="#ergodicity" title="Permanent link">&para;</a></h2>
-<p>The second part, forgetting the start, is <strong>ergodicity</strong>. A chain is ergodic if it is</p>
+<p>The second part, forgetting the start, is called <strong>ergodicity</strong>. A chain is ergodic if it is</p>
 <ul>
 <li><strong>irreducible</strong>: from every state there is a path with non-zero probability to every other state, so no region of states is cut off;</li>
 <li><strong>aperiodic</strong>: it does not return to a state only at multiples of some period <span class="arithmatex">\(k&gt;1\)</span>.</li>
 </ul>
 <p>For such a chain the stationary distribution is unique, and for any start <span class="arithmatex">\(P(X_t=i)\to\pi_i\)</span>. In LoopSage the moves can reach any arrangement of loops (a ring can unbind and load anywhere), and the chance to stay in the same state keeps the chain aperiodic, so the chain is ergodic in principle.</p>
-<p><em>In principle</em> is not <em>in practice</em>. A chain can be ergodic and still <strong>trapped</strong> for a very long time. At a low temperature the sampler may stay in one valley of the energy landscape because crossing the barrier needs a move the Metropolis rule almost never accepts. This is why LoopSage uses <strong>annealing</strong>: it starts hot, where barriers are easy to cross, and cools down so that the chain settles in a deep valley.</p>
+<p><em>In principle</em> is not the same as <em>in practice</em>. A chain can be ergodic and still be <strong>trapped</strong> for a very long time. At low temperature the sampler may stay in one valley of the energy landscape, because leaving it requires a move that the Metropolis rule almost never accepts. This is why LoopSage uses <strong>annealing</strong>: it starts hot, where barriers are easy to cross, and then cools down so that the chain settles in a deep valley.</p>
 <figure>
 <p><img alt="Ergodicity and trapping" src="../../assets/theory/mcmc_ergodic.svg" width="780" />
   </p>
@@ -1398,31 +1514,31 @@ P(X_{t+1}\mid X_t,X_{t-1},\dots,X_0)=P(X_{t+1}\mid X_t).
 <div class="arithmatex">\[
 \bar x_T=\frac1T\sum_{t=1}^{T}x_t \;\longrightarrow\; \langle x\rangle=\sum_i \pi_i f(i)\qquad (T\to\infty).
 \]</div>
-<p>The right-hand side is the <strong>ensemble average</strong>, the average over the Boltzmann distribution. The theorem says that the time average along one long ergodic chain equals it. This is what makes the whole method work: we never sum over all states, we average over snapshots.</p>
-<p>Almost everything LoopSage reports is an ergodic mean over the snapshots after the burn-in: the <strong>contact map</strong> implied by the loops, the <strong>mean loop length</strong>, the <strong>unfolded fraction</strong>, the average of each <strong>energy term</strong>, the occupancy of each bead by a loop leg, and the insulation or stripe profiles computed from the averaged map. The averaged <strong>MD contact map</strong> is the same kind of quantity over the 3D frames. These are meaningful when the chain has converged and the number of snapshots is large compared with the correlation time.</p>
-<p>What is <em>not</em> an ergodic mean: a single snapshot, the last snapshot, the minimum energy found, and any average that includes the burn-in or the annealing phase (the chain is then not stationary).</p>
+<p>The right-hand side is the <strong>ensemble average</strong>, the average over the Boltzmann distribution. The ergodic theorem says that the time average along one long ergodic chain equals it. This is what makes the whole method work: we never sum over all states, we simply average over snapshots.</p>
+<p>Almost everything LoopSage reports is an ergodic mean over the snapshots after the burn-in: the <strong>contact map</strong> implied by the loops, the <strong>mean loop length</strong>, the <strong>unfolded fraction</strong>, the average of each <strong>energy term</strong>, the occupancy of each bead by a loop leg, and the insulation or stripe profiles computed from the averaged map. The averaged <strong>MD contact map</strong> is the same kind of quantity, taken over the 3D frames. These numbers are meaningful when the chain has converged and the number of snapshots is large compared with the correlation time.</p>
+<p>What is <em>not</em> an ergodic mean: a single snapshot, the last snapshot, the minimum energy found, and any average that includes the burn-in or the annealing phase (the chain is not stationary there).</p>
 <h2 id="reading-a-run-the-burn-in">Reading a run: the burn-in<a class="headerlink" href="#reading-a-run-the-burn-in" title="Permanent link">&para;</a></h2>
-<p>A chain that starts away from the typical states first <em>drifts</em>, and only later fluctuates around a constant level. The drifting part is the <strong>burn-in</strong> and is discarded. The mean loop length is a good indicator: at the start the rings are short, it rises, and in equilibrium it should stay almost <strong>constant with fluctuations</strong>. A curve that keeps rising or falling is not equilibrated.</p>
+<p>A chain that starts away from the typical states first <em>drifts</em>, and only later fluctuates around a constant level. The drifting part is called the <strong>burn-in</strong>, and it is discarded. The mean loop length is a good indicator: at the start the rings are short, then it rises, and in equilibrium it should stay almost <strong>constant with fluctuations</strong>. A curve that keeps rising or falling is not equilibrated.</p>
 <figure>
 <p><img alt="Trace, ergodic mean and autocorrelation of two real chains" src="../../assets/theory/mcmc_diag.svg" width="780" />
   </p>
-<figcaption>Two real LoopSage chains (Metropolis, <span class="arithmatex">\(T=1\)</span>, 250 beads, 39 extruders, 200 000 steps, one snapshot per 40 steps). <b>a</b> The trace of the mean loop length. <b>b</b> The running mean after the burn-in. <b>c</b> The autocorrelation function. Purple is chain 1 and black chain 2.</figcaption>
+<figcaption>Two real LoopSage chains (Metropolis, <span class="arithmatex">\(T=1\)</span>, 250 beads, 39 extruders, 200 000 steps, one snapshot per 40 steps). <b>a</b> The trace of the mean loop length. <b>b</b> The running mean after the burn-in. <b>c</b> The autocorrelation function. Purple is chain 1 and black is chain 2.</figcaption>
 </figure>
 <h2 id="autocorrelation-how-long-the-chain-remembers">Autocorrelation: how long the chain remembers<a class="headerlink" href="#autocorrelation-how-long-the-chain-remembers" title="Permanent link">&para;</a></h2>
 <p>Consecutive snapshots are similar, so the samples are <em>not</em> independent. The <strong>autocorrelation function</strong> measures how similar a quantity is to itself after a delay of <span class="arithmatex">\(k\)</span> snapshots (the <em>lag</em>),</p>
 <div class="arithmatex">\[
 \rho(k)=\frac{\operatorname{cov}(x_t,\,x_{t+k})}{\operatorname{var}(x_t)},\qquad \rho(0)=1 .
 \]</div>
-<p><strong>How to read it.</strong> <span class="arithmatex">\(\rho(k)=1\)</span> means the two values are identical, <span class="arithmatex">\(\rho(k)=0\)</span> means that they are unrelated, and a negative value means that they tend to be opposite. A plot of <span class="arithmatex">\(\rho\)</span> against <span class="arithmatex">\(k\)</span> starts at 1 and decays. The lag at which it reaches about 0 is the time after which the chain has forgotten where it was: samples further apart than that are practically independent. A curve that stays high for hundreds of lags says that the chain moves slowly through the states.</p>
+<p><strong>How to read it.</strong> <span class="arithmatex">\(\rho(k)=1\)</span> means that the two values are identical, <span class="arithmatex">\(\rho(k)=0\)</span> means that they are unrelated, and a negative value means that they tend to be opposite. A plot of <span class="arithmatex">\(\rho\)</span> against <span class="arithmatex">\(k\)</span> starts at 1 and decays. The lag at which it reaches about 0 is the time after which the chain has forgotten where it was, so samples further apart than that are practically independent. A curve that stays high for hundreds of lags tells you that the chain moves slowly through the states.</p>
 <p>The decay is summarised by the <strong>integrated autocorrelation time</strong>,</p>
 <div class="arithmatex">\[
 \tau_{\mathrm{int}}=1+2\sum_{k\ge1}\rho(k),
 \]</div>
-<p>the number of snapshots that are worth <em>one</em> independent sample. With <span class="arithmatex">\(T\)</span> snapshots the <strong>effective sample size</strong> is</p>
+<p>which is the number of snapshots that are worth <em>one</em> independent sample. With <span class="arithmatex">\(T\)</span> snapshots, the <strong>effective sample size</strong> is</p>
 <div class="arithmatex">\[
 \mathrm{ESS}=\frac{T}{\tau_{\mathrm{int}}},
 \]</div>
-<p>and the error of an ergodic mean is about <span class="arithmatex">\(\sigma/\sqrt{\mathrm{ESS}}\)</span>, with <span class="arithmatex">\(\sigma\)</span> the standard deviation of the quantity. In the figure above <span class="arithmatex">\(\tau_{\mathrm{int}}\approx240\)</span> and <span class="arithmatex">\(740\)</span> snapshots, so each chain of 4750 snapshots after the burn-in is worth only about 20 and 6 independent samples of the mean loop length. This is the honest measure of how much the run knows.</p>
+<p>and the error of an ergodic mean is about <span class="arithmatex">\(\sigma/\sqrt{\mathrm{ESS}}\)</span>, where <span class="arithmatex">\(\sigma\)</span> is the standard deviation of the quantity. In the figure above <span class="arithmatex">\(\tau_{\mathrm{int}}\approx240\)</span> and <span class="arithmatex">\(740\)</span> snapshots, so each chain of 4750 snapshots after the burn-in is worth only about 20 and 6 independent samples of the mean loop length. This is the honest measure of how much the run really knows.</p>
 <div class="admonition tip">
 <p class="admonition-title">In practice</p>
 <p>Plot the trace: it should fluctuate around a constant after the burn-in. Run two chains from different random starts (<code>replicas</code>): their running means must agree, as in panel b. Read <span class="arithmatex">\(\tau_{\mathrm{int}}\)</span> off the autocorrelation: if it is a large share of the run, increase <code>n_steps</code>, not only the number of snapshots (saving more often adds correlated samples, not new ones). The <a href="../../implementation/monte-carlo/">Monte Carlo</a> page lists the settings, and the report shows the drift of the energy between the two halves of the run.</p>
@@ -1525,7 +1641,7 @@ P(X_{t+1}\mid X_t,X_{t-1},\dots,X_0)=P(X_{t+1}\mid X_t).
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

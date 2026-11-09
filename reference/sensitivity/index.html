@@ -1,0 +1,1817 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Energy-based stochastic modelling of chromatin loop extrusion and 3D genome structure">
+      
+      
+      
+        <link rel="canonical" href="https://sfglab.github.io/pyLoopSage/reference/sensitivity/">
+      
+      
+        <link rel="prev" href="../config/">
+      
+      
+        <link rel="next" href="../../acknowledgments/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Sensitivity scans - LoopSage</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/loopsage.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#sensitivity-scans" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="LoopSage" class="md-header__button md-logo" aria-label="LoopSage" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            LoopSage
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Sensitivity scans
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/SFGLab/pyLoopSage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SFGLab/pyLoopSage
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../intro/" class="md-tabs__link">
+          
+  
+  
+  Intro
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../theory/" class="md-tabs__link">
+          
+  
+  
+  Theory
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../implementation/" class="md-tabs__link">
+          
+  
+  
+  Implementation
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../acknowledgments/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Acknowledgments
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="LoopSage" class="md-nav__button md-logo" aria-label="LoopSage" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    LoopSage
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/SFGLab/pyLoopSage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SFGLab/pyLoopSage
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Intro
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Intro
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/inspiration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspiration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Theory
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Theory
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/scope/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scope
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/loop-extrusion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loop extrusion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/mechanics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mechanics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/mcmc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCMC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/molecular-dynamics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Molecular dynamics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/topology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Topology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Implementation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Implementation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/motif-finder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Motif Finder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/optimizer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Optimizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/monte-carlo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monte Carlo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/molecular-dynamics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Molecular Dynamics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command-line interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sensitivity scans
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sensitivity scans
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-a-sensitivity-scan-gives-biophysical-insight" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why a sensitivity scan gives biophysical insight
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick start
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-scan-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The scan file
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outputs-of-the-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs of the report
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-transitions-and-bifurcations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase transitions and bifurcations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3d-structure-and-topology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3D structure and topology
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loopsage-scan-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        loopsage-scan options
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#from-python" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From Python
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes-on-running-time-and-accuracy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes on running time and accuracy
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../acknowledgments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acknowledgments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-a-sensitivity-scan-gives-biophysical-insight" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why a sensitivity scan gives biophysical insight
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick start
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-scan-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The scan file
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outputs-of-the-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs of the report
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-transitions-and-bifurcations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase transitions and bifurcations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3d-structure-and-topology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3D structure and topology
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loopsage-scan-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        loopsage-scan options
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#from-python" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From Python
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes-on-running-time-and-accuracy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes on running time and accuracy
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="sensitivity-scans">Sensitivity scans<a class="headerlink" href="#sensitivity-scans" title="Permanent link">&para;</a></h1>
+<p><code>loopsage-scan</code> runs many small simulations on a synthetic polymer, varies the parameters you choose, and combines everything into one report, <code>sensitivity_report.html</code>. It answers questions such as: <em>which parameter controls the loop size? where does the system change its behaviour? do links appear in 3D when topoisomerase is slow?</em></p>
+<h2 id="why-a-sensitivity-scan-gives-biophysical-insight">Why a sensitivity scan gives biophysical insight<a class="headerlink" href="#why-a-sensitivity-scan-gives-biophysical-insight" title="Permanent link">&para;</a></h2>
+<p>A single simulation shows what one parameter set does. It does not tell you <strong>which parameters matter</strong>, <strong>how strongly</strong>, or <strong>where the behaviour changes</strong>. A scan does, and this is the same thing an experiment does when it varies one condition at a time.</p>
+<ul>
+<li><strong>Which knob controls which observable.</strong> The <em>importance map</em> shows the share of the variance of every output (mean loop size, number of parent and child loops, bound fraction, ...) explained by every input. A knob with a small share can be fixed; a knob with a large share must be measured or fitted.</li>
+<li><strong>Scaling laws.</strong> The <em>elasticity</em> is the percent change of an output per percent change of an input (the log-log slope). An elasticity of 1 means proportional, for example loop size growing with extruder processivity.</li>
+<li><strong>Interactions.</strong> Sobol indices separate the effect of an input alone (S1) from its effect together with others (ST). ST much larger than S1 means the inputs act in combination.</li>
+<li><strong>Phase transitions and bifurcations.</strong> Loop extrusion competes with thermal noise. At low temperature loops freeze, at high temperature they dissolve, and in between the system may change abruptly. A dense scan along one input finds where, and tells a smooth change from a sharp one (see below).</li>
+<li><strong>Topology.</strong> In 3D, loops can link like rings of a chain, and a chain can pass through itself. The scan counts both and shows how they depend on topoisomerase activity and excluded volume.</li>
+<li><strong>Trust.</strong> Every point is repeated with several seeds, so the report shows noise, equilibration and effective sample size next to every result.</li>
+</ul>
+<h2 id="quick-start">Quick start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>loopsage-scan<span class="w"> </span>--init<span class="w"> </span>scan.ini<span class="w">      </span><span class="c1"># write a template</span>
+loopsage-scan<span class="w"> </span>scan.ini<span class="w"> </span>--dry-run<span class="w">   </span><span class="c1"># count the runs and estimate the time</span>
+loopsage-scan<span class="w"> </span>scan.ini<span class="w">             </span><span class="c1"># run; writes results/scan_&lt;name&gt;/sensitivity_report.html</span>
+</code></pre></div>
+<p>To try it without writing a file, run the demo scan <code>python demo/run_demo.py sensitivity</code> (about 20 s; its settings are in <code>demo/demo_sensitivity.ini</code>).</p>
+<p>Open the report in any browser; it is one self-contained file. Finished runs are cached, so re-running a scan after you add a value only simulates the new points, and <code>--replot</code> rebuilds the report without running anything.</p>
+<h2 id="the-scan-file">The scan file<a class="headerlink" href="#the-scan-file" title="Permanent link">&para;</a></h2>
+<p>A scan file is an <code>.ini</code> file with five sections.</p>
+<div class="highlight"><pre><span></span><code><span class="na">[scan]                     # how to scan</span>
+<span class="na">name</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s">temperature_and_rings</span>
+<span class="na">design</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s">grid</span><span class="w">          </span><span class="c1"># grid | oat | random | sobol</span>
+<span class="na">replicates</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4</span><span class="w">             </span><span class="c1"># seeds per point; every point uses the same seeds</span>
+<span class="na">snapshots</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">200</span><span class="w">           </span><span class="c1"># saved configurations per run</span>
+<span class="na">metrics</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">default</span><span class="w">       </span><span class="c1"># default | all | a list</span>
+
+<span class="na">[system]                   # the synthetic polymer</span>
+<span class="na">n_beads</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s">300</span><span class="w">          </span><span class="c1"># 200 to 500 is typical</span>
+<span class="na">bp_per_bead</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">10000</span>
+<span class="na">n_ctcf</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s">12</span><span class="w">           </span><span class="c1"># CTCF sites</span>
+<span class="na">layout</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s">even</span><span class="w">         </span><span class="c1"># even | random</span>
+<span class="na">orientation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">convergent</span><span class="w">   </span><span class="c1"># convergent | random | forward | reverse</span>
+
+<span class="na">[base]                     # fixed parameters</span><span class="o">:</span><span class="w"> </span><span class="s">any key of config.ini</span>
+<span class="na">n_steps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">100000</span>
+
+<span class="na">[sweep]                    # what to vary</span>
+<span class="na">T</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s">lin(1, 16, 12)</span><span class="w">     </span><span class="c1"># 12 temperatures from 1 to 16</span>
+<span class="na">n_lef</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4, 12</span><span class="w">              </span><span class="c1"># two numbers of extruders</span>
+</code></pre></div>
+<p><strong>Writing an axis.</strong> Each line of <code>[sweep]</code> is one input to vary. Values can be a list (<code>4, 8, 16</code>), a range (<code>4:16:4</code> means 4, 8, 12, 16), <code>lin(a, b, n)</code> for <code>n</code> evenly spaced values, or <code>log(a, b, n)</code> for <code>n</code> values evenly spaced on a logarithmic scale. <code>T</code> is a shortcut that sets both <code>t_init</code> and <code>t_final</code>. Polymer settings are scanned as <code>system.n_beads</code>. Any key of the <a href="../config/">config page</a> can be an axis.</p>
+<p><strong>Choosing a design.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Design</th>
+<th>Runs</th>
+<th>Use it to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>grid</code></td>
+<td>product of all axes</td>
+<td>see every combination, draw heat maps and find transitions</td>
+</tr>
+<tr>
+<td><code>oat</code></td>
+<td>one axis at a time</td>
+<td>get a first local picture with few runs</td>
+</tr>
+<tr>
+<td><code>random</code></td>
+<td><code>samples</code> quasi-random points</td>
+<td>cover many inputs with few runs</td>
+</tr>
+<tr>
+<td><code>sobol</code></td>
+<td><code>samples</code> x (inputs + 2)</td>
+<td>measure S1 and ST with confidence intervals</td>
+</tr>
+</tbody>
+</table>
+<p>The total is printed first by <code>--dry-run</code>, with a time estimate; <code>max_runs</code> stops accidental explosions.</p>
+<p><strong>Defaults of the sandbox.</strong> Unless you change them in <code>[base]</code>, a scan uses the Metropolis sampler at <code>T = 5</code> and <code>bind_coeff = 0.05</code>. This is a lively regime for a handful of sites, not a recommendation for real data.</p>
+<h2 id="outputs-of-the-report">Outputs of the report<a class="headerlink" href="#outputs-of-the-report" title="Permanent link">&para;</a></h2>
+<p>The report has these sections: <em>Overview</em>, <em>At a glance</em> (plain-language findings and the importance map), <em>Phase transitions and bifurcations</em>, one section per group of outputs (loops, nesting, binding, energy, 3D structure, topology), <em>Quality</em>, <em>Setup</em> and a <em>Glossary</em>. Next to it the scan writes <code>sensitivity_runs.csv</code> (one row per run), <code>sensitivity_points.csv</code>, <code>sensitivity_importance.csv</code> and, for Sobol designs, <code>sensitivity_sobol.csv</code>.</p>
+<p>Outputs (metrics) include the mean loop length, unfolded fraction, number of <strong>parent</strong> loops (hold other loops), <strong>child</strong> loops (sit inside another), isolated loops, nesting depth, bound fraction at CTCF sites, anchored-loop fraction and energy. <code>loopsage-scan --list-metrics</code> lists all of them.</p>
+<h2 id="phase-transitions-and-bifurcations">Phase transitions and bifurcations<a class="headerlink" href="#phase-transitions-and-bifurcations" title="Permanent link">&para;</a></h2>
+<p>Give one input <strong>at least four values, preferably ten or more</strong>, and three or more replicates. The report then follows each output along that input and looks for a sharp change. For every detected change it shows:</p>
+<ul>
+<li>the <strong>order parameter</strong> (the output) against the <strong>control parameter</strong> (the input), with the transition interval shaded;</li>
+<li>its <strong>fluctuations</strong> in time (susceptibility), which peak at a continuous transition;</li>
+<li>the <strong>autocorrelation time</strong>, which peaks at <em>critical slowing down</em>;</li>
+<li>a <strong>bifurcation diagram</strong>: snapshots of the output at each input value, with one line per replicate. Two separate clouds at one value, or replicates that follow different lines, suggest two coexisting states (a first-order transition or a bifurcation);</li>
+<li><strong>histograms</strong> of the output across the transition;</li>
+<li>with two inputs on a grid, a <strong>phase map</strong>: the transition line as a function of the second input;</li>
+<li>if you scan <code>system.n_beads</code> together with <code>system.ctcf_spacing</code> (beads between sites, keeps the density fixed), a <strong>Binder cumulant</strong> plot whose crossing marks a continuous transition.</li>
+</ul>
+<p>The text next to each case states what the numbers suggest and suggests a finer range, for example <code>T = lin(1.8, 4.3, 12)</code>, to resolve it. The scan sees only the grid you give it: a steep crossover and a true transition look alike on a coarse grid, and hysteresis (different paths up and down) cannot be tested because each run starts from scratch. Read "possible bistability" as a hint to confirm with more replicates.</p>
+<h2 id="3d-structure-and-topology">3D structure and topology<a class="headerlink" href="#3d-structure-and-topology" title="Permanent link">&para;</a></h2>
+<p>Add <code>md = true</code> (or <code>--md</code>) to build a short 3D trajectory in every run and report the radius of gyration, compaction, contact-decay exponent and anchor contacts. Add <code>topology = true</code> (or <code>--topology</code>) to also count <strong>links</strong> between loops and <strong>chain crossings</strong>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">[scan]</span>
+<span class="na">md</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s">true</span>
+<span class="na">topology</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">true</span>
+<span class="na">md_frames</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">20</span><span class="w">             </span><span class="c1"># 3D frames analysed per run</span>
+
+<span class="k">[sweep]</span>
+<span class="na">n_lef</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s">8, 16</span>
+<span class="na">topo_rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.0, 0.01, 0.05</span><span class="w">   </span><span class="c1"># topoisomerase events</span>
+</code></pre></div>
+<p>Linked pairs are rare events, so the share of linked loop pairs is pooled over all frames and replicates, with a binomial error bar, rather than averaged run by run. The report also relates <strong>crossing leaks</strong> (the chain passing through itself even though no topoisomerase acted) to the <strong>strand-crossing barrier</strong> of the excluded volume. Sweeping a topology setting (<code>topo_*</code>, <code>ev_*</code>) switches 3D and topology on automatically. 3D runs are much slower: use fewer points and check <code>--dry-run</code>.</p>
+<h2 id="loopsage-scan-options"><code>loopsage-scan</code> options<a class="headerlink" href="#loopsage-scan-options" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scan</code></td>
+<td>the scan file</td>
+</tr>
+<tr>
+<td><code>-o, --out DIR</code></td>
+<td>output folder (default <code>results/scan_&lt;name&gt;</code>)</td>
+</tr>
+<tr>
+<td><code>-j, --workers N</code></td>
+<td>worker processes (default: all cores; every worker uses one thread)</td>
+</tr>
+<tr>
+<td><code>--set SECTION.KEY=VALUE</code></td>
+<td>override a setting, e.g. <code>--set scan.replicates=8 --set sweep.T=1,2,4</code></td>
+</tr>
+<tr>
+<td><code>--md</code>, <code>--topology</code></td>
+<td>switch on 3D structures, and link and crossing analysis</td>
+</tr>
+<tr>
+<td><code>--dry-run</code></td>
+<td>count the runs and estimate the time; run nothing</td>
+</tr>
+<tr>
+<td><code>--replot</code></td>
+<td>rebuild the report from the cache</td>
+</tr>
+<tr>
+<td><code>--no-cache</code></td>
+<td>ignore the cache of finished runs</td>
+</tr>
+<tr>
+<td><code>--init FILE</code></td>
+<td>write a template scan file</td>
+</tr>
+<tr>
+<td><code>--list-metrics</code></td>
+<td>list all outputs</td>
+</tr>
+<tr>
+<td><code>-q, --quiet</code></td>
+<td>no progress bar</td>
+</tr>
+</tbody>
+</table>
+<h2 id="from-python">From Python<a class="headerlink" href="#from-python" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">loopsage</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ls</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">ls</span><span class="o">.</span><span class="n">sweep</span><span class="p">({</span><span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="s2">&quot;lin(1, 16, 12)&quot;</span><span class="p">,</span> <span class="s2">&quot;n_lef&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">12</span><span class="p">]},</span>
+               <span class="n">system</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;n_beads&quot;</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span> <span class="s2">&quot;n_ctcf&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span> <span class="n">base</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;n_steps&quot;</span><span class="p">:</span> <span class="mi">100000</span><span class="p">},</span>
+               <span class="n">replicates</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s2">&quot;my_scan&quot;</span><span class="p">)</span>       <span class="c1"># writes my_scan/sensitivity_report.html</span>
+<span class="n">res</span><span class="o">.</span><span class="n">table</span>                                         <span class="c1"># one row per run (pandas DataFrame)</span>
+</code></pre></div>
+<p><code>res.table</code> has the inputs, the mean of every output over the production part of each run, and, for each output, its autocorrelation time (<code>tau:&lt;name&gt;</code>), its fluctuation (<code>std:&lt;name&gt;</code>) and its Binder cumulant (<code>u4:&lt;name&gt;</code>).</p>
+<h2 id="notes-on-running-time-and-accuracy">Notes on running time and accuracy<a class="headerlink" href="#notes-on-running-time-and-accuracy" title="Permanent link">&para;</a></h2>
+<p>Runs are independent, so they are spread over all cores, and each run gives up its raw trajectory as soon as the outputs are computed, so memory stays small. The same seeds are used at every point (common random numbers), which makes differences between points much less noisy than the noise of single runs. More snapshots per run do not add independent information; more steps or more replicates do (the <em>Quality</em> section tells you which is needed).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../config/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Config files">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Config files
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../acknowledgments/" class="md-footer__link md-footer__link--next" aria-label="Next: Acknowledgments">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Acknowledgments
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

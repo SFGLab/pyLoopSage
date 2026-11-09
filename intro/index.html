@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -535,6 +535,34 @@
     
   
     Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="inspiration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspiration
   
 
     
@@ -1152,6 +1180,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/data-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/cli/" class="md-nav__link">
         
   
@@ -1180,6 +1236,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/config/" class="md-nav__link">
         
   
@@ -1188,6 +1272,34 @@
     
   
     Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/sensitivity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sensitivity scans
   
 
     
@@ -1338,16 +1450,16 @@
 
 <p><img alt="LoopSage" class="home-banner" src="../assets/logo.svg" /></p>
 <p align="center">
-  <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
-  <img alt="OpenMM" src="https://img.shields.io/badge/OpenMM-8.5%2B-6a3de8">
-  <img alt="Numba" src="https://img.shields.io/badge/Numba-JIT%20sampler-00A3E0?logo=numba&logoColor=white">
-  <img alt="PyVista" src="https://img.shields.io/badge/PyVista-3D%20viewer-FF7F00">
-  <img alt="Docker" src="https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white">
-  <img alt="NumPy" src="https://img.shields.io/badge/NumPy-013243?logo=numpy&logoColor=white">
-  <img alt="SciPy" src="https://img.shields.io/badge/SciPy-8CAAE6?logo=scipy&logoColor=white">
-  <img alt="MDTraj" src="https://img.shields.io/badge/MDTraj-trajectories-1a1a1f">
-  <img alt="pytest" src="https://img.shields.io/badge/tested%20with-pytest-0A9EDC?logo=pytest&logoColor=white">
-  <img alt="GPL v3 license" src="https://img.shields.io/badge/License-GPL%20v3-blue">
+  <a href="https://www.python.org"><img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white"></a>
+  <a href="https://openmm.org"><img alt="OpenMM" src="https://img.shields.io/badge/OpenMM-8.5%2B-6a3de8"></a>
+  <a href="https://numba.pydata.org"><img alt="Numba" src="https://img.shields.io/badge/Numba-JIT%20sampler-00A3E0?logo=numba&logoColor=white"></a>
+  <a href="https://pyvista.org"><img alt="PyVista" src="https://img.shields.io/badge/PyVista-3D%20viewer-FF7F00"></a>
+  <a href="https://www.docker.com"><img alt="Docker" src="https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white"></a>
+  <a href="https://numpy.org"><img alt="NumPy" src="https://img.shields.io/badge/NumPy-013243?logo=numpy&logoColor=white"></a>
+  <a href="https://scipy.org"><img alt="SciPy" src="https://img.shields.io/badge/SciPy-8CAAE6?logo=scipy&logoColor=white"></a>
+  <a href="https://mdtraj.org"><img alt="MDTraj" src="https://img.shields.io/badge/MDTraj-trajectories-1a1a1f"></a>
+  <a href="https://github.com/SFGLab/pyLoopSage/tree/main/tests"><img alt="pytest" src="https://img.shields.io/badge/tested%20with-pytest-0A9EDC?logo=pytest&logoColor=white"></a>
+  <a href="https://www.gnu.org/licenses/gpl-3.0.html"><img alt="GPL v3 license" src="https://img.shields.io/badge/License-GPL%20v3-blue"></a>
 </p>
 
 <h1 id="what-is-loopsage">What is LoopSage?<a class="headerlink" href="#what-is-loopsage" title="Permanent link">&para;</a></h1>
@@ -1428,7 +1540,7 @@ It models how the protein complex <strong>cohesin</strong> pushes DNA through it
 <div class="highlight"><pre><span></span><code>loopsage<span class="w"> </span>-f<span class="w"> </span>loops.bedpe<span class="w"> </span>-r<span class="w"> </span>chr1:77000000-95000000
 </code></pre></div>
 <p>Then open <code>results/chr1_77000000_95000000_1/report/report.html</code> in a browser.
-Install the program first: see <a href="installation/">Installation</a>. All options are listed in the <a href="../reference/">Reference</a>.</p>
+Install the program first: see <a href="installation/">Installation</a>. To learn why LoopSage is built the way it is, read the <a href="inspiration/">Inspiration</a>. All options are listed in the <a href="../reference/">Reference</a>.</p>
 <h2 id="citation">Citation<a class="headerlink" href="#citation" title="Permanent link">&para;</a></h2>
 <p>If you use LoopSage, please cite:</p>
 <ul>
@@ -1517,7 +1629,7 @@ Install the program first: see <a href="installation/">Installation</a>. All opt
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../javascripts/mathjax.js"></script>
       

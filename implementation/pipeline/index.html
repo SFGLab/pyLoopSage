@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -430,6 +430,34 @@
     
   
     Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/inspiration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspiration
   
 
     
@@ -1154,6 +1182,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/data-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/cli/" class="md-nav__link">
         
   
@@ -1182,6 +1238,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/config/" class="md-nav__link">
         
   
@@ -1190,6 +1274,34 @@
     
   
     Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/sensitivity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sensitivity scans
   
 
     
@@ -1406,8 +1518,8 @@ loopsage<span class="w"> </span>-f<span class="w"> </span>loops.bedpe<span class
 loopsage<span class="w"> </span>-f<span class="w"> </span>loops.bedpe<span class="w"> </span>-r<span class="w"> </span>chr1:78000000-92000000<span class="w"> </span>-n<span class="w"> </span><span class="m">1000</span><span class="w"> </span>--run-MD<span class="w"> </span>--optimize<span class="w"> </span>--hic<span class="w"> </span>sample.hic
 </code></pre></div>
 <p>You can also run <strong>one stage</strong> on its own. The earlier stages are then not recomputed: their saved results are loaded from the latest run folder.</p>
-<div class="highlight"><pre><span></span><code>python<span class="w"> </span>src/pipeline/stage_mc.py<span class="w"> </span>-c<span class="w"> </span>config.ini<span class="w">      </span><span class="c1"># only the Monte Carlo, inputs are reused</span>
-python<span class="w"> </span>src/pipeline/stage_md.py<span class="w"> </span>-c<span class="w"> </span>config.ini<span class="w">      </span><span class="c1"># only the MD, the Monte Carlo is reused</span>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>loopsage.pipeline.stage_mc<span class="w"> </span>-c<span class="w"> </span>config.ini<span class="w">      </span><span class="c1"># only the Monte Carlo, inputs are reused</span>
+python<span class="w"> </span>-m<span class="w"> </span>loopsage.pipeline.stage_md<span class="w"> </span>-c<span class="w"> </span>config.ini<span class="w">      </span><span class="c1"># only the MD, the Monte Carlo is reused</span>
 </code></pre></div>
 <p>Because the Monte Carlo result is saved, you can change only MD options (time step, forces, number of steps per frame) and repeat the MD without sampling the loops again.</p>
 <h2 id="the-run-folder">The run folder<a class="headerlink" href="#the-run-folder" title="Permanent link">&para;</a></h2>
@@ -1432,23 +1544,23 @@ python<span class="w"> </span>src/pipeline/stage_md.py<span class="w"> </span>-c
 </thead>
 <tbody>
 <tr>
-<td><code>src/run.py</code></td>
-<td>entry point: reads the configuration and starts the pipeline</td>
+<td><code>src/loopsage/api.py</code></td>
+<td>entry points: the <code>loopsage</code> command (<code>cli</code>) and the Python functions</td>
 </tr>
 <tr>
-<td><code>src/pipeline/runner.py</code></td>
+<td><code>src/loopsage/pipeline/runner.py</code></td>
 <td>the run context and the loop over the stages (compute, or load the saved result, then describe)</td>
 </tr>
 <tr>
-<td><code>src/pipeline/stage_*.py</code></td>
+<td><code>src/loopsage/pipeline/stage_*.py</code></td>
 <td>one file per stage; each has <code>enabled</code>, <code>compute</code>, <code>load</code> and <code>describe</code></td>
 </tr>
 <tr>
-<td><code>src/knots/stage.py</code></td>
+<td><code>src/loopsage/knots/stage.py</code></td>
 <td>the optional links stage</td>
 </tr>
 <tr>
-<td><code>src/settings/</code></td>
+<td><code>src/loopsage/settings/</code></td>
 <td>the list of options (<code>schema.py</code>), reading of files and command line, checks</td>
 </tr>
 </tbody>
@@ -1551,7 +1663,7 @@ python<span class="w"> </span>src/pipeline/stage_md.py<span class="w"> </span>-c
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

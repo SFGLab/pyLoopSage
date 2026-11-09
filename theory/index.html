@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://sfglab.github.io/pyLoopSage/theory/">
       
       
-        <link rel="prev" href="../intro/installation/">
+        <link rel="prev" href="../intro/inspiration/">
       
       
         <link rel="next" href="scope/">
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -430,6 +430,34 @@
     
   
     Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../intro/inspiration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspiration
   
 
     
@@ -1062,6 +1090,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/data-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/cli/" class="md-nav__link">
         
   
@@ -1090,6 +1146,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/config/" class="md-nav__link">
         
   
@@ -1098,6 +1182,34 @@
     
   
     Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/sensitivity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sensitivity scans
   
 
     
@@ -1184,15 +1296,20 @@
 
 
 <h1 id="theory">Theory<a class="headerlink" href="#theory" title="Permanent link">&para;</a></h1>
-<p>The model behind LoopSage: loop extrusion, the energy function, Monte Carlo sampling and the 3D polymer.</p>
+<p>Welcome! This part of the documentation explains the ideas behind LoopSage, from the biology of loop extrusion to the physics and statistics that turn it into a working model. You do not need a particular background to read it. Every new word and every symbol is explained when it first appears, so a biologist can follow the mathematics, and a physicist or mathematician can follow the biology.</p>
+<p>The pages build on each other, but each one can also be read alone.</p>
 <ul>
-<li><a href="scope/">Scope</a>: what the model should explain, and how a few rules produce the patterns of a contact map.</li>
-<li><a href="loop-extrusion/">Loop extrusion</a>: the molecular players (cohesin, CTCF, condensin), the loop extrusion model with its assumptions, TADs and contact maps, stripes and why dynamics is needed.</li>
-<li><a href="mechanics/">Mechanics</a>: Hamiltonian, phase space, ensembles, the Boltzmann law, and why an energy-based model is a good approximation for a cell that is not in equilibrium.</li>
-<li><a href="mcmc/">MCMC</a>: Markov chains, detailed balance, ergodicity, ergodic means, burn-in and autocorrelation.</li>
-<li><a href="molecular-dynamics/">Molecular dynamics</a>: the polymer, the force field, Newton's second law and the Langevin equation.</li>
-<li><a href="topology/">Topology</a>: knots, links and the linking number, how it is computed in 3D, and how loops are checked for linking (optional, advanced).</li>
+<li><a href="scope/">Scope</a>: what we want the model to explain, and how a handful of simple rules can produce the patterns of a Hi-C contact map.</li>
+<li><a href="loop-extrusion/">Loop extrusion</a>: the molecular players (cohesin, CTCF, condensin), the loop extrusion model and its assumptions, TADs, loop dots and stripes, and why a snapshot is not enough and dynamics is needed.</li>
+<li><a href="mechanics/">Mechanics</a>: Hamiltonian, phase space, ensembles and the Boltzmann law, and why an energy-based model is a reasonable approximation for a living cell that is not in equilibrium.</li>
+<li><a href="mcmc/">MCMC</a>: Markov chains, detailed balance, ergodicity, ergodic means, burn-in and autocorrelation: how the sampler works and how to tell that it worked.</li>
+<li><a href="molecular-dynamics/">Molecular dynamics</a>: the polymer, the force field, Newton's second law and the Langevin equation: how a set of loops becomes a 3D structure.</li>
+<li><a href="topology/">Topology</a>: knots, links and the linking number, how it is computed in 3D, and how LoopSage checks whether loops are interlocked (optional and advanced).</li>
 </ul>
+<div class="admonition tip">
+<p class="admonition-title">Where to start</p>
+<p>If you are new to the field, read the pages in the order above. If you only want to know what a setting does, go to the <a href="../reference/">reference</a> or the <a href="../implementation/">implementation</a> pages, which link back here whenever an idea needs more explanation.</p>
+</div>
 
 
 
@@ -1228,7 +1345,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../intro/installation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Installation">
+          <a href="../intro/inspiration/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Inspiration">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1238,7 +1355,7 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Installation
+                Inspiration
               </div>
             </div>
           </a>
@@ -1291,7 +1408,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../javascripts/mathjax.js"></script>
       

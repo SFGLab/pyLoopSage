@@ -13,17 +13,17 @@
         <link rel="canonical" href="https://sfglab.github.io/pyLoopSage/reference/cli/">
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../data-input/">
       
       
-        <link rel="next" href="../config/">
+        <link rel="next" href="../python/">
       
       
         
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -430,6 +430,34 @@
     
   
     Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/inspiration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspiration
   
 
     
@@ -1049,6 +1077,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1179,10 +1235,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#monte-carlo-loop-extrusion-sampler" class="md-nav__link">
+  <a href="#monte-carlo" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Monte Carlo (loop extrusion) sampler
+        Monte Carlo
       
     </span>
   </a>
@@ -1201,10 +1257,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#molecular-dynamics-3d-structures" class="md-nav__link">
+  <a href="#molecular-dynamics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Molecular dynamics (3D structures)
+        Molecular dynamics
       
     </span>
   </a>
@@ -1234,10 +1290,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#parameter-optimizer-optimize" class="md-nav__link">
+  <a href="#parameter-optimizer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Parameter optimizer (--optimize)
+        Parameter optimizer
       
     </span>
   </a>
@@ -1245,10 +1301,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#topology-topoisomerase-chain-crossings-and-linking-optional-advanced" class="md-nav__link">
+  <a href="#topology" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Topology: topoisomerase, chain crossings and linking (optional, advanced)
+        Topology
       
     </span>
   </a>
@@ -1298,6 +1354,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../config/" class="md-nav__link">
         
   
@@ -1306,6 +1390,34 @@
     
   
     Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sensitivity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sensitivity scans
   
 
     
@@ -1447,10 +1559,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#monte-carlo-loop-extrusion-sampler" class="md-nav__link">
+  <a href="#monte-carlo" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Monte Carlo (loop extrusion) sampler
+        Monte Carlo
       
     </span>
   </a>
@@ -1469,10 +1581,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#molecular-dynamics-3d-structures" class="md-nav__link">
+  <a href="#molecular-dynamics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Molecular dynamics (3D structures)
+        Molecular dynamics
       
     </span>
   </a>
@@ -1502,10 +1614,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#parameter-optimizer-optimize" class="md-nav__link">
+  <a href="#parameter-optimizer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Parameter optimizer (--optimize)
+        Parameter optimizer
       
     </span>
   </a>
@@ -1513,10 +1625,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#topology-topoisomerase-chain-crossings-and-linking-optional-advanced" class="md-nav__link">
+  <a href="#topology" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Topology: topoisomerase, chain crossings and linking (optional, advanced)
+        Topology
       
     </span>
   </a>
@@ -1719,7 +1831,7 @@ loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class=
 <td><code>-o</code>, <code>--out</code></td>
 <td>text</td>
 <td><em>(empty)</em></td>
-<td>Results folder (empty = <project>/results); each run gets its own subfolder</td>
+<td>Results folder (empty = ./results in the current folder); each run gets its own subfolder</td>
 </tr>
 <tr>
 <td><code>--run</code></td>
@@ -1761,7 +1873,7 @@ loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class=
 <td><code>--save-ensemble</code> / <code>--no-save-ensemble</code></td>
 <td>true / false</td>
 <td><code>True</code></td>
-<td>Save every MD frame as .cif</td>
+<td>Save the 3D structures: every MD frame as .cif, plus the start structure, topology and trajectory (structures/)</td>
 </tr>
 </tbody>
 </table>
@@ -1790,7 +1902,7 @@ loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class=
 </tr>
 </tbody>
 </table>
-<h3 id="monte-carlo-loop-extrusion-sampler">Monte Carlo (loop extrusion) sampler<a class="headerlink" href="#monte-carlo-loop-extrusion-sampler" title="Permanent link">&para;</a></h3>
+<h3 id="monte-carlo">Monte Carlo<a class="headerlink" href="#monte-carlo" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -1894,7 +2006,7 @@ loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class=
 </tr>
 </tbody>
 </table>
-<h3 id="molecular-dynamics-3d-structures">Molecular dynamics (3D structures)<a class="headerlink" href="#molecular-dynamics-3d-structures" title="Permanent link">&para;</a></h3>
+<h3 id="molecular-dynamics">Molecular dynamics<a class="headerlink" href="#molecular-dynamics" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -1977,11 +2089,11 @@ loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class=
 <td><code>--track-smooth</code></td>
 <td>number (beads)</td>
 <td><code>7.0</code></td>
-<td>Gaussian smoothing of the Hi-C insulation score and of the eigenvector (A/B track) used as input and for validation (0 = off)</td>
+<td>Gaussian smoothing of the Hi-C insulation score and of the A/B track (Hi-C eigenvector or compartment BigWig) used as input and for validation (0 = off)</td>
 </tr>
 </tbody>
 </table>
-<h3 id="parameter-optimizer-optimize">Parameter optimizer (--optimize)<a class="headerlink" href="#parameter-optimizer-optimize" title="Permanent link">&para;</a></h3>
+<h3 id="parameter-optimizer">Parameter optimizer<a class="headerlink" href="#parameter-optimizer" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -2048,7 +2160,7 @@ loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class=
 </tr>
 </tbody>
 </table>
-<h3 id="topology-topoisomerase-chain-crossings-and-linking-optional-advanced">Topology: topoisomerase, chain crossings and linking (optional, advanced)<a class="headerlink" href="#topology-topoisomerase-chain-crossings-and-linking-optional-advanced" title="Permanent link">&para;</a></h3>
+<h3 id="topology">Topology<a class="headerlink" href="#topology" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -2070,11 +2182,49 @@ loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class=
 <h2 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h2>
 <p>Every run gets its own folder, <code>results/&lt;chrom&gt;_&lt;start&gt;_&lt;end&gt;_&lt;run&gt;/</code>, with the report in <code>report/report.html</code>, the figures in <code>visualizations/</code>, the 3D structures in <code>structures/</code>, and the numerical results in <code>data/</code> (matrices in <code>data/metadata/</code> as <code>.npy</code> files).
 Use <code>-o</code> to choose another results folder and <code>--run N</code> to fix the run number.</p>
+<p><strong>Everything is saved by default</strong>, from the command line and from a config file. Each kind of output has its own switch to turn it off (<code>--no-...</code>, or <code>... = False</code> in the config file):</p>
+<table>
+<thead>
+<tr>
+<th>Output</th>
+<th>Where</th>
+<th>Switch to turn it off</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HTML report</td>
+<td><code>report/report.html</code></td>
+<td><code>--no-report</code></td>
+</tr>
+<tr>
+<td>Figures (PNG and SVG)</td>
+<td><code>visualizations/</code></td>
+<td><code>--no-figures</code></td>
+</tr>
+<tr>
+<td>Matrices as <code>.npy</code> (contact maps, distances, strengths)</td>
+<td><code>data/metadata/</code></td>
+<td><code>--no-metadata</code></td>
+</tr>
+<tr>
+<td>3D structures: every MD frame as <code>.cif</code>, start structure, topology, trajectory</td>
+<td><code>structures/</code></td>
+<td><code>--no-save-ensemble</code></td>
+</tr>
+<tr>
+<td>3D viewer and videos</td>
+<td><code>visualizations/3d/</code></td>
+<td><code>--no-render-3d</code></td>
+</tr>
+</tbody>
+</table>
+<p>The results of the stages (<code>data/*.npz</code>), the log and <code>config_resolved.ini</code> are always written, because the stages and the repeatability of a run depend on them. From <a href="../python/">Python</a>, the step functions (<code>ls.run_mc</code>, <code>ls.run_md</code>, ...) write nothing; <code>ls.run</code> writes the same run folder as the command.</p>
 <h2 id="run-only-some-stages">Run only some stages<a class="headerlink" href="#run-only-some-stages" title="Permanent link">&para;</a></h2>
 <p>The pipeline has seven stages: reading the input, Monte Carlo, molecular dynamics, 3D structure analysis, validation, linking analysis and the report.
 Each stage can also be started alone with the same options; it re-uses the saved result of the earlier stages from the latest run.</p>
-<div class="highlight"><pre><span></span><code>python<span class="w"> </span>src/pipeline/stage_mc.py<span class="w"> </span>-c<span class="w"> </span>config.ini<span class="w">      </span><span class="c1"># Monte Carlo (and the input before it)</span>
-python<span class="w"> </span>src/pipeline/stage_md.py<span class="w"> </span>-c<span class="w"> </span>config.ini<span class="w">      </span><span class="c1"># up to the 3D molecular dynamics</span>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>loopsage.pipeline.stage_mc<span class="w"> </span>-c<span class="w"> </span>config.ini<span class="w">      </span><span class="c1"># Monte Carlo (and the input before it)</span>
+python<span class="w"> </span>-m<span class="w"> </span>loopsage.pipeline.stage_md<span class="w"> </span>-c<span class="w"> </span>config.ini<span class="w">      </span><span class="c1"># up to the 3D molecular dynamics</span>
 </code></pre></div>
 
 
@@ -2111,7 +2261,7 @@ python<span class="w"> </span>src/pipeline/stage_md.py<span class="w"> </span>-c
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Overview">
+          <a href="../data-input/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Data input">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2121,20 +2271,20 @@ python<span class="w"> </span>src/pipeline/stage_md.py<span class="w"> </span>-c
                 Previous
               </span>
               <div class="md-ellipsis">
-                Overview
+                Data input
               </div>
             </div>
           </a>
         
         
           
-          <a href="../config/" class="md-footer__link md-footer__link--next" aria-label="Next: Config files">
+          <a href="../python/" class="md-footer__link md-footer__link--next" aria-label="Next: Python interface">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Config files
+                Python interface
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -2174,7 +2324,7 @@ python<span class="w"> </span>src/pipeline/stage_md.py<span class="w"> </span>-c
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

@@ -16,14 +16,14 @@
         <link rel="prev" href="../">
       
       
-        <link rel="next" href="../../theory/">
+        <link rel="next" href="../inspiration/">
       
       
         
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -567,6 +567,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inspiration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspiration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1176,6 +1204,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/data-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/cli/" class="md-nav__link">
         
   
@@ -1204,6 +1260,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/config/" class="md-nav__link">
         
   
@@ -1212,6 +1296,34 @@
     
   
     Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/sensitivity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sensitivity scans
   
 
     
@@ -1408,14 +1520,14 @@ pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </s
 <span class="c1"># 5. install pyLoopSage itself (creates the `loopsage` command)</span>
 pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
 </code></pre></div>
-<p>Check the installation with <code>loopsage -h</code>. Without installing, you can also run <code>PYTHONPATH=src python src/run.py</code>.</p>
+<p>Check the installation with <code>loopsage -h</code>. The same command also runs as <code>python -m loopsage</code>.</p>
 <h2 id="check-that-it-works">Check that it works<a class="headerlink" href="#check-that-it-works" title="Permanent link">&para;</a></h2>
 <p>Run the small demo (under a minute) and open the report it writes:</p>
-<div class="highlight"><pre><span></span><code><span class="nv">PYTHONPATH</span><span class="o">=</span>src<span class="w"> </span>python<span class="w"> </span>demo/run_demo.py<span class="w"> </span>quick
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>demo/run_demo.py<span class="w"> </span>quick
 </code></pre></div>
 <p>The demo uses a small synthetic loop file shipped with the repository. It needs no downloads.</p>
 <p>To run the automatic tests (several minutes):</p>
-<div class="highlight"><pre><span></span><code><span class="nv">PYTHONPATH</span><span class="o">=</span>src<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>pytest
 </code></pre></div>
 <h2 id="choosing-the-3d-computing-platform">Choosing the 3D computing platform<a class="headerlink" href="#choosing-the-3d-computing-platform" title="Permanent link">&para;</a></h2>
 <p>The 3D stage runs on the fastest platform it finds, in this order: <strong>CUDA</strong> (NVIDIA GPU), <strong>OpenCL</strong>, then <strong>CPU</strong> with all cores. The chosen platform is always printed. To force one, use <code>--platform CUDA</code>, <code>--platform OpenCL</code> or <code>--platform CPU</code>.</p>
@@ -1485,13 +1597,13 @@ mkdocs<span class="w"> </span>build<span class="w">          </span><span class=
         
         
           
-          <a href="../../theory/" class="md-footer__link md-footer__link--next" aria-label="Next: Overview">
+          <a href="../inspiration/" class="md-footer__link md-footer__link--next" aria-label="Next: Inspiration">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Overview
+                Inspiration
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1531,7 +1643,7 @@ mkdocs<span class="w"> </span>build<span class="w">          </span><span class=
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

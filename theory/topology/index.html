@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -430,6 +430,34 @@
     
   
     Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/inspiration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspiration
   
 
     
@@ -1266,6 +1294,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/data-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/cli/" class="md-nav__link">
         
   
@@ -1294,6 +1350,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/config/" class="md-nav__link">
         
   
@@ -1302,6 +1386,34 @@
     
   
     Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/sensitivity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sensitivity scans
   
 
     
@@ -1563,23 +1675,21 @@
 
 
 <h1 id="topology">Topology<a class="headerlink" href="#topology" title="Permanent link">&para;</a></h1>
-<p>This page explains the <em>topological</em> side of LoopSage: whether the loops of a 3D structure are interlocked, how this is measured, and which optional switches model it.
-It is an advanced, optional feature. Nothing here runs by default and the default model is unchanged.</p>
+<p>This page explains the <em>topological</em> side of LoopSage: whether the loops of a 3D structure are interlocked, how this is measured, and which optional switches model it. It is an advanced, optional feature. Nothing here runs by default, and the default model is unchanged.</p>
 <h2 id="why-look-at-topology">Why look at topology?<a class="headerlink" href="#why-look-at-topology" title="Permanent link">&para;</a></h2>
-<p>A chromatin fibre is a very long thread. In the nucleus a thread cannot pass through another thread (the two strands repel each other), unless an enzyme, a <em>topoisomerase</em>, cuts one strand, passes the other one through and joins the cut again.
-Because of this rule, the way two pieces of the fibre are wound around each other is not changed by the usual motion of the chain. It is a <em>conserved</em> property, called its <em>topology</em>.</p>
-<p>In loop extrusion this matters in a concrete way. Each ring holds a <em>loop</em>, and loops of different rings sit close to each other in space. Two loops can lie next to each other like two separate rubber bands, or they can pass through each other like two links of a chain. The second case is called <em>catenation</em>, and it can only be created or removed by strand passage.</p>
+<p>A chromatin fibre is a very long thread. In the nucleus a thread cannot pass through another thread, because the two strands repel each other. The only exception is an enzyme called a <em>topoisomerase</em>, which cuts one strand, passes the other through, and seals the cut again. Because of this rule, the way two pieces of fibre are wound around each other is not changed by the usual motion of the chain. It is a <em>conserved</em> property, called its <em>topology</em>.</p>
+<p>In loop extrusion this matters in a concrete way. Each ring holds a <em>loop</em>, and the loops of different rings sit close to each other in space. Two loops can lie next to each other like two separate rubber bands, or they can pass through each other like two links of a chain. The second case is called <em>catenation</em>, and it can be created or removed only by strand passage.</p>
 <h2 id="knots-and-links">Knots and links<a class="headerlink" href="#knots-and-links" title="Permanent link">&para;</a></h2>
-<p>Topology studies shapes that can be deformed without cutting or gluing (a deformation without cutting is called an <em>isotopy</em>). Two objects are <em>the same</em> if one can be deformed into the other in this way. A coffee cup and a doughnut are the same in this sense, a doughnut and a sphere are not.</p>
+<p>Topology studies shapes that can be deformed without cutting or gluing (such a deformation is called an <em>isotopy</em>). Two objects count as <em>the same</em> if one can be deformed into the other in this way. A coffee cup and a doughnut are the same in this sense, whereas a doughnut and a sphere are not.</p>
 <p>For closed threads there are two basic objects.</p>
 <ul>
-<li>A <em>knot</em> is <em>one</em> closed curve in 3D space. The simplest closed curve is a round circle, the <em>unknot</em>. A knot is a closed curve that cannot be deformed into a circle without cutting it. The simplest one is the <em>trefoil</em>.</li>
-<li>A <em>link</em> is a set of <em>two or more</em> disjoint closed curves, called its <em>components</em>. The simplest link is the <em>Hopf link</em>: two circles, each passing through the other. The <em>unlink</em> is the trivial case, curves that can be pulled apart.</li>
+<li>A <em>knot</em> is <em>one</em> closed curve in 3D space. The simplest closed curve is a round circle, the <em>unknot</em>. A knot proper is a closed curve that cannot be deformed into a circle without cutting it. The simplest example is the <em>trefoil</em>.</li>
+<li>A <em>link</em> is a set of <em>two or more</em> disjoint closed curves, called its <em>components</em>. The simplest link is the <em>Hopf link</em>: two circles, each passing through the other. The <em>unlink</em> is the trivial case, curves that can simply be pulled apart.</li>
 </ul>
 <figure>
 <p><img alt="Knot, link and unlink" src="../../assets/theory/topology_dims.svg" width="760" />
   </p>
-<figcaption>A knot is one closed curve (here the trefoil), a link is several closed curves (here the Hopf link), and in the unlink the curves can be separated. At every crossing the strand that is cut by a gap passes <em>under</em> the other one.</figcaption>
+<figcaption>A knot is one closed curve (here the trefoil), a link is several closed curves (here the Hopf link), and in the unlink the curves can be separated. At every crossing, the strand that is cut by a gap passes <em>under</em> the other one.</figcaption>
 </figure>
 <h3 id="in-which-dimensions-do-they-exist">In which dimensions do they exist?<a class="headerlink" href="#in-which-dimensions-do-they-exist" title="Permanent link">&para;</a></h3>
 <p>A closed curve is a one-dimensional object. Knots and links need room to <em>go around</em> each other, and the number of dimensions of the space decides how much room there is.</p>
@@ -1616,12 +1726,11 @@ Because of this rule, the way two pieces of the fibre are wound around each othe
 <li><strong>The fibre is not closed.</strong> A chromosome piece is an open chain with two free ends, and strictly speaking an open chain cannot be knotted, because a knot needs a closed curve.</li>
 <li><strong>Loops are closed curves.</strong> The two legs of a ring, <span class="arithmatex">\(m_i\)</span> and <span class="arithmatex">\(n_i\)</span>, are held together by the ring, so they are neighbours in space. The stretch of fibre between them, closed by this short gap, is a closed curve (see below).</li>
 <li><strong>The question is about pairs.</strong> Loops are short and rarely knot on their own. The biologically interesting question is whether two <em>different</em> loops are interlocked, that is, whether the set of loops forms a link.</li>
-<li><strong>The ring itself is a link.</strong> A cohesin ring that holds DNA inside it is thought to be topologically linked with it (the ring entraps the fibre).</li>
+<li><strong>The ring itself is a link.</strong> A cohesin ring that holds DNA inside it is thought to be topologically linked with it, because the ring entraps the fibre.</li>
 </ol>
-<p>The tools that analyse <em>knots</em> of a single chain, such as the Python package <em>Topoly</em> (Dabrowski-Tumanski et al. 2021), compute polynomial invariants (Alexander, Jones, HOMFLY-PT) of a closed curve. They are the right tool to ask whether a protein or a closed DNA ring is knotted, and they can also compute linking numbers. LoopSage needs one quantity for many pairs of loops in thousands of frames, so it uses its own small implementation of the <em>linking number</em>, defined next. It does not depend on any external topology package.</p>
+<p>Tools that analyse the <em>knots</em> of a single chain, such as the Python package <em>Topoly</em> (Dabrowski-Tumanski et al. 2021), compute polynomial invariants (Alexander, Jones, HOMFLY-PT) of a closed curve. They are the right tool for asking whether a protein or a closed DNA ring is knotted, and they can also compute linking numbers. LoopSage needs one quantity for many pairs of loops in thousands of frames, so it uses its own small implementation of the <em>linking number</em>, defined next, and does not depend on any external topology package.</p>
 <h2 id="the-linking-number">The linking number<a class="headerlink" href="#the-linking-number" title="Permanent link">&para;</a></h2>
-<p>The <em>linking number</em> <span class="arithmatex">\(\mathrm{Lk}\)</span> is the simplest and most useful number that tells how two closed curves are interlocked.
-It is defined for two <em>oriented</em> curves (we choose a direction along each curve). Draw the pair on a plane, so that at every crossing one strand is over and the other is under. A crossing between the two curves gets a sign <span class="arithmatex">\(\varepsilon=\pm1\)</span>:</p>
+<p>The <em>linking number</em> <span class="arithmatex">\(\mathrm{Lk}\)</span> is the simplest and most useful number that tells how two closed curves are interlocked. It is defined for two <em>oriented</em> curves, which means that we choose a direction along each curve. Draw the pair on a plane, so that at every crossing one strand is over and the other is under. A crossing between the two curves gets a sign <span class="arithmatex">\(\varepsilon=\pm1\)</span>:</p>
 <ul>
 <li><span class="arithmatex">\(\varepsilon=+1\)</span> (<em>right-handed</em>) if the over strand has to be rotated counter-clockwise (by less than half a turn) to point along the under strand,</li>
 <li><span class="arithmatex">\(\varepsilon=-1\)</span> (<em>left-handed</em>) otherwise.</li>
@@ -1630,6 +1739,7 @@ It is defined for two <em>oriented</em> curves (we choose a direction along each
 <div class="arithmatex">\[
 \mathrm{Lk}(\gamma_1,\gamma_2) \;=\; \frac12 \sum_{\text{crossings between } \gamma_1 \text{ and } \gamma_2} \varepsilon .
 \]</div>
+<p>In plain words, <span class="arithmatex">\(\mathrm{Lk}\)</span> counts <em>how many times one curve winds around the other</em>, much as you would count the turns of a rubber band wrapped around a finger.</p>
 <p>Crossings of a curve with itself are not counted. Every crossing between the two curves is counted once, and half of the sum is used because, as in the Hopf link, the curves pass each other in pairs.</p>
 <figure>
 <p><img alt="Linking number" src="../../assets/theory/topology_lk.svg" width="760" />
@@ -1639,8 +1749,8 @@ It is defined for two <em>oriented</em> curves (we choose a direction along each
 <p>The most important properties are the following.</p>
 <ul>
 <li><span class="arithmatex">\(\mathrm{Lk}\)</span> is an <em>integer</em>, and it does not depend on how the curves are drawn: any deformation without cutting leaves it unchanged. It is an <em>invariant</em>.</li>
-<li>If <span class="arithmatex">\(\mathrm{Lk}\neq0\)</span> the curves are linked. The reverse is not true: there are linked curves with <span class="arithmatex">\(\mathrm{Lk}=0\)</span> (the Whitehead link), so <span class="arithmatex">\(\mathrm{Lk}=0\)</span> only says that the simplest test finds no linking.</li>
-<li>When a strand of one curve is passed through the other curve (what a topoisomerase does), <span class="arithmatex">\(\mathrm{Lk}\)</span> changes by exactly <span class="arithmatex">\(\pm1\)</span>.</li>
+<li>If <span class="arithmatex">\(\mathrm{Lk}\neq0\)</span> the curves are linked. The reverse is not true: there are linked curves with <span class="arithmatex">\(\mathrm{Lk}=0\)</span> (the Whitehead link), so <span class="arithmatex">\(\mathrm{Lk}=0\)</span> only says that this simplest test finds no linking.</li>
+<li>When a strand of one curve is passed through the other curve (which is what a topoisomerase does), <span class="arithmatex">\(\mathrm{Lk}\)</span> changes by exactly <span class="arithmatex">\(\pm1\)</span>.</li>
 <li>Reversing the direction of one curve changes the sign of <span class="arithmatex">\(\mathrm{Lk}\)</span>. We therefore report <span class="arithmatex">\(|\mathrm{Lk}|\)</span> and call a pair <em>linked</em> if <span class="arithmatex">\(|\mathrm{Lk}|\ge 1\)</span>.</li>
 </ul>
 <h3 id="the-same-number-as-an-integral">The same number as an integral<a class="headerlink" href="#the-same-number-as-an-integral" title="Permanent link">&para;</a></h3>
@@ -1649,12 +1759,12 @@ It is defined for two <em>oriented</em> curves (we choose a direction along each
 \mathrm{Lk}(\gamma_1,\gamma_2) \;=\; \frac{1}{4\pi}\oint_{\gamma_1}\oint_{\gamma_2}
 \frac{(\mathbf r_1-\mathbf r_2)\cdot(\mathrm d\mathbf r_1\times \mathrm d\mathbf r_2)}{\lVert \mathbf r_1-\mathbf r_2\rVert^{3}} .
 \]</div>
-<p>This is the <em>Gauss integral</em> (Gauss, 1833). Its meaning is geometric. The unit vector <span class="arithmatex">\((\mathbf r_1-\mathbf r_2)/\lVert\mathbf r_1-\mathbf r_2\rVert\)</span> that points from one curve to the other changes as the two points move along their curves, and it covers the sphere of directions a whole number of times. The factor <span class="arithmatex">\(1/4\pi\)</span> is the inverse of the area of the unit sphere, so <span class="arithmatex">\(\mathrm{Lk}\)</span> is exactly <em>how many times</em> the sphere is covered.</p>
+<p>This is the <em>Gauss integral</em> (Gauss, 1833), and its meaning is geometric. The unit vector <span class="arithmatex">\((\mathbf r_1-\mathbf r_2)/\lVert\mathbf r_1-\mathbf r_2\rVert\)</span>, which points from one curve to the other, changes as the two points move along their curves, and it covers the sphere of directions a whole number of times. The factor <span class="arithmatex">\(1/4\pi\)</span> is the inverse of the area of the unit sphere, so <span class="arithmatex">\(\mathrm{Lk}\)</span> is exactly <em>how many times</em> the sphere is covered.</p>
 <h2 id="why-is-it-hard-to-compute-in-3d">Why is it hard to compute in 3D?<a class="headerlink" href="#why-is-it-hard-to-compute-in-3d" title="Permanent link">&para;</a></h2>
 <p>The drawing recipe needs a <em>projection</em> of the 3D curves onto a plane. For a computer model, which is a chain of beads joined by straight segments, this causes several problems.</p>
 <ol>
 <li><strong>The picture depends on the viewing direction.</strong> From one direction the two loops cross twice, from another four times. Only the signed sum is the same.</li>
-<li><strong>Some directions are bad.</strong> If we look along a direction in which two segments overlap, or a bead lies exactly behind another segment, the crossing is degenerate, and the over/under decision is not defined. One has to find a "generic" direction, or average over many.</li>
+<li><strong>Some directions are bad.</strong> If we look along a direction in which two segments overlap, or a bead lies exactly behind another segment, the crossing is degenerate and the over/under decision is not defined. One has to find a "generic" direction, or average over many.</li>
 <li><strong>Structures are noisy.</strong> A molecular dynamics frame is a wiggling polymer with segments that pass very close to each other. A tiny change of the viewing direction can create or remove crossings.</li>
 <li><strong>Closed curves are needed.</strong> The loops of a chain are open pieces of the fibre.</li>
 <li><strong>There are many pairs and many frames.</strong> A region has tens of loops, so hundreds of pairs, in every analysed frame.</li>
@@ -1668,9 +1778,9 @@ It is defined for two <em>oriented</em> curves (we choose a direction along each
 <p>LoopSage avoids projections completely and computes the Gauss integral directly on the 3D coordinates.</p>
 <ol>
 <li><strong>Closing the loops.</strong> Every loop is the piece of the chain between the two legs of a ring, beads <span class="arithmatex">\(m_i,\dots,n_i\)</span>. The closing segment between the two anchors (the <em>chord</em>) turns it into a closed polygon. This is a good approximation because the ring holds the two anchors next to each other.</li>
-<li><strong>Which pairs are tested.</strong> Only pairs of loops that are really two separate curves are tested. Nested or overlapping loops share a piece of the chain, so they are not two separate curves and are skipped, and a loop of fewer than 4 beads is too short to be counted as a curve. What remains are loops that lie side by side along the chain, which can still be interlocked in 3D.</li>
-<li><strong>Exact formula for polygons.</strong> For two closed polygons the double integral is a <em>finite sum over pairs of segments</em>, one term for every segment of the first loop and every segment of the second (Klenin and Langowski 2000). Each term is the signed area on the unit sphere swept by the direction between the two segments, written with the four unit vectors that join their end points. The sum divided by <span class="arithmatex">\(4\pi\)</span> is an integer up to rounding errors, and LoopSage rounds it to give <span class="arithmatex">\(\mathrm{Lk}\)</span>. It is exact for the polygon, needs no projection and has no degenerate directions.</li>
-<li><strong>A cheap pre-filter.</strong> Two curves whose bounding boxes do not overlap cannot be linked, so the sum is only computed for pairs whose boxes overlap.</li>
+<li><strong>Choosing the pairs.</strong> Only pairs of loops that are really two separate curves are tested. Nested or overlapping loops share a piece of the chain, so they are not two separate curves and are skipped, and a loop of fewer than 4 beads is too short to count as a curve. What remains are loops that lie side by side along the chain, which can still be interlocked in 3D.</li>
+<li><strong>An exact formula for polygons.</strong> For two closed polygons the double integral becomes a <em>finite sum over pairs of segments</em>, one term for every segment of the first loop and every segment of the second (Klenin and Langowski 2000). Each term is the signed area on the unit sphere swept by the direction between the two segments, written with the four unit vectors that join their end points. The sum divided by <span class="arithmatex">\(4\pi\)</span> is an integer up to rounding errors, and LoopSage rounds it to obtain <span class="arithmatex">\(\mathrm{Lk}\)</span>. The result is exact for the polygon, needs no projection and has no degenerate directions.</li>
+<li><strong>A cheap pre-filter.</strong> Two curves whose bounding boxes do not overlap cannot be linked, so the sum is computed only for pairs whose boxes overlap.</li>
 </ol>
 <figure>
 <p><img alt="From loops to closed curves" src="../../assets/theory/topology_loops.svg" width="760" />
@@ -1683,20 +1793,20 @@ It is defined for two <em>oriented</em> curves (we choose a direction along each
 <p>The linking analysis is switched on with <code>--knots</code> (key <code>detect_knots</code>) and works on the 3D structures, so it needs the molecular dynamics stage (<code>run_MD = True</code>).
 The name <em>knots</em> is historical: the quantity that is computed is the <em>linking number</em> of pairs of loops, as explained above.</p>
 </div>
-<p>For every <code>knots_stride</code>-th MD frame LoopSage takes the loops <span class="arithmatex">\((m_i,n_i)\)</span> of the Monte Carlo configuration that belongs to that frame, closes them, tests all admissible pairs and stores the pairs with <span class="arithmatex">\(|\mathrm{Lk}|\ge1\)</span>. From this it reports:</p>
+<p>For every <code>knots_stride</code>-th MD frame, LoopSage takes the loops <span class="arithmatex">\((m_i,n_i)\)</span> of the Monte Carlo configuration that belongs to that frame, closes them, tests all admissible pairs and stores the pairs with <span class="arithmatex">\(|\mathrm{Lk}|\ge1\)</span>. From this it reports:</p>
 <ul>
 <li>the number of linked pairs per frame, next to the number of pairs that were tested,</li>
 <li>the <em>lifetime</em> of a link, which is the number of consecutive analysed frames in which the same pair stays linked, and how many links are formed and dissolved at each step,</li>
 <li>the closest approach of two loops, and a <em>link map</em>, which shows where along the chromosome linked pairs occur,</li>
-<li>3D snapshots of linked examples, in which the two loops are thick, closed by their chords, and a gold marker shows where they meet.</li>
+<li>3D snapshots of linked examples, in which the two loops are drawn thick and closed by their chords, and a gold marker shows where they meet.</li>
 </ul>
 <h3 id="why-links-appear-and-disappear">Why links appear and disappear<a class="headerlink" href="#why-links-appear-and-disappear" title="Permanent link">&para;</a></h3>
-<p>If the excluded volume were perfect, strands could never cross, and the topology of the chain could not change during the molecular dynamics. Links would then only come and go because the <em>loops themselves</em> change, since the Monte Carlo trajectory moves the legs and the pair of loops that is analysed is not the same in every frame. The second source is the topoisomerase.</p>
+<p>If the excluded volume were perfect, strands could never cross, and the topology of the chain could not change during the molecular dynamics. Links would then come and go only because the <em>loops themselves</em> change: the Monte Carlo trajectory moves the legs, so the pairs of loops that are analysed are not the same in every frame. The second source of change is the topoisomerase.</p>
 <h3 id="the-topoisomerase-and-the-crossing-counter">The topoisomerase and the crossing counter<a class="headerlink" href="#the-topoisomerase-and-the-crossing-counter" title="Permanent link">&para;</a></h3>
-<p>LoopSage offers two optional models of a topoisomerase II, both set in the <code>[topology]</code> section and both off by default.</p>
+<p>LoopSage offers two optional models of a topoisomerase II. Both are set in the <code>[topology]</code> section and both are off by default.</p>
 <ul>
 <li><strong><code>random</code> mode</strong> (<code>ev_p</code>, <code>continuous_top</code>). In every frame a random fraction <code>ev_p</code> of the beads has its excluded volume switched off, either scattered or as one continuous stretch (<code>continuous_top</code>). Strands can pass through these beads.</li>
-<li><strong><code>local</code> mode</strong> (<code>topo_mode = local</code>). Short strand-passage events: at close contacts, a strand of <code>topo_width</code> beads loses its excluded volume for a short window <code>topo_window</code> of the frame, and then the volume is switched on again. The attempts occur at a rate <code>topo_rate</code> per frame and per 1000 beads, between strands closer than <code>topo_radius</code> bond lengths. With <code>topo_keep &lt; 1</code> a passage that <em>creates</em> a new link is undone with probability <span class="arithmatex">\(1-\)</span><code>topo_keep</code>, which models a topoisomerase that simplifies the topology.</li>
+<li><strong><code>local</code> mode</strong> (<code>topo_mode = local</code>). Short strand-passage events: at close contacts, a strand of <code>topo_width</code> beads loses its excluded volume for a short window <code>topo_window</code> of the frame, and then the volume is switched on again. The attempts occur at a rate <code>topo_rate</code> per frame and per 1000 beads, between strands closer than <code>topo_radius</code> bond lengths. With <code>topo_keep &lt; 1</code>, a passage that <em>creates</em> a new link is undone with probability <span class="arithmatex">\(1-\)</span><code>topo_keep</code>, which models a topoisomerase that simplifies the topology.</li>
 </ul>
 <figure>
 <p><img alt="The two topoisomerase models" src="../../assets/theory/topology_topo.svg" width="700" />
@@ -1704,8 +1814,7 @@ The name <em>knots</em> is historical: the quantity that is computed is the <em>
 <figcaption><b>a</b> Random mode: in every frame some beads have no excluded volume (dashed), scattered or in one stretch, and a strand can pass through them. <b>b</b> Local mode: two strands come close, a short stretch of one loses its excluded volume for a short window, the other strand passes through, and the volume is restored. A passage that creates a new link can be undone.</figcaption>
 </figure>
 <p>The <em>crossing counter</em> (<code>track_crossings</code>, checked every <code>track_every</code> MD steps) detects two bonds that pass through each other between two checks. Crossings that occur with the excluded volume on are <em>leaks</em> of the force field, and crossings through a switched-off bead are <em>passages</em>.</p>
-<p>How easily strands cross is controlled by the excluded volume <span class="arithmatex">\(E(r)=\big(\varepsilon^2 s/(r+r_0)\big)^{p}\)</span>, where <span class="arithmatex">\(s\)</span> is the strength (<code>ev_ff_strength</code>), <span class="arithmatex">\(p\)</span> the exponent (<code>ev_ff_power</code>), <span class="arithmatex">\(r\)</span> the distance between two beads and <span class="arithmatex">\(r_0\)</span> a small softening length.
-Two bonds can only cross if four bead pairs overlap, so the <em>barrier</em> for a crossing is the lowest value of the sum of <span class="arithmatex">\(E\)</span> over these four pairs, in units of <span class="arithmatex">\(k_BT\)</span>. A barrier of a few <span class="arithmatex">\(k_BT\)</span> is crossed easily, and about <span class="arithmatex">\(10\,k_BT\)</span> or more keeps the chain intact. The topology report prints the barrier of the current setting, and <code>ev_barrier_target</code> is the barrier for which it suggests a new <code>ev_ff_strength</code>.</p>
+<p>How easily strands cross is controlled by the excluded volume <span class="arithmatex">\(E(r)=\big(\varepsilon^2 s/(r+r_0)\big)^{p}\)</span>, where <span class="arithmatex">\(s\)</span> is the strength (<code>ev_ff_strength</code>), <span class="arithmatex">\(p\)</span> the exponent (<code>ev_ff_power</code>), <span class="arithmatex">\(r\)</span> the distance between two beads and <span class="arithmatex">\(r_0\)</span> a small softening length. Two bonds can cross only if four bead pairs overlap, so the <em>barrier</em> for a crossing is the lowest value of the sum of <span class="arithmatex">\(E\)</span> over these four pairs, in units of <span class="arithmatex">\(k_BT\)</span>. A barrier of a few <span class="arithmatex">\(k_BT\)</span> is crossed easily, while about <span class="arithmatex">\(10\,k_BT\)</span> or more keeps the chain intact. The topology report prints the barrier of the current setting, and <code>ev_barrier_target</code> is the barrier for which it suggests a new <code>ev_ff_strength</code>.</p>
 <h3 id="keys">Keys<a class="headerlink" href="#keys" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1749,7 +1858,7 @@ Two bonds can only cross if four bead pairs overlap, so the <em>barrier</em> for
 </tr>
 </tbody>
 </table>
-<p>All keys are described in the <a href="../../reference/config/">config reference</a>, and <code>examples/11_topology_links.ini</code> is a ready example.</p>
+<p>All keys are described in the <a href="../../reference/config/">config reference</a>, and <code>examples/11_topology_links.ini</code> is a ready-made example.</p>
 <h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Gauss C. F. (1833). Integral formula for linking number. <em>Werke</em> 5, 605.</li>
@@ -1855,7 +1964,7 @@ Two bonds can only cross if four bead pairs overlap, so the <em>barrier</em> for
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

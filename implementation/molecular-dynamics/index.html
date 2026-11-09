@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -430,6 +430,34 @@
     
   
     Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/inspiration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspiration
   
 
     
@@ -1193,6 +1221,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/data-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/cli/" class="md-nav__link">
         
   
@@ -1221,6 +1277,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/config/" class="md-nav__link">
         
   
@@ -1229,6 +1313,34 @@
     
   
     Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/sensitivity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sensitivity scans
   
 
     
@@ -1553,7 +1665,7 @@ U_{\mathrm{comp}}(r)=s\,E_{ab}\,e^{-r^2/2w^2},\qquad w=\texttt{comp\_range}\cdot
 <span class="na">comp_range</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s">0.03</span><span class="w">       </span><span class="c1"># range in units of sqrt(N) nm</span>
 
 <span class="na">md_skip_burnin</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">False</span><span class="w">      </span><span class="c1"># only use snapshots after the Monte Carlo burn-in</span>
-<span class="na">save_ensemble</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">True</span><span class="w">       </span><span class="c1"># write every frame as .cif                       (CLI: --save-ensemble)</span>
+<span class="na">save_ensemble</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">True</span><span class="w">       </span><span class="c1"># write the structures (frames as .cif, trajectory)  (CLI: --save-ensemble)</span>
 
 <span class="k">[analysis]</span>
 <span class="na">contact_radius</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">1.0</span><span class="w">        </span><span class="c1"># nm, for the MD contact maps</span>
@@ -1572,23 +1684,23 @@ U_{\mathrm{comp}}(r)=s\,E_{ab}\,e^{-r^2/2w^2},\qquad w=\texttt{comp\_range}\cdot
 </thead>
 <tbody>
 <tr>
-<td><code>src/molecular_dynamics/engine.py</code></td>
+<td><code>src/loopsage/molecular_dynamics/engine.py</code></td>
 <td>the OpenMM engine: platform choice, build, the loop over frames, the contact maps</td>
 </tr>
 <tr>
-<td><code>src/molecular_dynamics/forces.py</code></td>
+<td><code>src/loopsage/molecular_dynamics/forces.py</code></td>
 <td>the force terms: bonds, angles, excluded volume, loop springs, compartments</td>
 </tr>
 <tr>
-<td><code>src/molecular_dynamics/structures.py</code></td>
+<td><code>src/loopsage/molecular_dynamics/structures.py</code></td>
 <td>the shapes of the starting chain</td>
 </tr>
 <tr>
-<td><code>src/molecular_dynamics/topology.py</code></td>
+<td><code>src/loopsage/molecular_dynamics/topology.py</code></td>
 <td>the topoisomerase passage events and the crossing counter</td>
 </tr>
 <tr>
-<td><code>src/pipeline/stage_md.py</code></td>
+<td><code>src/loopsage/pipeline/stage_md.py</code></td>
 <td>the pipeline stage: runs the engine, writes tables and figures</td>
 </tr>
 </tbody>
@@ -1693,7 +1805,7 @@ U_{\mathrm{comp}}(r)=s\,E_{ab}\,e^{-r^2/2w^2},\qquad w=\texttt{comp\_range}\cdot
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

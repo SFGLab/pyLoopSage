@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -430,6 +430,34 @@
     
   
     Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/inspiration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspiration
   
 
     
@@ -1271,6 +1299,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/data-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/cli/" class="md-nav__link">
         
   
@@ -1299,6 +1355,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/config/" class="md-nav__link">
         
   
@@ -1307,6 +1391,34 @@
     
   
     Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/sensitivity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sensitivity scans
   
 
     
@@ -1670,7 +1782,7 @@ This page explains what is read, how every file type is modelled, and the two wa
 <p>Start with preferential binding. If the simulated loops cover regions where the input has no loops, try contrastive. If the simulation instead collapses onto a few strong anchors and leaves most of the region empty, go back to preferential, or lower the binding coefficient <span class="arithmatex">\(b\)</span>.</p>
 </div>
 <h2 id="extra-tracks">Extra tracks<a class="headerlink" href="#extra-tracks" title="Permanent link">&para;</a></h2>
-<p>Any BigWig signal (for example RNA polymerase II, H3K27ac or another cohesin ChIP) can add a binding term. Each track is averaged over the beads, and a leg placed on a bead with a high signal is rewarded or penalised according to the strength you give the track (a negative strength rewards; the default is <span class="arithmatex">\(-N/10\)</span> per track). A separate BigWig can describe where extruders <em>load</em> on the chromatin (for example NIPBL or cohesin ChIP): the rebinding move then picks the new loop position in proportion to this track instead of uniformly.</p>
+<p>Any BigWig signal (for example RNA polymerase II, H3K27ac or another cohesin ChIP) can add a binding term. Each track is averaged over the beads and smoothed with the same Gaussian as the anchor profiles <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span> (width <span class="arithmatex">\(\sigma=\max(1.5,\,N/300)\)</span> beads, switched by <code>smoothing_input</code>). Negative values are set to 0, because the energy rewards the share of the track's total signal under the legs, and a track without any signal is an error. A leg placed on a bead with a high signal is rewarded or penalised according to the strength you give the track (a negative strength rewards; the default is <span class="arithmatex">\(-N/10\)</span> per track, a gentle pull next to the loops, and a larger magnitude such as <span class="arithmatex">\(-300\)</span> pulls the legs clearly onto the signal). A separate BigWig can describe where extruders <em>load</em> on the chromatin (for example NIPBL or cohesin ChIP): the rebinding move then picks the new loop position in proportion to this track instead of uniformly.</p>
 <div class="highlight"><pre><span></span><code><span class="k">[input]</span>
 <span class="na">bw_files</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s">rnapii.bw,h3k27ac.bw</span><span class="w">        </span><span class="c1"># extra binding tracks</span>
 <span class="na">bw_strengths</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">-100,-100</span><span class="w">                   </span><span class="c1"># one per track (empty = -N_beads/10)</span>
@@ -1691,7 +1803,7 @@ This page explains what is read, how every file type is modelled, and the two wa
 <h3 id="compartments-from-hi-c">Compartments from Hi-C<a class="headerlink" href="#compartments-from-hi-c" title="Permanent link">&para;</a></h3>
 <p>The Potts field <span class="arithmatex">\(h_k\)</span> tells the epigenetic model which beads are A (positive) and which are B (negative). It comes from the first source that is available:</p>
 <ol>
-<li>a BigWig of the A/B signal (<code>comp_bw_file</code>), rescaled to <span class="arithmatex">\([-1,1]\)</span>;</li>
+<li>a BigWig of the A/B signal (<code>comp_bw_file</code>), smoothed with <code>track_smooth</code> beads like the Hi-C eigenvector and rescaled to <span class="arithmatex">\([-1,1]\)</span>;</li>
 <li>a BED of compartments or sub-compartments (<code>comp_bed_file</code>): A labels count positive and B negative, deeper sub-compartments (A.2 against A.1) count a bit more, and a score column, if present, is used as <span class="arithmatex">\(2s-1\)</span>;</li>
 <li>the Hi-C map itself, when the epigenetic model is on (<code>epi_coeff</code> greater than 0) and no track is given.</li>
 </ol>
@@ -1724,23 +1836,23 @@ This page explains what is read, how every file type is modelled, and the two wa
 </thead>
 <tbody>
 <tr>
-<td><code>src/preproc/readers.py</code></td>
+<td><code>src/loopsage/preproc/readers.py</code></td>
 <td>BEDPE, BED and narrowPeak readers: anchors to beads, <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span>, smoothing, scaling, binding mode</td>
 </tr>
 <tr>
-<td><code>src/preproc/loader.py</code></td>
+<td><code>src/loopsage/preproc/loader.py</code></td>
 <td>region and beads, compartment files, tracks, the container of all inputs</td>
 </tr>
 <tr>
-<td><code>src/preproc/hic.py</code></td>
+<td><code>src/loopsage/preproc/hic.py</code></td>
 <td>reading <code>.hic</code> files, choosing resolution and normalisation, putting the map on the bead grid</td>
 </tr>
 <tr>
-<td><code>src/analysis/maps.py</code></td>
+<td><code>src/loopsage/analysis/maps.py</code></td>
 <td>the compartment eigenvector from a Hi-C map</td>
 </tr>
 <tr>
-<td><code>src/pipeline/stage_preproc.py</code></td>
+<td><code>src/loopsage/pipeline/stage_preproc.py</code></td>
 <td>the pipeline stage: runs the steps, writes the tables and figures of the input</td>
 </tr>
 </tbody>
@@ -1845,7 +1957,7 @@ This page explains what is read, how every file type is modelled, and the two wa
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

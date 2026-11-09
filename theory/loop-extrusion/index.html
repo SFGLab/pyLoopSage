@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -430,6 +430,34 @@
     
   
     Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/inspiration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspiration
   
 
     
@@ -1248,6 +1276,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/data-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/cli/" class="md-nav__link">
         
   
@@ -1276,6 +1332,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/config/" class="md-nav__link">
         
   
@@ -1284,6 +1368,34 @@
     
   
     Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/sensitivity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sensitivity scans
   
 
     
@@ -1527,49 +1639,34 @@
 
 
 <h1 id="loop-extrusion">Loop extrusion<a class="headerlink" href="#loop-extrusion" title="Permanent link">&para;</a></h1>
-<p>This page explains <em>loop extrusion</em>, the process that folds chromatin into loops.
-It is about the biology and the basic ideas only. The energy function and the sampling algorithm of LoopSage come in the next sections.
-The boxes called <em>In LoopSage</em> just point to the settings where each idea appears in the program.</p>
+<p>This page introduces <em>loop extrusion</em>, the process that folds chromatin into loops. It covers the biology and the basic ideas only. The energy function and the sampling algorithm of LoopSage come in the following pages. The boxes called <em>In LoopSage</em> simply point to the settings where each idea appears in the program.</p>
 <h2 id="the-big-picture">The big picture<a class="headerlink" href="#the-big-picture" title="Permanent link">&para;</a></h2>
-<p>A human cell has about two metres of DNA that must fit into a nucleus a few micrometres wide.
-The DNA is therefore folded, and the folding is not random: places that are far apart along the DNA are often brought next to each other, and this controls which genes talk to which regulatory elements.
-One of the main folding mechanisms is <em>loop extrusion</em>.
-Imagine a ring that is threaded onto a rope and starts to slide along it while pulling the rope through itself: a loop of rope grows on one side of the ring.
-In the cell the ring is a protein complex, and the rope is the chromatin fibre.</p>
+<p>A human cell holds about two metres of DNA inside a nucleus only a few micrometres wide. The DNA must therefore be folded, and the folding is far from random: places that are far apart along the DNA are often brought next to each other, which decides which genes can talk to which regulatory elements.</p>
+<p>One of the main folding mechanisms is <em>loop extrusion</em>. Picture a ring threaded onto a rope. The ring starts to slide along the rope and pulls the rope through itself, so a loop of rope grows on one side of the ring. In the cell, the ring is a protein complex and the rope is the chromatin fibre.</p>
 <h2 id="the-players">The players<a class="headerlink" href="#the-players" title="Permanent link">&para;</a></h2>
-<p><strong>The chromatin fibre</strong> is the DNA together with the proteins it is wrapped around.
-Over distances of thousands of bases it behaves like a long flexible rope. In all figures it is the <em>black line</em>.</p>
-<p><strong>Cohesin</strong> is a ring-shaped protein complex that works as a molecular motor.
-It holds the fibre at two points, and using the energy of ATP it moves these two points apart, pulling more and more fibre through itself.
-We call such a motor a <em>loop extrusion factor</em>, or <em>LEF</em>.
-In the figures cohesin is the <em>purple ring</em>.</p>
-<p><strong>CTCF</strong> is a protein that sticks to the DNA at places with a specific sequence, the <em>CTCF motif</em>.
-The motif has a <em>direction</em>, like a one-way arrow written along the DNA: it can point right (<em>red</em>) or left (<em>blue</em>).
-CTCF acts as a <em>boundary element</em>: a place where cohesin tends to stop.</p>
-<p><strong>Condensin</strong> is a cohesin relative that works when the cell divides. It is also a ring that extrudes loops, and in the figures it is <em>green</em>. We meet it at the end of this page.</p>
+<p><strong>The chromatin fibre</strong> is the DNA together with the proteins it is wrapped around. Over distances of thousands of bases it behaves like a long, flexible rope. In all figures it is the <em>black line</em>.</p>
+<p><strong>Cohesin</strong> is a ring-shaped protein complex that works as a molecular motor. It holds the fibre at two points and, using the energy of ATP, moves these two points apart, pulling more and more fibre through itself. Such a motor is called a <em>loop extrusion factor</em>, or <em>LEF</em>. In the figures, cohesin is the <em>purple ring</em>.</p>
+<p><strong>CTCF</strong> is a protein that sticks to the DNA at places with a specific sequence, the <em>CTCF motif</em>. The motif has a <em>direction</em>, like a one-way arrow written along the DNA: it can point right (<em>red</em>) or left (<em>blue</em>). CTCF acts as a <em>boundary element</em>, a place where cohesin tends to stop.</p>
+<p><strong>Condensin</strong> is a close relative of cohesin that works when the cell divides. It is also a ring that extrudes loops, and in the figures it is <em>green</em>. We meet it at the end of this page.</p>
 <figure>
 <p><img alt="The loop extrusion players" src="../../assets/theory/players.svg" width="640" />
   </p>
 <figcaption>One chromatin loop held by cohesin. The ring encircles the two strands at the base of the loop. The loop is the piece of fibre between the two legs of the ring, at positions <i>m</i><sub>i</sub> and <i>n</i><sub>i</sub> (ring <i>i</i>). Two CTCF proteins sit at the base, one pointing right (red) and one pointing left (blue).</figcaption>
 </figure>
 <h2 id="the-loop-extrusion-model">The loop extrusion model<a class="headerlink" href="#the-loop-extrusion-model" title="Permanent link">&para;</a></h2>
-<p>The <em>loop extrusion model</em> (Sanborn et al. 2015, Fudenberg et al. 2016) proposes that a loop is not made by two faraway places that happen to meet.
-Instead, a cohesin ring sits on the fibre and <em>reels it in from both sides</em>, so the loop keeps growing until the ring is stopped by something.</p>
+<p>The <em>loop extrusion model</em> (Sanborn et al. 2015, Fudenberg et al. 2016) proposes that a loop is not made by two faraway places that happen to meet. Instead, a cohesin ring sits on the fibre and <em>reels it in from both sides</em>, so the loop keeps growing until something stops the ring.</p>
 <figure>
 <p><img alt="The extrusion cycle" src="../../assets/theory/extrusion.svg" width="780" />
   </p>
 <figcaption>The life of one loop. <b>1</b> A ring holds a short loop. <b>2</b> Driven by ATP, its two legs move apart and the loop grows. <b>3</b> Two CTCFs that face each other stop the legs. <b>4</b> After some time the ring unloads and binds somewhere else, and the old loop is released.</figcaption>
 </figure>
 <h3 id="how-we-describe-a-loop">How we describe a loop<a class="headerlink" href="#how-we-describe-a-loop" title="Permanent link">&para;</a></h3>
-<p>First we cut the studied region into small equal pieces, called <em>beads</em> (for example 5 000 bases each), and number them <span class="arithmatex">\(1, 2, \dots, N_{\mathrm{beads}}\)</span>.
-A bead is simply a position on the fibre, and we write <span class="arithmatex">\(k\)</span> for a general bead number.</p>
-<p>There are usually many rings on the region at once, <span class="arithmatex">\(N_{\mathrm{lef}}\)</span> of them, and we give every ring its own index <span class="arithmatex">\(i = 1, 2, \dots, N_{\mathrm{lef}}\)</span>.
-A ring has two legs, so ring <span class="arithmatex">\(i\)</span> is described by two bead numbers,</p>
+<p>First we cut the studied region into small, equal pieces called <em>beads</em> (for example 5 000 bases each) and number them <span class="arithmatex">\(1, 2, \dots, N_{\mathrm{beads}}\)</span>. A bead is simply a position on the fibre, and we write <span class="arithmatex">\(k\)</span> for a general bead number.</p>
+<p>Usually there are many rings on the region at once, <span class="arithmatex">\(N_{\mathrm{lef}}\)</span> of them, and every ring gets its own index <span class="arithmatex">\(i = 1, 2, \dots, N_{\mathrm{lef}}\)</span>. A ring has two legs, so ring <span class="arithmatex">\(i\)</span> is described by two bead numbers,</p>
 <div class="arithmatex">\[
 (m_i,\, n_i), \qquad m_i &lt; n_i ,
 \]</div>
-<p>where <span class="arithmatex">\(m_i\)</span> is the position of its <em>left leg</em> and <span class="arithmatex">\(n_i\)</span> the position of its <em>right leg</em>.
-The loop of ring <span class="arithmatex">\(i\)</span> is everything between its legs, so its size in beads is</p>
+<p>where <span class="arithmatex">\(m_i\)</span> is the position of its <em>left leg</em> and <span class="arithmatex">\(n_i\)</span> the position of its <em>right leg</em>. The loop of ring <span class="arithmatex">\(i\)</span> is everything between its legs, so its size in beads is</p>
 <div class="arithmatex">\[
 \ell_i = n_i - m_i .
 \]</div>
@@ -1577,7 +1674,7 @@ The loop of ring <span class="arithmatex">\(i\)</span> is everything between its
 <div class="arithmatex">\[
 \{(m_i, n_i)\}_{i=1}^{N_{\mathrm{lef}}} ,
 \]</div>
-<p>which is <span class="arithmatex">\(N_{\mathrm{lef}}\)</span> pairs of numbers. This short list is all that the stochastic model of the next sections has to keep track of, and a change of the system is a change of one of these numbers.</p>
+<p>which is <span class="arithmatex">\(N_{\mathrm{lef}}\)</span> pairs of numbers. This short list is all that the stochastic model of the next pages has to keep track of, and every change of the system is a change of one of these numbers.</p>
 <table>
 <thead>
 <tr>
@@ -1617,75 +1714,64 @@ The loop of ring <span class="arithmatex">\(i\)</span> is everything between its
 </tbody>
 </table>
 <h3 id="what-a-lef-does">What a LEF does<a class="headerlink" href="#what-a-lef-does" title="Permanent link">&para;</a></h3>
-<p>The ring is always on the fibre, and its life is a short cycle.</p>
+<p>A ring is always on the fibre, and its life follows a short cycle.</p>
 <ol>
 <li><em>It holds a small loop.</em> A freshly placed ring holds a very short piece of fibre, a loop of one or two beads.</li>
-<li><em>It extrudes.</em> The legs slide along the fibre: the left leg moves left (<span class="arithmatex">\(m \to m-1\)</span>) and the right leg moves right (<span class="arithmatex">\(n \to n+1\)</span>). The loop grows. In experiments this happens at about one thousand bases per second (Davidson et al. 2019; Kim et al. 2019).</li>
+<li><em>It extrudes.</em> The legs slide along the fibre: the left leg moves left (<span class="arithmatex">\(m \to m-1\)</span>) and the right leg moves right (<span class="arithmatex">\(n \to n+1\)</span>), so the loop grows. In experiments this happens at about one thousand bases per second (Davidson et al. 2019; Kim et al. 2019).</li>
 <li><em>It stops</em> when a leg meets a barrier: a CTCF with the right orientation, or another ring. The other leg may still move.</li>
-<li><em>It unloads and rebinds.</em> After some time the ring leaves the fibre, the loop is released, and a ring binds again somewhere else. In a living cell the number of rings on the fibre stays roughly constant, so we can think that every ring that leaves is replaced at once.</li>
+<li><em>It unloads and rebinds.</em> After some time the ring leaves the fibre, the loop is released, and a ring binds again somewhere else. In a living cell the number of rings on the fibre stays roughly constant, so we can think of every ring that leaves as being replaced at once.</li>
 </ol>
-<p>The fuel is <em>ATP</em>, the energy currency of the cell. Each step of the ring uses a little ATP, and without it no loops are made (Ganji et al. 2018; Davidson et al. 2019).
-We do not follow this chemistry in detail. We only keep its result: legs that keep moving outward.</p>
+<p>The fuel is <em>ATP</em>, the energy currency of the cell. Each step of the ring uses a little ATP, and without it no loops are made (Ganji et al. 2018; Davidson et al. 2019). We do not follow this chemistry in detail. We keep only its result: legs that keep moving outward.</p>
 <div class="admonition note">
 <p class="admonition-title">In LoopSage</p>
 <p>The number of rings <span class="arithmatex">\(N_{\mathrm{lef}}\)</span> is <code>n_lef</code>, and the number of beads <span class="arithmatex">\(N_{\mathrm{beads}}\)</span> is <code>n_beads</code>.
 A Monte Carlo step either slides the legs of one ring or lets the ring unbind and rebind at a new place, so all <code>n_lef</code> rings are always on the fibre.
-By default the new place is random; <code>lef_track_file</code> (cohesin ChIP-seq signal) makes some places more likely.</p>
+By default the new place is random; <code>lef_track_file</code> (a cohesin ChIP-seq signal) makes some places more likely.</p>
 </div>
 <h3 id="what-the-model-assumes">What the model assumes<a class="headerlink" href="#what-the-model-assumes" title="Permanent link">&para;</a></h3>
 <p>The picture above rests on a few simple assumptions.</p>
 <ol>
-<li><strong>More extrusion than sinking.</strong> On average the legs move <em>outward</em>, so loops grow rather than shrink. In the simplest version a leg only moves outward. In a more general version a leg does a random walk with a drift, so it can also step back sometimes.</li>
+<li><strong>More extrusion than sinking.</strong> On average the legs move <em>outward</em>, so loops grow rather than shrink. In the simplest version a leg only moves outward. In a more general version a leg performs a random walk with a drift, so it can also step back from time to time.</li>
 <li><strong>Motion is one-dimensional.</strong> A leg moves only along the fibre, like a bead on a string. Three-dimensional space matters later, when the loops are folded into a 3D structure.</li>
 <li><strong>Rings do not cross.</strong> Two cohesin rings cannot pass through each other (see below).</li>
-<li><strong>CTCF is a one-way barrier.</strong> It only stops a leg that comes from the correct side (see below).</li>
-<li><strong>Rings live longer at barriers.</strong> A ring that is stopped by a CTCF pair is protected from being removed, so it stays much longer than a ring that is just sliding. This is why the loops anchored at CTCF are the ones that dominate experimental data. Typically CTCF stays on DNA for minutes and cohesin for tens of minutes (Hansen et al. 2017).</li>
+<li><strong>CTCF is a one-way barrier.</strong> It stops only a leg that arrives from the correct side (see below).</li>
+<li><strong>Rings live longer at barriers.</strong> A ring that is stopped by a pair of CTCFs is protected from removal, so it stays much longer than a ring that is just sliding. This is why loops anchored at CTCF dominate experimental data. Typically CTCF stays on DNA for minutes and cohesin for tens of minutes (Hansen et al. 2017).</li>
 <li><strong>The data are averages.</strong> An experiment measures millions of cells at once, each with its own loops. The model therefore describes a <em>population</em> of possible loop arrangements, not one fixed picture.</li>
 </ol>
 <div class="admonition note">
 <p class="admonition-title">In LoopSage</p>
-<p><code>lef_rw = true</code> means that legs do a random walk; <code>false</code> means that they only extrude outward.
+<p><code>lef_rw = true</code> means that legs perform a random walk; <code>false</code> means that they only extrude outward.
 <code>lef_speed</code> lets different rings move at different speeds.</p>
 </div>
 <h2 id="how-ctcf-stops-cohesin">How CTCF stops cohesin<a class="headerlink" href="#how-ctcf-stops-cohesin" title="Permanent link">&para;</a></h2>
-<p>CTCF stops cohesin in one direction only.
-A <em>forward</em> CTCF (red) stops a leg that is moving <em>left</em>, head-on towards the arrow tip, and a <em>reverse</em> CTCF (blue) stops a leg that is moving <em>right</em>.
-So the two CTCFs at the ends of a loop must <em>face each other</em> (this is called <em>convergent</em>) to stop both legs.</p>
+<p>CTCF stops cohesin in one direction only. A <em>forward</em> CTCF (red) stops a leg that is moving <em>left</em>, head-on towards the arrow tip, and a <em>reverse</em> CTCF (blue) stops a leg that is moving <em>right</em>. So the two CTCFs at the ends of a loop must <em>face each other</em> (this is called a <em>convergent</em> arrangement) to stop both legs.</p>
 <figure>
 <p><img alt="CTCF orientation" src="../../assets/theory/orientation.svg" width="760" />
   </p>
-<figcaption>Four arrangements of two CTCF sites. The pale dashed arc is the loop when the ring starts; the solid arc is the final loop. <b>a</b> Facing each other: both legs stop. <b>b</b> Facing away: nothing stops. <b>c, d</b> Same direction: one leg stops, the other keeps going. Dots are the legs of the ring, a bar marks a stopped leg, and an arrow a leg that is still moving.</figcaption>
+<figcaption>Four arrangements of two CTCF sites. The pale dashed arc is the loop when the ring starts; the solid arc is the final loop. <b>a</b> Facing each other: both legs stop. <b>b</b> Facing away: nothing stops them. <b>c, d</b> Same direction: one leg stops, the other keeps going. Dots are the legs of the ring, a bar marks a stopped leg, and an arrow marks a leg that is still moving.</figcaption>
 </figure>
-<p>This is exactly what is seen in data: loops with CTCF at both ends are mostly convergent (Rao et al. 2014; de Wit et al. 2015; Guo et al. 2015).
-If the two sites point in the same direction, one leg is free and keeps extruding, which makes a line of enriched contacts called a <em>stripe</em>.
-If they face away from each other, no loop is kept.</p>
-<p>To use this in a model we only need to say, for every bead <span class="arithmatex">\(k\)</span>, how strongly it stops a left leg, <span class="arithmatex">\(L(k)\)</span>, and how strongly it stops a right leg, <span class="arithmatex">\(R(k)\)</span>.
-Beads that are not CTCF sites have <span class="arithmatex">\(L(k)=R(k)=0\)</span>.
-The direction of each site is read from the DNA sequence of its motif.</p>
+<p>This is exactly what data show: loops with CTCF at both ends are mostly convergent (Rao et al. 2014; de Wit et al. 2015; Guo et al. 2015). If the two sites point in the same direction, one leg stays free and keeps extruding, which creates a line of enriched contacts called a <em>stripe</em>. If they face away from each other, no loop is kept.</p>
+<p>To use this in a model we only need to state, for every bead <span class="arithmatex">\(k\)</span>, how strongly it stops a left leg, <span class="arithmatex">\(L(k)\)</span>, and how strongly it stops a right leg, <span class="arithmatex">\(R(k)\)</span>. Beads that are not CTCF sites have <span class="arithmatex">\(L(k)=R(k)=0\)</span>. The direction of each site is read from the DNA sequence of its motif.</p>
 <div class="admonition note">
 <p class="admonition-title">In LoopSage</p>
 <p>The anchors in the input BEDPE file become the profiles <span class="arithmatex">\(L(k)\)</span> and <span class="arithmatex">\(R(k)\)</span>.
-If the file has orientation columns (8 and 9) they are used directly; otherwise <code>motif_genome</code> switches on the CTCF motif search (<code>motif_pfm</code>, <code>motif_pvalue</code>) that finds the orientation of every anchor.
+If the file has orientation columns (8 and 9) they are used directly; otherwise <code>motif_genome</code> switches on the CTCF motif search (<code>motif_pfm</code>, <code>motif_pvalue</code>), which finds the orientation of every anchor.
 With <code>data_loss_mode = 1</code> the barriers are given as a 2D map of loops <span class="arithmatex">\((m,n)\)</span> instead of two 1D profiles.</p>
 </div>
 <h2 id="loops-tads-and-contact-maps">Loops, TADs and contact maps<a class="headerlink" href="#loops-tads-and-contact-maps" title="Permanent link">&para;</a></h2>
-<p>Hi-C is an experiment that counts how often two places of the genome touch each other.
-The result is a <em>contact map</em>: a square picture in which the pixel <span class="arithmatex">\((i,j)\)</span> is darker when places <span class="arithmatex">\(i\)</span> and <span class="arithmatex">\(j\)</span> touch more often.
-Loop extrusion leaves two clear marks on it.</p>
+<p>Hi-C is an experiment that counts how often two places of the genome touch each other. Its result is a <em>contact map</em>: a square picture in which the pixel <span class="arithmatex">\((i,j)\)</span> is darker when places <span class="arithmatex">\(i\)</span> and <span class="arithmatex">\(j\)</span> touch more often. Loop extrusion leaves two clear marks on it.</p>
 <ul>
-<li><strong>Loop dots.</strong> The two ends of a stable loop are held together, so they touch more often than expected and make a dark dot, usually at the corner of a square.</li>
-<li><strong>TADs</strong> (topologically associating domains; Dixon et al. 2012, Nora et al. 2012). These are squares along the diagonal. Inside a TAD, rings keep reeling in the whole region, so every place touches every other one. Across a TAD boundary contacts are rare. A boundary is often a <em>pair of CTCFs facing away from each other</em>, because neither lets rings from the other side come through.</li>
+<li><strong>Loop dots.</strong> The two ends of a stable loop are held together, so they touch more often than expected and form a dark dot, usually at the corner of a square.</li>
+<li><strong>TADs</strong> (topologically associating domains; Dixon et al. 2012, Nora et al. 2012). These are squares along the diagonal. Inside a TAD, rings keep reeling in the whole region, so every place touches every other one. Across a TAD boundary, contacts are rare. A boundary is often a <em>pair of CTCFs facing away from each other</em>, because neither lets rings from the other side come through.</li>
 </ul>
 <figure>
 <p><img alt="Loops and TADs" src="../../assets/theory/tads.png" width="640" />
   </p>
 <figcaption>Top: the fibre with loops of cohesin (nested loops inside two TADs) and CTCFs at the domain ends. Bottom: the contact map this arrangement would give. The two squares along the diagonal are TADs, and the dots are loops.</figcaption>
 </figure>
-<p>Experiments agree with this picture: when cohesin is removed, loops and TADs disappear, and when CTCF is removed, domains lose their sharp edges (Rao et al. 2017; Nora et al. 2017).
-Cohesin makes the loops, and CTCF decides where they stop.</p>
+<p>Experiments agree with this picture: when cohesin is removed, loops and TADs disappear, and when CTCF is removed, domains lose their sharp edges (Rao et al. 2017; Nora et al. 2017). In short, cohesin makes the loops and CTCF decides where they stop.</p>
 <h2 id="rings-do-not-cross">Rings do not cross<a class="headerlink" href="#rings-do-not-cross" title="Permanent link">&para;</a></h2>
-<p>The fibre passes through the ring, so two rings on the same fibre cannot pass through one another.
-For two different rings <span class="arithmatex">\(i\)</span> and <span class="arithmatex">\(j\)</span>, with loops <span class="arithmatex">\((m_i,n_i)\)</span> and <span class="arithmatex">\((m_j,n_j)\)</span>, this means that they can lie <em>side by side</em> or <em>one inside the other</em>, but they cannot be <em>interleaved</em>, and they cannot share a leg.</p>
+<p>The fibre passes through the ring, so two rings on the same fibre cannot pass through one another. For two different rings <span class="arithmatex">\(i\)</span> and <span class="arithmatex">\(j\)</span>, with loops <span class="arithmatex">\((m_i,n_i)\)</span> and <span class="arithmatex">\((m_j,n_j)\)</span>, this means that the loops can lie <em>side by side</em> or <em>one inside the other</em>, but they cannot be <em>interleaved</em> and cannot share a leg.</p>
 <figure>
 <p><img alt="Allowed and forbidden arrangements" src="../../assets/theory/crossing.svg" width="760" />
   </p>
@@ -1694,15 +1780,13 @@ For two different rings <span class="arithmatex">\(i\)</span> and <span class="a
 <p>As a result, rings push against each other and cannot all collapse into the same loop. They form a chain of neighbouring and nested loops, and the outer legs stay pressed against the next barrier.</p>
 <div class="admonition note">
 <p class="admonition-title">In LoopSage</p>
-<p>The interleaved case can be switched on or off with <code>cross_loop</code>, and the strictness is set by <code>cross_coeff</code>.</p>
+<p>The interleaved case can be switched on or off with <code>cross_loop</code>, and its strictness is set by <code>cross_coeff</code>.</p>
 </div>
 <h2 id="condensin-and-mitosis">Condensin and mitosis<a class="headerlink" href="#condensin-and-mitosis" title="Permanent link">&para;</a></h2>
-<p>When a cell divides, each chromosome must become a compact rod that can be moved safely into a daughter cell.
-For this the cell uses <em>condensin</em> (two forms, I and II).
-Like cohesin, condensin is an ATP-driven ring that extrudes loops (Ganji et al. 2018), but with three differences.</p>
+<p>When a cell divides, each chromosome must become a compact rod that can be moved safely into a daughter cell. For this the cell uses <em>condensin</em> (in two forms, I and II). Like cohesin, condensin is an ATP-driven ring that extrudes loops (Ganji et al. 2018), but it differs in three ways.</p>
 <ol>
 <li><strong>Longer loops.</strong> Condensin makes loops of roughly a hundred thousand to a few hundred thousand bases, arranged in nested arrays along the chromosome (Goloborodko et al. 2016; Gibcus et al. 2018).</li>
-<li><strong>No CTCF stops.</strong> In mitosis CTCF and most cohesin leave the chromosome arms. The condensin loops are not anchored at fixed motifs and form a dense <em>bottle-brush</em> around a central axis. TADs and CTCF loops disappear from the contact map.</li>
+<li><strong>No CTCF stops.</strong> In mitosis CTCF and most cohesin leave the chromosome arms. The condensin loops are not anchored at fixed motifs, and they form a dense <em>bottle-brush</em> around a central axis. TADs and CTCF loops disappear from the contact map.</li>
 <li><strong>They can pass cohesin.</strong> Single-molecule experiments show that condensin rings can pass through each other and through other ring complexes (Kim et al. 2020). A cohesin loop and a condensin loop can therefore be interleaved.</li>
 </ol>
 <figure>
@@ -1716,25 +1800,15 @@ Like cohesin, condensin is an ATP-driven ring that extrudes loops (Ganji et al. 
 Setting <code>between_families_penalty = false</code> lets the two groups pass through each other, while rings of the same group still cannot.</p>
 </div>
 <h2 id="stripes-and-the-need-for-dynamics">Stripes and the need for dynamics<a class="headerlink" href="#stripes-and-the-need-for-dynamics" title="Permanent link">&para;</a></h2>
-<p>Not every pattern of a Hi-C map is a <em>static</em> picture of one loop.
-Many maps show <em>stripes</em>: thin lines that start at a CTCF site on the diagonal and run along a row (and, because the map is symmetric, along a column) for tens or hundreds of kilobases.
-A stripe means that one locus, the stripe anchor, touches <em>many different</em> loci in a row, one after the other.</p>
-<p>Loop extrusion explains this naturally, if we allow the extrusion to be <em>one-sided</em> (Vian et al. 2018; Barrington et al. 2019).
-A ring is loaded close to a CTCF site that stops one of its legs.
-The other leg keeps running, so the loop grows step by step: at time <span class="arithmatex">\(t_1\)</span> the loop is short, at <span class="arithmatex">\(t_2\)</span> it is longer, at <span class="arithmatex">\(t_3\)</span> longer still, until the moving leg is stopped by the opposite CTCF or the ring falls off.
-At each moment the ring holds <em>one</em> contact, <span class="arithmatex">\((m_i, n_i)\)</span> with <span class="arithmatex">\(m_i\)</span> fixed and <span class="arithmatex">\(n_i\)</span> growing.
-A Hi-C experiment averages over millions of cells and over time, so these contacts add up to a line:</p>
+<p>Not every pattern of a Hi-C map is a <em>static</em> picture of one loop. Many maps show <em>stripes</em>: thin lines that start at a CTCF site on the diagonal and run along a row (and, because the map is symmetric, along a column) for tens or hundreds of kilobases. A stripe means that one locus, the stripe anchor, touches <em>many different</em> loci in a row, one after the other.</p>
+<p>Loop extrusion explains this naturally if we allow the extrusion to be <em>one-sided</em> (Vian et al. 2018; Barrington et al. 2019). A ring is loaded close to a CTCF site that stops one of its legs. The other leg keeps running, so the loop grows step by step: at time <span class="arithmatex">\(t_1\)</span> the loop is short, at <span class="arithmatex">\(t_2\)</span> it is longer, at <span class="arithmatex">\(t_3\)</span> longer still, until the moving leg is stopped by the opposite CTCF or the ring falls off. At each moment the ring holds <em>one</em> contact, <span class="arithmatex">\((m_i, n_i)\)</span>, with <span class="arithmatex">\(m_i\)</span> fixed and <span class="arithmatex">\(n_i\)</span> growing. A Hi-C experiment averages over millions of cells and over time, so these contacts add up to a line.</p>
 <figure>
 <p><img alt="Stripes from one-sided extrusion" src="../../assets/theory/stripes.png" width="760" />
   </p>
 <figcaption>A stripe is a trajectory. The left leg of a ring rests at a forward CTCF while the right leg moves (pale to dark arcs, times <i>t</i><sub>1</sub> &lt; <i>t</i><sub>2</sub> &lt; <i>t</i><sub>3</sub>). Each time point contributes one contact on the row of the fixed anchor, and the average over many rings and times is the stripe on the contact map.</figcaption>
 </figure>
-<p>This is an important point for the rest of the documentation.
-A stable, two-sided loop gives a <em>dot</em>, and a dot can be explained by a single static picture.
-A stripe cannot: the contact <span class="arithmatex">\((m, n)\)</span> changes while the leg moves, and the stripe is the record of this <em>motion</em>.
-The same holds for the fuzzy "flames" that start at a loop dot, for domains whose inside is enriched, and for the way the strength of a loop depends on how long rings live on the fibre.
-These features only make sense when we know <em>how long a ring stays, how fast it moves and how often it is stopped</em>.</p>
-<p>In short, a complete explanation of a Hi-C map needs <em>dynamics</em>, not only the positions of the barriers. This is exactly what drove us to build LoopSage: a model in which many rings load, extrude, stall and unload on the fibre, so that the contact map is obtained as an average over a simulated trajectory, and the same trajectory can be turned into 3D structures.</p>
+<p>This is an important point for the rest of the documentation. A stable, two-sided loop gives a <em>dot</em>, and a dot can be explained by a single static picture. A stripe cannot: the contact <span class="arithmatex">\((m, n)\)</span> changes while the leg moves, and the stripe is the record of this <em>motion</em>. The same holds for the fuzzy "flames" that start at a loop dot, for domains whose inside is enriched, and for the way the strength of a loop depends on how long rings stay on the fibre. All these features make sense only when we know <em>how long a ring stays, how fast it moves and how often it is stopped</em>.</p>
+<p>In short, a complete explanation of a Hi-C map needs <em>dynamics</em>, not only the positions of the barriers. This is exactly what motivated LoopSage: a model in which many rings load, extrude, stall and unload on the fibre, so that the contact map is obtained as an average over a simulated trajectory, and the same trajectory can be turned into 3D structures.</p>
 <div class="admonition note">
 <p class="admonition-title">In LoopSage</p>
 <p>Every leg <span class="arithmatex">\(m_i\)</span>, <span class="arithmatex">\(n_i\)</span> is moved by its own Monte Carlo step: it slides as a random walk or only outwards (<code>lef_rw</code>), with a speed set by <code>lef_speed</code>.
@@ -1745,7 +1819,7 @@ See the <a href="../../reference/config/">config reference</a>.</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
 <ul>
 <li>A <em>LEF</em> (cohesin) sits on the fibre and reels it in from both sides. Ring <span class="arithmatex">\(i\)</span> is just a pair of legs <span class="arithmatex">\((m_i,n_i)\)</span>, its loop has size <span class="arithmatex">\(\ell_i=n_i-m_i\)</span>, and the whole system is the list of the <span class="arithmatex">\(N_{\mathrm{lef}}\)</span> pairs.</li>
-<li><em>CTCF</em> is a one-way barrier: facing sites stop both legs and make stable loops, sites in the same direction make stripes.</li>
+<li><em>CTCF</em> is a one-way barrier: facing sites stop both legs and make stable loops, while sites in the same direction make stripes.</li>
 <li><em>Stripes</em> are the record of a leg that moves while the other rests: they need dynamics, not a single snapshot.</li>
 <li><em>TADs</em> and <em>loop dots</em> in Hi-C maps are the average footprint of many rings stopped at CTCF boundaries.</li>
 <li>Cohesin rings do not cross each other, but <em>condensin</em>, which builds the long nested loops of mitotic chromosomes, can pass through cohesin.</li>
@@ -1869,7 +1943,7 @@ See the <a href="../../reference/config/">config reference</a>.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

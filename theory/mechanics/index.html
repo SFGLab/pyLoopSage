@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -430,6 +430,34 @@
     
   
     Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/inspiration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspiration
   
 
     
@@ -1165,6 +1193,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/data-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/cli/" class="md-nav__link">
         
   
@@ -1193,6 +1249,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/config/" class="md-nav__link">
         
   
@@ -1201,6 +1285,34 @@
     
   
     Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/sensitivity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sensitivity scans
   
 
     
@@ -1361,27 +1473,31 @@
 
 
 <h1 id="mechanics-of-loopsage">Mechanics of LoopSage<a class="headerlink" href="#mechanics-of-loopsage" title="Permanent link">&para;</a></h1>
-<p>LoopSage assigns an <strong>energy</strong> to every set of loops and samples sets with probability <span class="arithmatex">\(\propto e^{-E/T}\)</span>. This page explains where that idea comes from, why it is only an <em>approximation</em> for a living cell, and what is kept from the exact theory. New words are defined when they appear.</p>
+<p>LoopSage assigns an <strong>energy</strong> to every set of loops and samples sets with probability <span class="arithmatex">\(\propto e^{-E/T}\)</span>. This page explains where that idea comes from, why it is only an <em>approximation</em> for a living cell, and which parts of the exact theory are kept. New words are explained as they appear, so you can read it whether you come from biology, physics, mathematics or computer science.</p>
 <h2 id="the-mechanical-hamiltonian">The mechanical Hamiltonian<a class="headerlink" href="#the-mechanical-hamiltonian" title="Permanent link">&para;</a></h2>
-<p>In classical mechanics a system of <span class="arithmatex">\(N\)</span> particles is described by the positions <span class="arithmatex">\(q\)</span> and momenta <span class="arithmatex">\(p\)</span> of all particles. Together they form a point <span class="arithmatex">\((q,p)\)</span> in the <strong>phase space</strong>, a space with <span class="arithmatex">\(6N\)</span> coordinates (three positions and three momenta per particle). The <strong>Hamiltonian</strong> <span class="arithmatex">\(H(q,p)\)</span> is the total energy as a function of this point: kinetic plus potential, for example <span class="arithmatex">\(H=\tfrac12p^2+\tfrac12q^2\)</span> for an oscillator. It determines the motion through <strong>Hamilton's equations</strong>,</p>
+<p>In classical mechanics a system of <span class="arithmatex">\(N\)</span> particles is described by the positions <span class="arithmatex">\(q\)</span> and the momenta <span class="arithmatex">\(p\)</span> of all particles. Together they form one point <span class="arithmatex">\((q,p)\)</span> in the <strong>phase space</strong>, a space with <span class="arithmatex">\(6N\)</span> coordinates (three positions and three momenta per particle). The <strong>Hamiltonian</strong> <span class="arithmatex">\(H(q,p)\)</span> is the total energy as a function of this point: kinetic plus potential energy. For a simple oscillator, for example, <span class="arithmatex">\(H=\tfrac12p^2+\tfrac12q^2\)</span>. The Hamiltonian determines the motion through <strong>Hamilton's equations</strong>,</p>
 <div class="arithmatex">\[
 \dot q=\frac{\partial H}{\partial p},\qquad \dot p=-\frac{\partial H}{\partial q},
 \]</div>
-<p>where a dot is the derivative with respect to time. The system moves along a curve of constant energy.</p>
-<p>This needs <span class="arithmatex">\(H\)</span> to be <strong>differentiable</strong>: the force is the derivative of the energy, so a smooth landscape gives a well-defined motion. The energy of the loop model is not like that. A loop has integer positions <span class="arithmatex">\((m,n)\)</span> on a grid of beads, so there is no derivative, and the loops do not follow equations of motion. Loop extrusion in LoopSage is a <strong>statistical</strong> model, and for it only a weaker notion of Hamiltonian is kept.</p>
+<p>where a dot means the derivative with respect to time. As time passes, the system moves along a curve of constant energy.</p>
+<p>This requires <span class="arithmatex">\(H\)</span> to be <strong>differentiable</strong>: the force is the derivative of the energy, so a smooth energy landscape gives a well-defined motion. The energy of the loop model is not like that. A loop has integer positions <span class="arithmatex">\((m,n)\)</span> on a grid of beads, so there is no derivative, and the loops do not follow equations of motion. Loop extrusion in LoopSage is a <strong>statistical</strong> model, and for it we keep only a weaker notion of the Hamiltonian, described next.</p>
 <figure>
 <p><img alt="Phase space, Boltzmann law and ensembles" src="../../assets/theory/mech_hamilton.svg" width="780" />
   </p>
 <figcaption><b>a</b> A mechanical state is a point in phase space and moves along a curve of constant energy. <b>b</b> An energy landscape turns into probabilities by the Boltzmann law; a higher temperature allows higher energies. <b>c</b> Ensembles differ by what is held fixed.</figcaption>
 </figure>
 <h2 id="the-statistical-hamiltonian">The statistical Hamiltonian<a class="headerlink" href="#the-statistical-hamiltonian" title="Permanent link">&para;</a></h2>
-<p>In statistical physics the <em>Hamiltonian</em> can be any function <span class="arithmatex">\(E(x)\)</span> that gives the energy of a state <span class="arithmatex">\(x\)</span>, with no need for derivatives or motion. Then the probability of a state at temperature <span class="arithmatex">\(T\)</span> is the <strong>Boltzmann law</strong>,</p>
+<p>In statistical physics the <em>Hamiltonian</em> can be any function <span class="arithmatex">\(E(x)\)</span> that gives the energy of a state <span class="arithmatex">\(x\)</span>, with no need for derivatives or motion. The probability of a state at temperature <span class="arithmatex">\(T\)</span> is then given by the <strong>Boltzmann law</strong>,</p>
 <div class="arithmatex">\[
 P(x)=\frac{1}{Z}\,e^{-E(x)/T},\qquad Z=\sum_x e^{-E(x)/T}.
 \]</div>
-<p><span class="arithmatex">\(Z\)</span> is the <em>partition function</em>, the number that makes the probabilities sum to one. Low-energy states are likely, and <span class="arithmatex">\(T\)</span> sets how much higher energy is tolerated. In LoopSage <span class="arithmatex">\(T\)</span> is in arbitrary units, because the energy itself is made of effective terms (folding, binding, crossing) and not of physical joules. A state <span class="arithmatex">\(x\)</span> is the complete set of loops <span class="arithmatex">\(\{(m_i,n_i)\}\)</span>, possibly with the epigenetic states of the beads.</p>
+<p>Here <span class="arithmatex">\(Z\)</span> is the <em>partition function</em>, the number that makes all probabilities add up to one. In plain words: low-energy states are likely, and the temperature <span class="arithmatex">\(T\)</span> sets how much extra energy is tolerated. In LoopSage, <span class="arithmatex">\(T\)</span> is given in arbitrary units, because the energy itself is built from effective terms (folding, binding, crossing) and not from physical joules. A state <span class="arithmatex">\(x\)</span> is the complete set of loops <span class="arithmatex">\(\{(m_i,n_i)\}\)</span>, possibly together with the epigenetic states of the beads.</p>
+<div class="admonition tip">
+<p class="admonition-title">Intuition</p>
+<p>Imagine a marble rolling on hilly ground that is being gently shaken. At low temperature (weak shaking) the marble spends nearly all its time in the deepest valley. At high temperature (strong shaking) it hops between valleys and explores the whole landscape. The Boltzmann law is the exact statement of how much time the marble spends at each height.</p>
+</div>
 <h2 id="ensembles">Ensembles<a class="headerlink" href="#ensembles" title="Permanent link">&para;</a></h2>
-<p>An <strong>ensemble</strong> is the set of all states together with their probabilities, for a given set of conditions. The three classical ones differ in what is held fixed.</p>
+<p>An <strong>ensemble</strong> is the set of all possible states together with their probabilities, under given conditions. The three classical ensembles differ in what is held fixed.</p>
 <table>
 <thead>
 <tr>
@@ -1408,28 +1524,28 @@ P(x)=\frac{1}{Z}\,e^{-E(x)/T},\qquad Z=\sum_x e^{-E(x)/T}.
 </tr>
 </tbody>
 </table>
-<p>LoopSage uses the <strong>canonical ensemble</strong>: the number of extruders <span class="arithmatex">\(N_{\mathrm{lef}}\)</span> is fixed, and the temperature <span class="arithmatex">\(T\)</span> controls the fluctuations. This is why the Boltzmann law above is the right distribution, and why the Metropolis rule on the <a href="../../implementation/monte-carlo/">Monte Carlo</a> page works. The grand canonical alternative, with extruders appearing and disappearing, is mimicked by the <em>rebinding</em> move, where one ring is removed and another loaded.</p>
+<p>LoopSage uses the <strong>canonical ensemble</strong>: the number of extruders <span class="arithmatex">\(N_{\mathrm{lef}}\)</span> is fixed, and the temperature <span class="arithmatex">\(T\)</span> controls the fluctuations. This is why the Boltzmann law above is the right distribution, and why the Metropolis rule on the <a href="../../implementation/monte-carlo/">Monte Carlo</a> page works. The grand canonical alternative, in which extruders appear and disappear, is mimicked by the <em>rebinding</em> move, where one ring is removed and another one is loaded.</p>
 <h2 id="a-cell-is-not-in-equilibrium">A cell is not in equilibrium<a class="headerlink" href="#a-cell-is-not-in-equilibrium" title="Permanent link">&para;</a></h2>
-<p>The Boltzmann law describes a system in <strong>equilibrium</strong>. A cohesin ring is not in equilibrium: it burns ATP to extrude, and it loads and unloads in a cycle. This is a <em>driven</em> system.</p>
-<p>What distinguishes equilibrium is <strong>detailed balance</strong>. Let <span class="arithmatex">\(\pi_i\)</span> be the probability of state <span class="arithmatex">\(i\)</span> and <span class="arithmatex">\(P_{ij}\)</span> the probability to jump from <span class="arithmatex">\(i\)</span> to <span class="arithmatex">\(j\)</span> in one step. Detailed balance says that for every pair of states the two flows are equal,</p>
+<p>The Boltzmann law describes a system in <strong>equilibrium</strong>. A cohesin ring is not in equilibrium: it burns ATP to extrude, and it loads and unloads in a cycle. Such a system is called <em>driven</em>.</p>
+<p>What distinguishes equilibrium is <strong>detailed balance</strong>. Let <span class="arithmatex">\(\pi_i\)</span> be the probability of state <span class="arithmatex">\(i\)</span>, and <span class="arithmatex">\(P_{ij}\)</span> the probability to jump from <span class="arithmatex">\(i\)</span> to <span class="arithmatex">\(j\)</span> in one step. Detailed balance says that for every pair of states the two flows are equal,</p>
 <div class="arithmatex">\[
 \pi_i\,P_{ij}=\pi_j\,P_{ji}.
 \]</div>
-<p>Nothing circulates: a film of the system looks the same played backwards. In a driven cycle (load, extrude, release) the forward flow is much larger than the backward one, so there is a steady current and detailed balance is broken. The system is then in a <strong>steady state</strong>: the probabilities <span class="arithmatex">\(\pi\)</span> do not change with time, but they are not Boltzmann probabilities.</p>
+<p>Nothing circulates, and a film of the system looks the same when played backwards. In a driven cycle (load, extrude, release) the forward flow is much larger than the backward flow, so there is a steady current and detailed balance is broken. The system then reaches a <strong>steady state</strong>: the probabilities <span class="arithmatex">\(\pi\)</span> no longer change with time, but they are not Boltzmann probabilities.</p>
 <figure>
 <p><img alt="Detailed balance, a driven cycle and the effective energy" src="../../assets/theory/mech_equilibrium.svg" width="780" />
   </p>
 <figcaption><b>a</b> Detailed balance: equal flows for every pair. <b>b</b> A driven cycle has a net current, so it is out of equilibrium. <b>c</b> LoopSage takes the stationary distribution and writes it as an effective energy.</figcaption>
 </figure>
 <h2 id="the-loopsage-approximation">The LoopSage approximation<a class="headerlink" href="#the-loopsage-approximation" title="Permanent link">&para;</a></h2>
-<p>LoopSage does not model the driving. It turns the problem around: <em>whatever the stationary distribution <span class="arithmatex">\(\pi\)</span> of the loops is, write it as</em></p>
+<p>LoopSage does not model the driving. Instead it turns the problem around: <em>whatever the stationary distribution <span class="arithmatex">\(\pi\)</span> of the loops is, write it as</em></p>
 <div class="arithmatex">\[
 \pi(x)\propto e^{-E(x)/T}.
 \]</div>
-<p>The energy is then an <strong>effective energy</strong>, <span class="arithmatex">\(E=-T\ln\pi\)</span> up to a constant: it is not the physical energy of the ring but a compact way of saying which loop sets are likely. The terms of <span class="arithmatex">\(E\)</span> are chosen to reproduce what is observed. Long loops are favoured (folding), legs prefer CTCF sites (binding), and crossing loops are forbidden (crossing). The coefficients are fitted by the <a href="../../implementation/optimizer/">optimizer</a> to Hi-C or to the input loops.</p>
-<p>This is an approximation with a clear limit. Equilibrium sampling gives the right <em>average map</em> and the right fluctuations if the effective energy is right, but it does not give the <strong>dynamics</strong>: the sampler's steps are not real time, and currents such as the directed motion of a ring are replaced by random-walk moves. Questions about speed, residence times or the order of events need a model with real kinetics.</p>
+<p>The energy is then an <strong>effective energy</strong>, <span class="arithmatex">\(E=-T\ln\pi\)</span> up to a constant. It is not the physical energy of the ring, but a compact way of saying which sets of loops are likely. The terms of <span class="arithmatex">\(E\)</span> are chosen to reproduce what is observed: long loops are favoured (folding), legs prefer CTCF sites (binding), and crossing loops are forbidden (crossing). The coefficients are fitted by the <a href="../../implementation/optimizer/">optimizer</a> to Hi-C data or to the input loops.</p>
+<p>This approximation has a clear limit. Equilibrium sampling gives the right <em>average map</em> and the right fluctuations, provided the effective energy is right, but it does not give the <strong>dynamics</strong>: the steps of the sampler are not real time, and currents such as the directed motion of a ring are replaced by random-walk moves. Questions about speed, residence times or the order of events need a model with real kinetics.</p>
 <h2 id="how-detailed-balance-is-approximated">How detailed balance is approximated<a class="headerlink" href="#how-detailed-balance-is-approximated" title="Permanent link">&para;</a></h2>
-<p>The sampler (<a href="../mcmc/">MCMC</a>) is built so that it satisfies detailed balance with respect to <span class="arithmatex">\(e^{-E/T}\)</span> by construction: a proposed move is accepted with the Metropolis probability, which makes <span class="arithmatex">\(\pi_iP_{ij}=\pi_jP_{ji}\)</span> for the target distribution. Three choices keep this approximately true in practice.</p>
+<p>The sampler (<a href="../mcmc/">MCMC</a>) is built so that it satisfies detailed balance with respect to <span class="arithmatex">\(e^{-E/T}\)</span> by construction: a proposed move is accepted with the Metropolis probability, which makes <span class="arithmatex">\(\pi_iP_{ij}=\pi_jP_{ji}\)</span> for the target distribution. Three design choices keep this approximately true in practice.</p>
 <ul>
 <li><strong>Symmetric proposals.</strong> Sliding by <span class="arithmatex">\(\pm1\)</span> is as likely as the reverse move, so the proposal does not bias the result.</li>
 <li><strong>Rebinding as an approximation.</strong> The rebinding move (load a minimal loop anywhere) is not exactly the reverse of the extrusion, so it is a loading process rather than an exactly balanced move. With uniform loading it is close to symmetric. A loading track makes it deliberately biased towards the real loading sites.</li>
@@ -1537,7 +1653,7 @@ P(x)=\frac{1}{Z}\,e^{-E(x)/T},\qquad Z=\sum_x e^{-E(x)/T}.
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       
