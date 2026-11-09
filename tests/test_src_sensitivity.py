@@ -251,7 +251,18 @@ def test_topology_metrics_scan(tmp_path):
 
 def test_example_scan_files_are_valid():
     from pathlib import Path
-    files = sorted(Path(__file__).resolve().parents[1].glob("examples/*scan*.ini"))
+    files = sorted(Path(__file__).resolve().parents[1].glob("examples/*scan*.ini")) + [Path(__file__).resolve().parents[1] / "demo" / "demo_sensitivity.ini"]
     assert files
     for f in files:
         check(load_scan(str(f)))
+
+
+def test_figures_have_at_most_three_panels(tmp_path, monkeypatch):
+    from loopsage.sensitivity import plots as P
+    seen = []
+    orig = P.png
+    monkeypatch.setattr(P, "png", lambda fig: (seen.append(sum(a.axison for a in fig.axes if a.get_label() != "<colorbar>")), orig(fig))[1])
+    spec = load_scan(TINY.replace("design = grid", "design = oat").replace("n_lef = 3, 6", "n_lef = 3, 6\nbind_coeff = 0.05, 0.1\nt_final = 3, 5"))
+    res = run_scan(spec, tmp_path, workers=2, progress=False)
+    res.report(tmp_path / "r.html")
+    assert seen and max(seen) <= 3

@@ -8,7 +8,9 @@ Tiny synthetic runs (`data/demo_loops.bedpe`: 60 loops on chr1:77-95 Mb, made by
 | `python demo/run_demo.py full` | + 3D polymer MD, geometry, 3D viewer and videos, map features, linking analysis | about 15 seconds |
 | `python demo/run_demo.py epigenetic` | loop extrusion + the optional epigenetic model (dynamic coupling), with its extra figures | about 20 seconds |
 | `python demo/run_demo.py speed` | LEFs with Maxwell-Boltzmann speeds: velocity statistics, phase space and free-energy flow figures | about 15 seconds |
+| `python demo/run_demo.py sensitivity` | a sensitivity scan (`loopsage-scan`) on a synthetic polymer: temperature against number of extruders, with the phase-transition analysis; needs no input file | about 20 seconds |
 | `loopsage -c demo/demo_quick.ini -vv` | same as `quick`, with info messages | seconds |
 
-Each run writes a folder `results/chr1_77000000_95000000_<n>/` containing `report/report.html`.
+The sensitivity demo writes `results/scan_demo/sensitivity_report.html` (plus CSV tables); results folders are not tracked by git.
+Each other run writes a folder `results/chr1_77000000_95000000_<n>/` containing `report/report.html`.
 Add `-v` (tables) or `-vv` (info) to `run_demo.py` to see more in the terminal.

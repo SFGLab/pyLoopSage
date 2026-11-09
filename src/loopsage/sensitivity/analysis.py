@@ -149,12 +149,17 @@ def convergence(res) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def series_by(res, metric, axis, others="mean"):
-    """Time series of a metric grouped by the values of one axis: {value: (steps, mean, lo, hi)} (other axes and replicates pooled)."""
+def series_by(res, metric, axis, where=None):
+    """Time series of a metric grouped by the values of one axis: {value: (steps, mean, lo, hi)}; replicates (and axes not in `where`) pooled.
+
+    `where` = {axis name: value} keeps only the runs with those values.
+    """
     a = next(x for x in res.design.axes if x.label == axis or x.name == axis)
     groups_ = {}
     for t in res.tasks:
         r = res.records.get(t["key"])
+        if where and any(t["values"].get(k) != v for k, v in where.items()):
+            continue
         if r and r["ok"] and metric in r["series"]:
             groups_.setdefault(t["values"][a.name], []).append((r["steps"], r["series"][metric]))
     out = {}

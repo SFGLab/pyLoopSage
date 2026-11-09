@@ -8,17 +8,22 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.egg-info/
+*.egg
 .eggs/
 build/
 dist/
 *.whl
 pip-wheel-metadata/
 
-# ---- Virtual environments ----
+# ---- Virtual environments and local interpreter pins ----
 env/
 venv/
 .venv/
 ENV/
+.python-version
+.tool-versions
+.envrc
+.direnv/
 
 # ---- Environment files and secrets (the template stays tracked) ----
 .env
@@ -35,7 +40,12 @@ ENV/
 .hypothesis/
 .coverage
 .coverage.*
+coverage.xml
 htmlcov/
+.tox/
+.nox/
+.pytype/
+.pyre/
 .ipynb_checkpoints/
 *.nbi
 *.nbc
@@ -44,6 +54,7 @@ htmlcov/
 /site/
 
 # ---- LoopSage run results (one folder per run) ----
+.scan_cache.pkl
 results/
 *results*/
 output/
@@ -62,7 +73,7 @@ slurm-*.out
 CLAUDE.md
 .cursor/
 .aider*
-[Cc]laude[ -_]outputs/
+[Cc]laude[ _-]outputs/
 outputs/
 scratchpad/
 .codex/

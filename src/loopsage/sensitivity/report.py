@@ -24,17 +24,18 @@ h3 small{color:#5a5a66;font-weight:600;font-size:.82rem;margin-left:8px}
 """
 GROUPS = [
     ("loops", "Loops and folding", "How long the loops are and how much of the polymer they cover.", ["mean_loop_length", "longest_loop", "unfolded_fraction", "n_loops"]),
-    ("nesting", "Nesting: parents and children", "Loops can sit inside each other. A parent holds loops and sits in none; a child sits inside another loop.", ["n_parents", "n_children", "n_orphans", "nesting_depth"]),
+    ("nesting", "Nesting: parents and children", "Loops can sit inside each other. A parent holds loops and sits in none; a child sits inside another loop.", ["n_parents", "n_children", "n_orphans", "n_order_1", "n_order_2", "n_order_3", "nesting_depth"]),
     ("binding", "Binding at CTCF sites", "How often the legs of the rings rest on CTCF sites.", ["bound_fraction", "anchored_loop_fraction"]),
     ("energy", "Energy", "The effective energy of the loop configurations.", ["energy_total", "folding_energy", "binding_energy", "crossing_energy"]),
     ("structure", "3D structure", "Size and shape of the polymer built from the loops (molecular dynamics).", list(M.MD_METRICS)),
     ("topology", "Topology: links and chain crossings", "Whether loops are linked in 3D, and whether the chain passes through itself.", list(M.TOPO_METRICS)),
 ]
 EXPLAIN = {
+    "time": "Each line is one value of the colour-coded input, averaged over replicates (a band shows the middle 70% of the runs when there are three lines or fewer). The tinted start is the burn-in. Curves that level off have equilibrated; large, slow wiggles mean the number of loops of that kind fluctuates strongly in time.",
     "traces": "Each line is the average over the runs that share one value of the input (the other inputs and the replicates are pooled); the band is the middle 70% of those runs. The tinted start is the burn-in, which is discarded. A curve that is flat after the burn-in has equilibrated; one that keeps drifting needs more steps.",
     "response": "Dots are single runs (production mean after the burn-in). The black line is the mean over runs and the band its 95% interval. A flat line means the metric does not care about this input; a steep one means it matters. With several inputs the others are averaged out.",
-    "heatmap": "The mean of the metric for every combination of the two inputs (the rest averaged out). Colour runs from low (light) to high (warm). Look for diagonal bands (the two inputs trade off) and for corners where the metric changes abruptly.",
-    "lines": "The same data as the heat map as curves: the metric against the first input, one curve per value of the second. Parallel curves mean the two inputs act independently; curves that cross or fan out mean they interact.",
+    "heatmap": "Left: the mean of the metric for every combination of the two inputs; colour runs from low (light) to high (dark). Look for diagonal bands (the inputs trade off) and for abrupt edges.",
+    "lines": "Curves: the metric against the first input, one per value of the second (band: 95% interval). Parallel curves mean the inputs act independently; curves that cross or fan out mean they interact.",
     "main": "One panel per input: the mean of the metric in bins of that input, with the other inputs averaged out (main effect). The panel with the largest vertical change is the most influential input; all panels share the vertical axis.",
     "oat": "One-at-a-time scan: each panel changes one input while all the others stay at their baseline. This shows the local effect of each input, but not how inputs interact.",
     "importance": "Each cell is the share of the variance of the metric that is explained by that input alone (first-order effect, eta squared). The values of one column do not add to 100%: what is missing is interaction between inputs plus noise.",
@@ -45,8 +46,8 @@ EXPLAIN = {
     "sizes": "The distribution of loop lengths in logarithmic bins. A shift to the right means longer loops; a second bump means two populations of loops (for example short anchored loops and long extruded ones).",
     "convergence": "Left: effective number of independent samples in each run (the red line marks 30; below it the mean is poorly determined). Middle: how much the mean differs between the first and second half of the production run (red line: 10%). Right: the spread of the means between replicates.",
     "phase": "Top: the order parameter (mean over replicates, line; single runs, dots). The shaded band is the transition interval and the dashed red line its centre. Middle: the fluctuations of the order parameter in time (susceptibility); a peak at the transition is the mark of a continuous transition. Bottom: the autocorrelation time; a peak means critical slowing down, the system takes much longer to forget its state.",
-    "bifurcation": "Violet dots are snapshots of the order parameter during the production run, at each value of the control parameter; coloured lines connect the mean of each replicate. One cloud that moves smoothly means a continuous change. Two separate clouds at one value, or replicates that follow different lines, mean two coexisting states: a bifurcation or a first-order transition.",
-    "distribution": "Histograms of the order parameter at values of the control parameter across the transition (bottom: low value, top: high value). One peak that slides is a continuous change; a second peak that appears and grows while the first fades is a discontinuous one, and at the transition both exist at the same time.",
+    "bifurcation": "Left: each coloured line is the mean of one replicate and the violet band the range between replicates. Lines that stay together mean a single state; lines that part at the transition suggest two possible states (bifurcation).",
+    "distribution": "Right: distribution of the snapshots at several control values (bottom: low, top: high). One peak that slides is a continuous change; two peaks at the same value mean two coexisting states.",
     "phasemap": "Left: the mean of the order parameter on the plane of two inputs. Right: its fluctuation in time. Red diamonds mark the detected transition along the horizontal input. A ridge of high fluctuation that follows the transition is its phase boundary: it shows how the transition point moves with the other input.",
     "binder": "The Binder cumulant U4 measures the shape of the fluctuations: 2/3 for a sharply ordered state, 0 for Gaussian noise. For a continuous transition the curves of different system sizes cross at one point, the critical value of the control parameter. Curves that do not cross suggest a crossover or a first-order transition.",
     "leak": "Crossing leaks counted during the dynamics, against the strand-crossing barrier of the excluded volume. A leak means the chain passed through itself even though no topoisomerase was active; barriers of about 10 kT or more keep the topology intact.",
@@ -57,10 +58,10 @@ def _img(b: bytes, alt="") -> str:
     return f'<img alt="{esc(alt)}" src="data:image/png;base64,{base64.b64encode(b).decode()}">'
 
 
-def _card(title, figs, how, sub="", intro="") -> str:
+def _card(title, figs, how, sub="", intro="", stack=False) -> str:
     """A card with a short intro, one or more figures and a 'how to read' box."""
     body = "".join(f"<figure>{_img(f, title)}</figure>" for f in figs)
-    grid = f'<div class="grid2">{body}</div>' if len(figs) > 1 else body
+    grid = f'<div class="grid2">{body}</div>' if len(figs) > 1 and not stack else body
     lead = f"<p class='intro' style='margin-left:0'>{esc(intro)}</p>" if intro else ""
     return (f'<div class="card"><h3>{esc(title)}<small>{esc(sub)}</small></h3>{lead}{grid}'
             f'<details open><summary>How to read this</summary><p>{how}</p></details></div>')
@@ -111,7 +112,9 @@ class Builder:
             if self.kind == "grid" and b is not None and a.numeric and b.numeric:
                 figs.append(P.heatmap(res, m, a.label, b.label)); how.append(EXPLAIN["heatmap"])
         elif self.k == 2 and s is not None:
-            figs.append(P.heatmap(res, m, p.label, s.label)); figs.append(P.lines_by(res, m, p.label, s.label)); how += [EXPLAIN["heatmap"], EXPLAIN["lines"]]
+            if s.numeric and len(self.df[s.label].unique()) > 4 and p.numeric:      # many rows: a heat map shows the plane; few rows: curves are clearer
+                figs.append(P.heatmap(res, m, p.label, s.label)); how.append(EXPLAIN["heatmap"])
+            figs.append(P.lines_by(res, m, p.label, s.label)); how.append(EXPLAIN["lines"])
         else:
             if m in M.METRICS and headline:
                 figs.append(P.traces(res, m, p.label)); how.append(EXPLAIN["traces"])
@@ -160,6 +163,30 @@ class Builder:
                          + "<p class='caption'>Elasticity is the percent change of the metric per percent change of the input (log-log slope): 1 means proportional, 0 means no effect.</p></div>")
         return '<section id="glance"><h2>At a glance</h2><p class="intro">The short version: what responds to what.</p>' + "".join(parts) + "</section>"
 
+    def nesting_time(self):
+        """Parents, children and orphans, and children by nesting order, against the Monte Carlo step."""
+        res, df = self.res, self.df
+        have = lambda ms: [m for m in ms if m in df.columns and df[m].notna().any()]
+        sets = [("Parents, children and isolated loops over the run", have(["n_parents", "n_children", "n_orphans"])),
+                ("Children by nesting order over the run", have(["n_order_1", "n_order_2", "n_order_3"]))]
+        sets = [(t, ms) for t, ms in sets if ms]
+        if not sets:
+            return []
+        by = max(self.axes, key=lambda a: (a.numeric, df[a.label].nunique()))          # colour by the input with most values (usually the dense one)
+        others = [a for a in self.axes if a is not by]
+        splits = [(None, "")]
+        if len(others) == 1 and df[others[0].label].nunique() <= 3:                 # one panel row per value of a short second input
+            o = others[0]
+            splits = [({o.name: v}, f"{o.label} = {_g(v)}") for v in sorted(df[o.label].unique())]
+        elif others:
+            splits = [(None, "other inputs pooled")]
+        cards = []
+        for t, ms in sets:
+            figs = [P.time_panels(res, ms, by.label, w, lab) for w, lab in splits]
+            cards.append(_card(t, figs, EXPLAIN["time"], f"coloured by {by.label}",
+                               intro="Parent: holds loops and sits in none. Child of order k: sits inside k loops. Isolated: inside none and holds none.", stack=True))
+        return cards
+
     def group_section(self, gid, title, intro, names):
         cols = [m for m in names if m in self.df.columns]
         extra = [m for m in A.metric_cols(self.df) if gid == "other" and not any(m in g[3] for g in GROUPS)]
@@ -168,6 +195,8 @@ class Builder:
             return ""
         head = [m for m in cols][:6]
         cards = []
+        if gid == "nesting":
+            cards += self.nesting_time()
         if gid == "topology":
             cards.append(self.topology_intro())
         for m in cols:

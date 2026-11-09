@@ -4,6 +4,7 @@
     python demo/run_demo.py full      # + 3D MD, validation, linking numbers
     python demo/run_demo.py epigenetic # MC + epigenetic model (dynamic coupling)
     python demo/run_demo.py speed     # MC with Maxwell-Boltzmann LEF speeds (speed and phase-space figures)
+    python demo/run_demo.py sensitivity # parameter scan on a synthetic polymer (loopsage-scan), about 20 s
 Options: --out DIR   results folder (default ./results)
 """
 import argparse
@@ -20,10 +21,13 @@ from loopsage.settings.loader import load_config                 # noqa: E402
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("name", choices=["quick", "full", "epigenetic", "speed"], nargs="?", default="quick")
+    ap.add_argument("name", choices=["quick", "full", "epigenetic", "speed", "sensitivity"], nargs="?", default="quick")
     ap.add_argument("--out", default=None)
     ap.add_argument("-v", "--verbose", action="count", default=0)
     a = ap.parse_args()
+    if a.name == "sensitivity":                      # needs no input data
+        from loopsage.sensitivity.cli import cli     # noqa: E402
+        return cli([str(ROOT / "demo" / "demo_sensitivity.ini")] + (["-o", a.out] if a.out else []))
     data = ROOT / "demo" / "data" / "demo_loops.bedpe"
     if not data.exists():
         write_bedpe(data)

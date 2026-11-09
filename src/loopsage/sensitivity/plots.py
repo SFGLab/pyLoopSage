@@ -81,6 +81,40 @@ def traces(res, metric, axis):
     return png(fig)
 
 
+def time_panels(res, metrics, axis, where=None, title=""):
+    """Up to three panels (one per metric) of the metric against the Monte Carlo step, one line per value of `axis`."""
+    ax_ = _ax(res, axis)
+    metrics = metrics[:MAX_PANELS]
+    fig, axs = plt.subplots(1, len(metrics), figsize=(3.6 * len(metrics) + 1.2, 3.2), sharex=True, squeeze=False)
+    apply_theme()
+    vals = None
+    for ax, m in zip(axs[0], metrics):
+        ser = A.series_by(res, m, ax_.name, where)
+        vals = list(ser)
+        cols = _colors(len(vals)) if ax_.numeric else CAT
+        for (v, (st, mean, lo, hi)), c in zip(ser.items(), cols):
+            if len(ser) <= 3:
+                ax.fill_between(st / 1e3, lo, hi, color=c, alpha=0.10, lw=0)
+            w = max(1, len(mean) // 30)              # light smoothing: few replicates make single snapshots noisy
+            ax.plot(st / 1e3, np.convolve(np.pad(mean, (w // 2, w - 1 - w // 2), mode='edge'), np.ones(w) / w, mode='valid'), color=c, lw=1.4)
+        ax.set_title(A.label(m).split(" (")[0], fontsize=10)
+        ax.set_xlabel("Monte Carlo step (thousands)")
+        ax.set_xlim(0, None)
+    b = next((r["steps"][r["burnin_idx"]] for r in res.records.values() if r["ok"]), 0)
+    for ax in axs[0]:
+        ax.axvspan(0, b / 1e3, color="#f1eefb", zorder=0)
+    if ax_.numeric and vals:
+        v = np.array(vals, float)
+        norm = matplotlib.colors.LogNorm(v.min(), v.max()) if _logx(res.table, ax_) else matplotlib.colors.Normalize(v.min(), v.max())
+        cb = fig.colorbar(matplotlib.cm.ScalarMappable(norm, LINES), ax=list(axs[0]), pad=0.015, fraction=0.04)
+        cb.set_label(ax_.label); cb.outline.set_visible(False)
+    elif vals:
+        axs[0, -1].legend([plt.Line2D([], [], color=c, lw=2) for c in CAT[:len(vals)]], [fmt(v) for v in vals], title=ax_.label, loc="center left", bbox_to_anchor=(1.01, 0.5))
+    if title:
+        fig.suptitle(title, x=0.01, ha="left", fontsize=10, color=MUTED)
+    return png(fig)
+
+
 def response(res, metric, axis, df=None):
     """The production mean of the metric against one axis, with 95% intervals; faint dots are single runs."""
     df, ax_ = res.table if df is None else df, _ax(res, axis)
@@ -111,7 +145,7 @@ def heatmap(res, metric, a, b, df=None):
     ax.set_yticks(range(g.shape[0]), [fmt(v) for v in g.index])
     ax.grid(False)
     ax.set_xlabel(A1.label); ax.set_ylabel(B1.label)
-    if g.size <= 64:
+    if g.size <= 36:
         lo, hi = np.nanmin(g.values), np.nanmax(g.values)
         for i in range(g.shape[0]):
             for j in range(g.shape[1]):
@@ -123,21 +157,28 @@ def heatmap(res, metric, a, b, df=None):
 
 
 def lines_by(res, metric, a, b, df=None):
-    """The metric against axis a, one curve per value of axis b."""
+    """The metric against axis a, one curve per value of axis b (band = 95% interval, labels at the line ends)."""
     df, A1, B1 = res.table if df is None else df, _ax(res, a), _ax(res, b)
     g = agg(df, metric, [B1.label, A1.label])
-    fig, ax = _fig(6.8, 4.0)
+    fig, ax = _fig(6.6, 3.9)
     keys = list(dict.fromkeys(g.index.get_level_values(0)))
+    direct = len(keys) <= 6
     for k, c in zip(keys, CAT if not B1.numeric else _colors(len(keys))):
         d = g.loc[k]
         x = d.index.values.astype(float) if A1.numeric else np.arange(len(d))
-        ax.errorbar(x, d["mean"], yerr=1.96 * d["se"], color=c, marker="o", ms=4, lw=1.7, capsize=2, label=fmt(k))
+        ax.fill_between(x, d["mean"] - 1.96 * d["se"], d["mean"] + 1.96 * d["se"], color=c, alpha=0.15, lw=0)
+        ax.plot(x, d["mean"], color=c, marker="o", ms=3.5, lw=1.8, label=fmt(k))
+        if direct:
+            ax.annotate(f"{B1.label} = {fmt(k)}", (x[-1], d["mean"].iloc[-1]), xytext=(6, 0), textcoords="offset points", color=c, fontsize=9, va="center", fontweight="bold")
     if A1.numeric and _logx(df, A1):
         ax.set_xscale("log")
     if not A1.numeric:
         ax.set_xticks(range(len(d)), [fmt(v) for v in d.index])
     ax.set_xlabel(A1.label); ax.set_ylabel(A.label(metric))
-    ax.legend(title=B1.label, loc="center left", bbox_to_anchor=(1.01, 0.5), ncol=2 if len(keys) > 8 else 1)
+    if direct:
+        ax.margins(x=0.02); ax.set_xlim(right=ax.get_xlim()[1] + 0.22 * np.ptp(ax.get_xlim()))
+    else:
+        ax.legend(title=B1.label, loc="center left", bbox_to_anchor=(1.01, 0.5), ncol=2 if len(keys) > 8 else 1)
     return png(fig)
 
 
@@ -252,7 +293,7 @@ def profiles(res, axis, field, sites=None):
     ax_ = _ax(res, axis)
     n = len(next(iter(prof.values())))
     fig, ax = _fig(7.4, 0.55 * min(len(prof), 9) + 2.2)
-    vals = list(prof)[:: max(1, len(prof) // 9)]
+    vals = list(prof)[:: max(1, int(np.ceil(len(prof) / 7)))]
     top = max(float(np.max(prof[v])) for v in vals) or 1
     cols = CAT if not ax_.numeric else _colors(len(vals))
     for i, (v, c) in enumerate(zip(vals, cols)):
@@ -345,54 +386,63 @@ def phase_panel(res, row, d, axis):
     m, lg = row.metric, _logx(d, axis)
     g = d.groupby(axis.label)
     x = np.array(sorted(g.groups), float)
-    fig, axs = plt.subplots(3, 1, figsize=(7.4, 7.0), sharex=True, gridspec_kw=dict(height_ratios=[1.5, 1, 1], hspace=0.12))
+    fig, axs = plt.subplots(3, 1, figsize=(7.0, 6.4), sharex=True, gridspec_kw=dict(height_ratios=[1.6, 1, 1], hspace=0.28))
     apply_theme()
-    for ax, (col, lab) in zip(axs, ((m, A.label(m)), (f"std:{m}", "fluctuation (std over time)"), (f"tau:{m}", "autocorrelation time (steps)"))):
-        ax.scatter(d[axis.label].astype(float), d[col], s=11, color=VIOLET, alpha=0.3, lw=0, zorder=2)
+    rows = ((m, "order parameter", True), (f"std:{m}", "fluctuation", False), (f"tau:{m}", "autocorrelation time", False))
+    for ax, (col, lab, dots) in zip(axs, rows):
+        if dots:
+            ax.scatter(d[axis.label].astype(float), d[col], s=12, color=VIOLET, alpha=0.3, lw=0, zorder=2)
         mean = g[col].mean().reindex(x)
-        ax.plot(x, mean, color=INK, lw=1.9, marker="o", ms=4, zorder=3)
+        ax.plot(x, mean, color=INK, lw=1.9, marker="o", ms=3.5, zorder=3)
         _mark(ax, row, lg)
-        ax.set_ylabel(lab)
+        ax.set_title(lab, fontsize=10, loc="left", color=MUTED, fontweight="normal", pad=4)
         if lg:
             ax.set_xscale("log")
-    axs[0].set_title(f"{A.label(m)} along {axis.label}", loc="left", fontsize=11)
+    axs[0].set_ylabel(A.label(m).split(" (")[0])
+    axs[0].text(row.x_star, axs[0].get_ylim()[1], "  transition", color=A_RED, fontsize=9, va="top", fontweight="bold")
     axs[-1].set_xlabel(axis.label)
     return png(fig)
 
 
 def bifurcation_diagram(res, row, d, axis, samples):
-    """Snapshots of the order parameter at every control value; separate clouds at one value mean coexisting states."""
+    """Mean of each replicate along the control parameter; the band is the range between replicates."""
     m = row.metric
-    fig, ax = _fig(6.6, 4.2)
-    xs = sorted(samples)
-    for xv in xs:
-        v = samples[xv]
-        ax.scatter(np.full(len(v), xv), v, s=5, color=VIOLET, alpha=0.12, lw=0, zorder=2)
-    for r, (rep, g) in zip(range(99), d.groupby("rep")):
-        ax.plot(g.groupby(axis.label)[m].mean().index, g.groupby(axis.label)[m].mean().values, color=CAT[r % len(CAT)], lw=1.3, marker="o", ms=3.5, label=f"replicate {rep}", zorder=3)
+    fig, ax = _fig(6.0, 4.2)
+    pv = d.pivot_table(index=axis.label, columns="rep", values=m)
+    ax.fill_between(pv.index, pv.min(axis=1), pv.max(axis=1), color=VIOLET, alpha=0.18, lw=0, label="range between replicates")
+    for r, (rep, g) in enumerate(d.groupby("rep")):
+        mm = g.groupby(axis.label)[m].mean()
+        ax.plot(mm.index, mm.values, color=CAT[r % len(CAT)], lw=1.2, marker="o", ms=3, alpha=0.9, zorder=3)
     _mark(ax, row, False)
     if _logx(d, axis):
         ax.set_xscale("log")
-    ax.set_xlabel(axis.label); ax.set_ylabel(A.label(m))
-    ax.legend(loc="center left", bbox_to_anchor=(1.01, 0.5), title="mean per replicate")
+    ax.set_xlabel(axis.label); ax.set_ylabel(A.label(m).split(" (")[0])
+    ax.set_title("each line = one replicate", fontsize=10, loc="left", color=MUTED, fontweight="normal")
+    ax.legend(loc="best")
     return png(fig)
 
 
 def distribution_at(res, row, samples, axis, k=6):
-    """Distribution of the order parameter at k control values across the transition (offset histograms)."""
+    """Distribution of the order parameter at k control values across the transition (smoothed, offset)."""
+    from scipy.stats import gaussian_kde
     xs = sorted(samples)
     sel = sorted({xs[int(i)] for i in np.linspace(0, len(xs) - 1, k)} | {x for x in xs if np.isclose(x, row.lo) or np.isclose(x, row.hi)})
     allv = np.concatenate([samples[x] for x in sel])
-    bins = np.linspace(allv.min(), allv.max() + 1e-9, 28)
-    fig, ax = _fig(6.0, 4.4)
-    cols = _colors(len(sel))
-    for i, (xv, c) in enumerate(zip(sel, cols)):
-        h, _ = np.histogram(samples[xv], bins=bins, density=True)
+    lo, hi = np.percentile(allv, [0.5, 99.5])              # ignore rare outliers for the axis range
+    pad = 0.08 * max(hi - lo, 1e-9)
+    grid = np.linspace(lo - pad, hi + pad, 200)
+    fig, ax = _fig(6.0, 4.2)
+    for i, (xv, c) in enumerate(zip(sel, _colors(len(sel)))):
+        v = samples[xv]
+        try:
+            h = gaussian_kde(v, bw_method=0.3)(grid) if np.ptp(v) > 1e-9 else np.exp(-0.5 * ((grid - v[0]) / (0.02 * np.ptp(grid))) ** 2)
+        except Exception:
+            h = np.exp(-0.5 * ((grid - v.mean()) / (0.02 * np.ptp(grid))) ** 2)
         h = h / (h.max() + 1e-12) * 0.9
-        ax.fill_between(0.5 * (bins[1:] + bins[:-1]), i, i + h, step="mid", color=c, alpha=0.85, lw=0)
-        ax.plot(0.5 * (bins[1:] + bins[:-1]), i + h, color="white", lw=0.6, drawstyle="steps-mid")
+        ax.fill_between(grid, i, i + h, color=c, alpha=0.85, lw=0)
+        ax.plot(grid, i + h, color="white", lw=0.8)
     ax.set_yticks(range(len(sel)), [fmt(x) for x in sel]); ax.set_ylabel(axis.label)
-    ax.set_xlabel(A.label(row.metric)); ax.grid(False)
+    ax.set_xlabel(A.label(row.metric).split(" (")[0]); ax.grid(False)
     return png(fig)
 
 

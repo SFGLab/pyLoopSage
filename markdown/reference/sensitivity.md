@@ -21,6 +21,8 @@ loopsage-scan scan.ini --dry-run   # count the runs and estimate the time
 loopsage-scan scan.ini             # run; writes results/scan_<name>/sensitivity_report.html
 ```
 
+To try it without writing a file, run the demo scan `python demo/run_demo.py sensitivity` (about 20 s; its settings are in `demo/demo_sensitivity.ini`).
+
 Open the report in any browser; it is one self-contained file. Finished runs are cached, so re-running a scan after you add a value only simulates the new points, and `--replot` rebuilds the report without running anything.
 
 ## The scan file
