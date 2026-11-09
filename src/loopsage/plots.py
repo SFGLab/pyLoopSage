@@ -12,15 +12,15 @@ _MODULES = ("mc_figs", "map_figs", "input_figs", "optimizer_figs", "structure_fi
 
 def _find(name):
     for mod in _MODULES:
-        fn = getattr(importlib.import_module(f"viz.{mod}"), name, None)
-        if inspect.isfunction(fn) and fn.__module__ == f"viz.{mod}":
+        fn = getattr(importlib.import_module(f"loopsage.viz.{mod}"), name, None)
+        if inspect.isfunction(fn) and fn.__module__ == f"loopsage.viz.{mod}":
             return fn
     raise AttributeError(f"no figure function '{name}' in loopsage.viz")
 
 
 def _wrap(fn):
     def draw(*args, **kwargs):
-        from reporting.report import REGISTRY
+        from loopsage.reporting.report import REGISTRY
         old = REGISTRY.capture
         REGISTRY.capture = captured = []
         try:

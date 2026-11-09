@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from optimizer.objective import loss_weights   # noqa: E402
+from loopsage.optimizer.objective import loss_weights   # noqa: E402
 
 X = lambda mb: 1.5 + 4.6 * np.log10(mb)        # log axis: 1 Mb -> 1.5, 250 Mb -> 12.5 (cm)
 Y = lambda w: 1.0 + 1.6 * w                    # weight 0 -> 1.0, 2 -> 4.2

@@ -1,8 +1,8 @@
 """Signal normalisation and the correlation of two signals (zero/zero pairs are left out)."""
 import numpy as np
 
-from common.utils import normalize_signal
-from validation.compare import correlate
+from loopsage.common.utils import normalize_signal
+from loopsage.validation.compare import correlate
 
 
 def test_zero_exclusion_changes_result():

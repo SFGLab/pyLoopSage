@@ -4,7 +4,7 @@ The basic terms (kappa, folding, binding, crossing) are covered in test_src_ener
 """
 import numpy as np
 
-from monte_carlo.energy import E_bind, dE_data
+from loopsage.monte_carlo.energy import E_bind, dE_data
 
 
 def test_dE_data_matches_the_difference_of_e_bind():

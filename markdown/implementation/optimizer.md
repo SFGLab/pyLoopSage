@@ -206,9 +206,9 @@ The total cost is about $\texttt{opt\_steps}\times(\texttt{opt\_evals}+12)$ Mont
 
 | File | Role |
 |---|---|
-| `src/optimizer/objective.py` | the loss: target map, loss terms and weights, one evaluation of $L(\theta)$ |
-| `src/optimizer/nelder_mead.py` | the search: bounds, Nelder&ndash;Mead, early stopping, final check |
-| `src/pipeline/stage_optimize.py` | the pipeline stage: reads the target, runs the search, writes the result and the report |
+| `src/loopsage/optimizer/objective.py` | the loss: target map, loss terms and weights, one evaluation of $L(\theta)$ |
+| `src/loopsage/optimizer/nelder_mead.py` | the search: bounds, Nelder&ndash;Mead, early stopping, final check |
+| `src/loopsage/pipeline/stage_optimize.py` | the pipeline stage: reads the target, runs the search, writes the result and the report |
 
 ## Outputs
 

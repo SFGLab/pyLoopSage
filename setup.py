@@ -1,42 +1,38 @@
-from setuptools import setup, find_namespace_packages
-import re
 from pathlib import Path
+import re
 
-with open('README.md', 'r', encoding='utf-8') as f:
-    long_description = f.read()
+from setuptools import find_packages, setup
 
-VERSION = re.search(r'"([^"]+)"', Path('src/version.py').read_text().split('__version__')[1]).group(1)
+VERSION = re.search(r'"([^"]+)"', Path('src/loopsage/version.py').read_text().split('__version__')[1]).group(1)
 
 setup(
     name='pyLoopSage',  # Package name
-    version=VERSION,  # read from src/version.py
+    version=VERSION,  # read from src/loopsage/version.py
     description='An energy-based stochastic model of loop extrusion in chromatin.',
-    long_description=long_description,
+    long_description=Path('README.md').read_text(encoding='utf-8'),
     long_description_content_type='text/markdown',
     author='Sebastian Korsak',
     author_email='s.korsak@datascience.edu.pl',
     url='https://github.com/SFGLab/pyLoopSage',  # GitHub repository URL
     license='GNU General Public License v3.0',
     package_dir={'': 'src'},
-    packages=find_namespace_packages('src', exclude=['*__pycache__*']),
-    py_modules=['run', 'logger', 'version'],
+    packages=find_packages('src', include=['loopsage', 'loopsage.*']),
     include_package_data=True,
     package_data={
-        'html': ['*.html', '*.css'],
-        'molecular_dynamics.forcefields': ['*.xml'],
-        'motif_finder.data': ['*.pfm'],
+        'loopsage.html': ['*.html', '*.css'],
+        'loopsage.molecular_dynamics': ['forcefields/*.xml'],
+        'loopsage.motif_finder': ['data/*.pfm'],
     },
-    install_requires=[  # List your package dependencies here
-        'numpy>1.2,<2.0',
+    install_requires=[
+        'numpy>=1.26',
         'numba',
         'scipy',
         'pandas',
-        'argparse',
         'matplotlib',
         'mdtraj',
         'seaborn',
         'scikit-learn',
-        'configparser',
+        'rich',
         'typing-extensions',
         'tqdm',
         'pyvista[all]',
@@ -52,7 +48,8 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'loopsage=run:main',  # the `loopsage` command runs src/run.py
+            'loopsage=loopsage.api:cli',  # the `loopsage` command
+            'loopsage-scan=loopsage.sensitivity.cli:cli',  # sensitivity scans
         ],
     },
     classifiers=[

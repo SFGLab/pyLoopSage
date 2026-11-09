@@ -18,7 +18,7 @@ import importlib.abc
 import importlib.util
 import sys
 
-from version import __version__
+from loopsage.version import __version__
 
 # sub-packages and modules that can be imported as loopsage.<name>
 _SUBMODULES = ("analysis", "common", "knots", "molecular_dynamics", "monte_carlo", "motif_finder", "optimizer", "pipeline",
@@ -37,36 +37,11 @@ _API = {
     "run": ("loopsage.api", "run"),
     "main": ("loopsage.api", "main"),
     "Sandbox": ("loopsage.sandbox", "Sandbox"),
-    "load_config": ("settings.loader", "load_config"),
-    "Config": ("settings.loader", "Config"),
-    "write_ini": ("settings.loader", "write_ini"),
+    "load_config": ("loopsage.settings.loader", "load_config"),
+    "Config": ("loopsage.settings.loader", "Config"),
+    "write_ini": ("loopsage.settings.loader", "write_ini"),
+    "sweep": ("loopsage.sensitivity.api", "sweep"),
 }
-
-
-class _Alias(importlib.abc.MetaPathFinder, importlib.abc.Loader):
-    """Make `loopsage.monte_carlo[.x]` the very same module object as `monte_carlo[.x]` (no second copy)."""
-
-    def find_spec(self, name, path=None, target=None):
-        parts = name.split(".")
-        if parts[0] != "loopsage" or len(parts) < 2 or parts[1] not in _SUBMODULES:
-            return None
-        real = ".".join(parts[1:])
-        try:
-            if importlib.util.find_spec(real) is None:
-                return None
-        except (ImportError, ValueError):
-            return None
-        return importlib.util.spec_from_loader(name, self, is_package=importlib.util.find_spec(real).submodule_search_locations is not None)
-
-    def create_module(self, spec):
-        return importlib.import_module(spec.name.split(".", 1)[1])
-
-    def exec_module(self, module):
-        pass
-
-
-if not any(isinstance(f, _Alias) for f in sys.meta_path):
-    sys.meta_path.insert(0, _Alias())
 
 
 def __getattr__(name):

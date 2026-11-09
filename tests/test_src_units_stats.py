@@ -2,11 +2,11 @@
 import numpy as np
 import pytest
 
-from common.genome import Geometry
-from common.genome import fmt_bp, fmt_duration, fmt_num
-from analysis.maps import insulation_score, minmax, ps_curve
-from common.utils import moving_average, normalize_signal, pearson_ci, strength_label
-from validation.compare import correlate
+from loopsage.common.genome import Geometry
+from loopsage.common.genome import fmt_bp, fmt_duration, fmt_num
+from loopsage.analysis.maps import insulation_score, minmax, ps_curve
+from loopsage.common.utils import moving_average, normalize_signal, pearson_ci, strength_label
+from loopsage.validation.compare import correlate
 
 
 def test_formatting():

@@ -160,10 +160,10 @@ epi_coeff      = 0.0     # epsilon: epigenetic coupling, 0 = off
 
 | File | Role |
 |---|---|
-| `src/monte_carlo/energy.py` | every energy term and its change $\Delta E$ for one move |
-| `src/monte_carlo/sampler.py` | parameters of the sampler, the two LEF moves, the Metropolis loop (compiled with numba) |
-| `src/monte_carlo/simulation.py` | runs the chains, collects the snapshots, the result object and its saving |
-| `src/pipeline/stage_mc.py` | the pipeline stage: runs the simulation, writes the tables and figures |
+| `src/loopsage/monte_carlo/energy.py` | every energy term and its change $\Delta E$ for one move |
+| `src/loopsage/monte_carlo/sampler.py` | parameters of the sampler, the two LEF moves, the Metropolis loop (compiled with numba) |
+| `src/loopsage/monte_carlo/simulation.py` | runs the chains, collects the snapshots, the result object and its saving |
+| `src/loopsage/pipeline/stage_mc.py` | the pipeline stage: runs the simulation, writes the tables and figures |
 
 ### Outputs
 

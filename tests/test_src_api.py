@@ -7,8 +7,6 @@ from pathlib import Path
 
 import pytest
 
-SRC = Path(__file__).resolve().parents[1] / "src"
-
 
 @pytest.fixture
 def params(demo_bedpe, tmp_path):
@@ -18,8 +16,7 @@ def params(demo_bedpe, tmp_path):
 
 
 def _python(code):
-    env = dict(os.environ, PYTHONPATH=str(SRC))
-    return subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, env=env, timeout=120)
+    return subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=120)
 
 
 def test_import_is_light():
@@ -29,18 +26,17 @@ def test_import_is_light():
 
 
 def test_submodules_are_the_same_objects():
+    import loopsage as ls
     import loopsage.monte_carlo as mc
-    import monte_carlo
     from loopsage.preproc.loader import load_inputs
-    from preproc.loader import load_inputs as direct
-    assert mc is monte_carlo and load_inputs is direct
+    assert ls.monte_carlo is mc and ls.preproc.loader.load_inputs is load_inputs
     with pytest.raises(ImportError):
         import loopsage.not_a_module  # noqa: F401
 
 
 def test_top_level_names():
     import loopsage as ls
-    from settings.loader import Config
+    from loopsage.settings.loader import Config
     assert ls.Config is Config and callable(ls.run_mc) and callable(ls.load_config) and callable(ls.read_inputs)
 
 
@@ -54,7 +50,7 @@ def test_config_from_python(params):
 
 def test_config_from_ini_config_and_dict(params, tmp_path):
     import loopsage as ls
-    from settings.loader import write_ini
+    from loopsage.settings.loader import write_ini
     base = ls.config(**params)
     ini = tmp_path / "c.ini"
     write_ini(ini, base.as_dict(), base.source)
@@ -75,12 +71,12 @@ def test_config_errors_raise_value_error(params):
 
 
 def test_python_dash_m_loopsage():
-    r = subprocess.run([sys.executable, "-m", "loopsage", "-h"], capture_output=True, text=True, env=dict(os.environ, PYTHONPATH=str(SRC)), timeout=120)
+    r = subprocess.run([sys.executable, "-m", "loopsage", "-h"], capture_output=True, text=True, timeout=120)
     assert r.returncode == 0 and "usage: loopsage" in r.stdout
 
 
 def test_python_dash_m_loopsage():
-    r = subprocess.run([sys.executable, "-m", "loopsage", "-h"], capture_output=True, text=True, env=dict(os.environ, PYTHONPATH=str(SRC)), timeout=120)
+    r = subprocess.run([sys.executable, "-m", "loopsage", "-h"], capture_output=True, text=True, timeout=120)
     assert r.returncode == 0 and "usage: loopsage" in r.stdout
 
 

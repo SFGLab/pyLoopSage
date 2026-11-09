@@ -4,11 +4,11 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from analysis.speed import lef_windows, msd, vacf
-from monte_carlo.sampler import lef_speeds
-from monte_carlo.simulation import run_mc
-from preproc.loader import build_geometry, load_inputs
-from settings.loader import load_config
+from loopsage.analysis.speed import lef_windows, msd, vacf
+from loopsage.monte_carlo.sampler import lef_speeds
+from loopsage.monte_carlo.simulation import run_mc
+from loopsage.preproc.loader import build_geometry, load_inputs
+from loopsage.settings.loader import load_config
 
 
 def _cfg(kind, **kw):
@@ -87,7 +87,7 @@ def test_windows_do_not_cross_rebinding():
 
 
 def test_speed_is_absolute_and_legs_move_at_plus_minus_v():
-    from analysis.speed import velocities
+    from loopsage.analysis.speed import velocities
     ch = _Chain(np.array([[4, 6, 8, 10, 8, 6]]))                      # right leg +1, left leg -1 (opening) then closing
     ch.Ms = 50 - (ch.Ns - 50) // 2
     ch.Ns = ch.Ms + np.array([[4, 6, 8, 10, 8, 6]])
@@ -97,8 +97,8 @@ def test_speed_is_absolute_and_legs_move_at_plus_minus_v():
 
 
 def test_free_energy_surface_and_interactive_html():
-    from analysis.speed import free_energy_surface
-    from viz.surface3d import surface_html
+    from loopsage.analysis.speed import free_energy_surface
+    from loopsage.viz.surface3d import surface_html
     rng = np.random.default_rng(0)
     x, y, F = free_energy_surface(rng.normal(5, 1, 500), rng.normal(2, 0.5, 500), bins=(12, 10))
     assert F.shape == (10, 12) and F.min() == pytest.approx(0.0, abs=0.5) and F.max() <= 7.0
@@ -107,8 +107,8 @@ def test_free_energy_surface_and_interactive_html():
 
 
 def test_free_energy_colors_never_white():
-    from viz.surface3d import surface_html
-    from viz.theme import FREE
+    from loopsage.viz.surface3d import surface_html
+    from loopsage.viz.theme import FREE
     for t in np.linspace(0, 1, 50):
         r, g, b, _ = FREE(t)
         assert min(r, g, b) < 0.9                                 # every level stays visible on a white page

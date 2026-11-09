@@ -121,11 +121,11 @@ contact_radius  = 1.0        # nm, for the MD contact maps
 
 | File | Role |
 |---|---|
-| `src/molecular_dynamics/engine.py` | the OpenMM engine: platform choice, build, the loop over frames, the contact maps |
-| `src/molecular_dynamics/forces.py` | the force terms: bonds, angles, excluded volume, loop springs, compartments |
-| `src/molecular_dynamics/structures.py` | the shapes of the starting chain |
-| `src/molecular_dynamics/topology.py` | the topoisomerase passage events and the crossing counter |
-| `src/pipeline/stage_md.py` | the pipeline stage: runs the engine, writes tables and figures |
+| `src/loopsage/molecular_dynamics/engine.py` | the OpenMM engine: platform choice, build, the loop over frames, the contact maps |
+| `src/loopsage/molecular_dynamics/forces.py` | the force terms: bonds, angles, excluded volume, loop springs, compartments |
+| `src/loopsage/molecular_dynamics/structures.py` | the shapes of the starting chain |
+| `src/loopsage/molecular_dynamics/topology.py` | the topoisomerase passage events and the crossing counter |
+| `src/loopsage/pipeline/stage_md.py` | the pipeline stage: runs the engine, writes tables and figures |
 
 ### Outputs
 

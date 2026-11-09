@@ -1,7 +1,7 @@
 """Loop nesting: parent / child orders, summaries, figures and report entries."""
 import numpy as np
 
-from analysis.nesting import nesting, nesting_summary, order_counts
+from loopsage.analysis.nesting import nesting, nesting_summary, order_counts
 
 
 def _toy():
@@ -33,13 +33,13 @@ def test_summary():
 
 import pytest
 
-from analysis.nesting import production_nesting, pooled
-from monte_carlo.simulation import run_mc
-from preproc.loader import build_geometry, load_inputs
-from reporting.explanations import EXPLAIN
-from reporting.report import REGISTRY
-from settings.loader import load_config
-from viz.nesting_figs import nesting_figure, parents_children_figure
+from loopsage.analysis.nesting import production_nesting, pooled
+from loopsage.monte_carlo.simulation import run_mc
+from loopsage.preproc.loader import build_geometry, load_inputs
+from loopsage.reporting.explanations import EXPLAIN
+from loopsage.reporting.report import REGISTRY
+from loopsage.settings.loader import load_config
+from loopsage.viz.nesting_figs import nesting_figure, parents_children_figure
 
 
 @pytest.fixture(scope="module")

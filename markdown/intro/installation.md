@@ -29,14 +29,14 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-Check the installation with `loopsage -h`. Without installing, you can also run `PYTHONPATH=src python src/run.py`.
+Check the installation with `loopsage -h`. The same command also runs as `python -m loopsage`.
 
 ## Check that it works
 
 Run the small demo (under a minute) and open the report it writes:
 
 ```bash
-PYTHONPATH=src python demo/run_demo.py quick
+python demo/run_demo.py quick
 ```
 
 The demo uses a small synthetic loop file shipped with the repository. It needs no downloads.
@@ -44,7 +44,7 @@ The demo uses a small synthetic loop file shipped with the repository. It needs 
 To run the automatic tests (several minutes):
 
 ```bash
-PYTHONPATH=src python -m pytest
+python -m pytest
 ```
 
 ## Choosing the 3D computing platform

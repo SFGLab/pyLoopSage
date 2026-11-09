@@ -1,2 +1,3 @@
 exclude Dockerfile
 recursive-include src *.html *.css *.xml *.pfm
+include CHANGELOG.md

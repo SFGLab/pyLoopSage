@@ -4,9 +4,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from monte_carlo.energy import E_cross, Kappa
-from monte_carlo.energy import E_bind
-from monte_carlo.energy import dE_bind_inner, E_bind_inner, E_fold, dE_fold
+from loopsage.monte_carlo.energy import E_cross, Kappa
+from loopsage.monte_carlo.energy import E_bind
+from loopsage.monte_carlo.energy import dE_bind_inner, E_bind_inner, E_fold, dE_fold
 
 
 def _arr(*v):
@@ -52,12 +52,12 @@ def test_bind_inner_rewards_spanning_covered_beads():
                                    ["--binding-mode", "contrastive"]])
 def test_mc_incremental_energy_matches_recomputed(fast_args, extra):
     """After sampling, the running energy must equal a fresh evaluation of the final state (all epigenetic modes)."""
-    from monte_carlo.energy import total_energy
-    from monte_carlo.sampler import build_params
-    from monte_carlo.simulation import run_mc
-    from preproc.loader import load_inputs
-    from preproc.loader import build_geometry
-    from settings.loader import load_config
+    from loopsage.monte_carlo.energy import total_energy
+    from loopsage.monte_carlo.sampler import build_params
+    from loopsage.monte_carlo.simulation import run_mc
+    from loopsage.preproc.loader import load_inputs
+    from loopsage.preproc.loader import build_geometry
+    from loopsage.settings.loader import load_config
 
     cfg = load_config(fast_args + extra)
     geom = build_geometry(cfg)
@@ -74,7 +74,7 @@ def test_mc_incremental_energy_matches_recomputed(fast_args, extra):
 
 def test_dynamic_epigenetic_incremental_matches_full():
     """dE for epigenetic-state changes and LEF moves equals the difference of full dynamic energies (incl. duplicate loops)."""
-    from monte_carlo.energy import E_epi_dyn, dE_epi_dyn, dE_epi_move
+    from loopsage.monte_carlo.energy import E_epi_dyn, dE_epi_dyn, dE_epi_move
     rng = np.random.default_rng(0)
     n, norm = 30, 2.0
     h = rng.normal(size=n)
@@ -101,7 +101,7 @@ def test_dynamic_epigenetic_incremental_matches_full():
 
 def test_dynamic_epigenetic_coupling_structure():
     """All beads in one state: energy = -(backbone bonds + distinct LEF loops); no loops left -> backbone only."""
-    from monte_carlo.energy import E_epi_dyn
+    from loopsage.monte_carlo.energy import E_epi_dyn
     S, h = np.zeros(10, np.int64), np.zeros(10)
     ms, ns = np.array([1, 1, 4], np.int64), np.array([6, 6, 8], np.int64)
     assert E_epi_dyn(S, ms, ns, h, 1.0) == -(9 + 2)             # 9 backbone + 2 distinct loops
@@ -109,11 +109,11 @@ def test_dynamic_epigenetic_coupling_structure():
 
 
 def test_epigenetic_mode_is_config_only():
-    from settings.loader import load_config
+    from loopsage.settings.loader import load_config
     import subprocess, sys
     cfg = load_config(["-f", "demo/data/demo_loops.bedpe", "-r", "chr1:77000000-95000000"])
     assert cfg.epigenetic_mode == "dynamic"
-    out = subprocess.run([sys.executable, "src/run.py", "-h"], capture_output=True, text=True).stdout
+    out = subprocess.run([sys.executable, "-m", "loopsage", "-h"], capture_output=True, text=True).stdout
     assert "epigenetic-mode" not in out and "epigenetic_mode" not in out
 
 
@@ -130,7 +130,7 @@ def _dense_J(n, ms, ns):
 
 def test_dynamic_epigenetic_matches_dense_matrix_definition():
     """Fast incremental energies equal the energy computed from the explicit changing matrix J."""
-    from monte_carlo.energy import E_epi, E_epi_dyn, dE_epi_dyn, dE_epi_move
+    from loopsage.monte_carlo.energy import E_epi, E_epi_dyn, dE_epi_dyn, dE_epi_move
     rng = np.random.default_rng(5)
     n, norm = 40, 1.7
     h = rng.normal(size=n)
@@ -154,9 +154,9 @@ def test_dynamic_epigenetic_matches_dense_matrix_definition():
 
 def test_epigenetic_model_off_by_default(tiny_args):
     """Default = pure loop extrusion: no epigenetic states are sampled and no epigenetic figures are made."""
-    from settings.loader import load_config
-    from monte_carlo.simulation import run_mc
-    from preproc.loader import build_geometry, load_inputs
+    from loopsage.settings.loader import load_config
+    from loopsage.monte_carlo.simulation import run_mc
+    from loopsage.preproc.loader import build_geometry, load_inputs
     cfg = load_config(tiny_args)
     assert cfg.epi_coeff == 0.0 and cfg.epigenetic_mode == "dynamic"
     geom = build_geometry(cfg)
@@ -166,9 +166,9 @@ def test_epigenetic_model_off_by_default(tiny_args):
 
 def test_dynamic_epigenetic_model_end_to_end(tmp_path):
     """Demo run with the dynamic model: loop ends share a state more often than random pairs, report has the figures."""
-    from analysis.ensemble import loop_state_agreement
-    from pipeline.runner import run_pipeline
-    from settings.loader import load_config
+    from loopsage.analysis.ensemble import loop_state_agreement
+    from loopsage.pipeline.runner import run_pipeline
+    from loopsage.settings.loader import load_config
     root = Path(__file__).resolve().parents[1]
     cfg = load_config(["-c", str(root / "demo/demo_epigenetic.ini"), "-f", str(root / "demo/data/demo_loops.bedpe"),
                        "-o", str(tmp_path), "--mc-steps", "5000", "--burnin", "1500",
@@ -186,7 +186,7 @@ def test_dynamic_epigenetic_model_end_to_end(tmp_path):
 
 def _engine(platform, tmp_path, threads_source="default"):
     from types import SimpleNamespace
-    from molecular_dynamics.engine import LoopMD
+    from loopsage.molecular_dynamics.engine import LoopMD
     e = LoopMD.__new__(LoopMD)
     e.cfg = SimpleNamespace(platform=platform, sim_temp=300, friction=1.0, integrator_step=10, seed=1, device="", threads=1,
                             source={"threads": threads_source})
@@ -208,7 +208,7 @@ def test_platform_candidates_prefer_gpu_then_cpu(tmp_path):
 def test_platform_falls_back_when_a_platform_fails_to_start(tmp_path, monkeypatch):
     mm = pytest.importorskip("openmm")
     from openmm import app
-    import molecular_dynamics.engine as eng
+    import loopsage.molecular_dynamics.engine as eng
     system = mm.System()
     system.addParticle(1.0)
     top = app.Topology()

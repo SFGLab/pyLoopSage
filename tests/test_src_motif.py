@@ -5,11 +5,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from motif_finder import annotate_bedpe, load_pfm
-from motif_finder.annotate import anchor_call, read_loops, select_loops
-from motif_finder.fasta import encode, Fasta
-from pipeline.runner import run_pipeline
-from settings.loader import load_config
+from loopsage.motif_finder import annotate_bedpe, load_pfm
+from loopsage.motif_finder.annotate import anchor_call, read_loops, select_loops
+from loopsage.motif_finder.fasta import encode, Fasta
+from loopsage.pipeline.runner import run_pipeline
+from loopsage.settings.loader import load_config
 
 COMP = str.maketrans("ACGT", "TGCA")
 REGION = ("chr1", 1_000_000, 1_600_000)
@@ -138,8 +138,8 @@ def test_orientation_recovery(world, tmp_path):
 
 
 def test_output_file_is_valid_loopsage_input(world, tmp_path):
-    from analysis.inputs import anchor_table
-    from common.genome import Geometry
+    from loopsage.analysis.inputs import anchor_table
+    from loopsage.common.genome import Geometry
     res = annotate_bedpe(world["bedpe"], tmp_path / "out.bedpe", REGION, world["fasta"], min_pet=3)
     cols = pd.read_csv(res.path, sep="\t", header=None)
     assert cols.shape[1] == 9 and (cols[6] >= 3).all()
@@ -207,8 +207,8 @@ def _variant(src, dst, ncols):
 
 @pytest.mark.parametrize("ncols", [6, 7, 9])
 def test_plain_bedpe_loads_with_or_without_orientation(demo_bedpe, tmp_path, ncols):
-    from common.genome import Geometry
-    from preproc.loader import load_inputs
+    from loopsage.common.genome import Geometry
+    from loopsage.preproc.loader import load_inputs
     f = _variant(demo_bedpe, tmp_path / f"l{ncols}.bedpe", ncols)
     cfg = load_config(["-f", str(f), "-r", "chr1:77000000-95000000", "-n", "120", "-o", str(tmp_path)])
     assert cfg.min_pet == 0 and cfg.motif_genome is None                       # nothing extra runs by default

@@ -168,10 +168,10 @@ Chromosome names are matched flexibly (`1` and `chr1` are the same). A BEDPE tha
 
 | File | Role |
 |---|---|
-| `src/motif_finder/pssm.py` | the matrix $M$, the exact cutoff, the two-strand scan |
-| `src/motif_finder/fasta.py` | indexed random access to a reference genome |
-| `src/motif_finder/annotate.py` | filtering, scanning anchors, $P(\mathrm{rev})$, the annotated BEDPE |
-| `src/preproc/readers.py` | turns the probabilities into the profiles $L$ and $R$ |
+| `src/loopsage/motif_finder/pssm.py` | the matrix $M$, the exact cutoff, the two-strand scan |
+| `src/loopsage/motif_finder/fasta.py` | indexed random access to a reference genome |
+| `src/loopsage/motif_finder/annotate.py` | filtering, scanning anchors, $P(\mathrm{rev})$, the annotated BEDPE |
+| `src/loopsage/preproc/readers.py` | turns the probabilities into the profiles $L$ and $R$ |
 
 ### Outputs
 

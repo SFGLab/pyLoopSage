@@ -5,12 +5,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from analysis.maps import insulation, map_features, observed_over_expected   # noqa: E402
-from analysis.structure import compute_metrics                               # noqa: E402
-from knots.linking import frame_links, gauss_linking                                 # noqa: E402
-from molecular_dynamics.structures import interpolate_trajectory                    # noqa: E402
+from loopsage.analysis.maps import insulation, map_features, observed_over_expected   # noqa: E402
+from loopsage.analysis.structure import compute_metrics                               # noqa: E402
+from loopsage.knots.linking import frame_links, gauss_linking                                 # noqa: E402
+from loopsage.molecular_dynamics.structures import interpolate_trajectory                    # noqa: E402
 
 
 def ring(plane, center, r=1.0, n=40):
@@ -63,16 +62,16 @@ def test_map_features():
 
 
 def test_viewer_file(tmp_path):
-    from viz3d.render import build_viewer
+    from loopsage.viz3d.render import build_viewer
     p = build_viewer(np.random.default_rng(0).normal(size=(3, 10, 3)), tmp_path / "v.html")
     t = p.read_text()
     assert "Tube (linear)" in t and "Beads on a string" in t
 
 
 def test_loop_pairs_and_zoom_window():
-    from analysis.ensemble import loop_pairs_of_frame
+    from loopsage.analysis.ensemble import loop_pairs_of_frame
     from types import SimpleNamespace
-    from viz.mc_figs import _zoom_window
+    from loopsage.viz.mc_figs import _zoom_window
     p = loop_pairs_of_frame(np.array([5, 3, 7, 9]), np.array([2, 8, 7, 12]))
     assert p.tolist() == [[2, 5], [3, 8], [9, 12]]            # dedup, ordered, zero-length dropped
     res = SimpleNamespace(n_samples=1000, burnin_idx=200)
@@ -81,18 +80,18 @@ def test_loop_pairs_and_zoom_window():
 
 
 def test_bend_angle_straight_chain():
-    from analysis.structure import _bend
+    from loopsage.analysis.structure import _bend
     c = np.c_[np.arange(6.0), np.zeros(6), np.zeros(6)]
     assert np.allclose(_bend(c), 180.0)
 
 
 def test_replicas_threads_reproducible_and_pooled(tmp_path):
-    from analysis.ensemble import r_hat
-    from monte_carlo.simulation import MCResult
-    from monte_carlo.simulation import run_mc
-    from preproc.loader import load_inputs
-    from preproc.loader import build_geometry
-    from settings.loader import load_config
+    from loopsage.analysis.ensemble import r_hat
+    from loopsage.monte_carlo.simulation import MCResult
+    from loopsage.monte_carlo.simulation import run_mc
+    from loopsage.preproc.loader import load_inputs
+    from loopsage.preproc.loader import build_geometry
+    from loopsage.settings.loader import load_config
     root = Path(__file__).resolve().parents[1]
     base = ["-c", str(root / "demo/demo_quick.ini"), "-f", str(root / "demo/data/demo_loops.bedpe"), "--seed", "3", "--mc-steps", "2000", "--n-replicas", "3"]
     out = {}

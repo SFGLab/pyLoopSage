@@ -46,7 +46,7 @@ def run_file(path: Path, extra: list, tmp: Path, st: State) -> dict:
     """Run one test file in its own pytest process (streaming its -v output into `st`); returns counts, time, failures and slowest tests."""
     xml = tmp / f"{path.stem}.xml"
     cmd = [sys.executable, "-m", "pytest", str(path), "-v", "-p", "no:cacheprovider", f"--junitxml={xml}", "--tb=short", *extra]
-    env = dict(os.environ, PYTHONPATH=str(ROOT / "src"), MPLBACKEND="Agg", PYTHONUNBUFFERED="1")
+    env = dict(os.environ, MPLBACKEND="Agg", PYTHONUNBUFFERED="1")
     t0 = st.start = time.time()
     st.status = "running"
     proc = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=0)

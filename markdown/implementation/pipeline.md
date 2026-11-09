@@ -58,8 +58,8 @@ loopsage -f loops.bedpe -r chr1:78000000-92000000 -n 1000 --run-MD --optimize --
 You can also run **one stage** on its own. The earlier stages are then not recomputed: their saved results are loaded from the latest run folder.
 
 ```bash
-python src/pipeline/stage_mc.py -c config.ini      # only the Monte Carlo, inputs are reused
-python src/pipeline/stage_md.py -c config.ini      # only the MD, the Monte Carlo is reused
+python -m loopsage.pipeline.stage_mc -c config.ini      # only the Monte Carlo, inputs are reused
+python -m loopsage.pipeline.stage_md -c config.ini      # only the MD, the Monte Carlo is reused
 ```
 
 Because the Monte Carlo result is saved, you can change only MD options (time step, forces, number of steps per frame) and repeat the MD without sampling the loops again.
@@ -85,8 +85,8 @@ The file `config_resolved.ini` is the best record of a run: it contains every op
 
 | File | Role |
 |---|---|
-| `src/run.py` | entry point: reads the configuration and starts the pipeline |
-| `src/pipeline/runner.py` | the run context and the loop over the stages (compute, or load the saved result, then describe) |
-| `src/pipeline/stage_*.py` | one file per stage; each has `enabled`, `compute`, `load` and `describe` |
-| `src/knots/stage.py` | the optional links stage |
-| `src/settings/` | the list of options (`schema.py`), reading of files and command line, checks |
+| `src/loopsage/api.py` | entry points: the `loopsage` command (`cli`) and the Python functions |
+| `src/loopsage/pipeline/runner.py` | the run context and the loop over the stages (compute, or load the saved result, then describe) |
+| `src/loopsage/pipeline/stage_*.py` | one file per stage; each has `enabled`, `compute`, `load` and `describe` |
+| `src/loopsage/knots/stage.py` | the optional links stage |
+| `src/loopsage/settings/` | the list of options (`schema.py`), reading of files and command line, checks |

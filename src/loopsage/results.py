@@ -87,7 +87,7 @@ def leg_density(mc, geom) -> np.ndarray:
 
 def contact_map(mc, geom) -> np.ndarray:
     """Contact map implied by the loops: array (beads, beads)."""
-    from analysis.maps import loop_map
+    from loopsage.analysis.maps import loop_map
     return loop_map(mc.pooled(), geom.n_beads)
 
 

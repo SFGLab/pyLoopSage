@@ -5,13 +5,13 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from analysis.maps import denoise_map, fill_masked, ps_curve
-from common.genome import Geometry
-from optimizer.objective import loss_parts, target_map
-from pipeline.runner import run_pipeline
-from preproc import hic as H
-from settings.loader import load_config
-from validation.hic_compare import compare_hic
+from loopsage.analysis.maps import denoise_map, fill_masked, ps_curve
+from loopsage.common.genome import Geometry
+from loopsage.optimizer.objective import loss_parts, target_map
+from loopsage.pipeline.runner import run_pipeline
+from loopsage.preproc import hic as H
+from loopsage.settings.loader import load_config
+from loopsage.validation.hic_compare import compare_hic
 
 
 def _hic_like(n=120, seed=0, noise=0.1):
@@ -130,7 +130,7 @@ def test_loop_target_is_smoothed_like_a_hic_map(tiny_args):
 
 
 def test_hic_compartments_put_the_denser_side_negative():
-    from analysis.maps import compartment_from_hic
+    from loopsage.analysis.maps import compartment_from_hic
     n, rng = 240, np.random.default_rng(1)
     t = np.sign(np.sin(np.arange(n) / 20 * np.pi / 2) + 1e-9)
     sep = np.abs(np.subtract.outer(np.arange(n), np.arange(n)))
@@ -143,13 +143,13 @@ def test_hic_compartments_put_the_denser_side_negative():
 
 
 def test_correlation_matrix_score_and_figure(tmp_path):
-    from viz.hic_figs import hic_correlation_figure
+    from loopsage.viz.hic_figs import hic_correlation_figure
     t = _hic_like()
     same, other = compare_hic(t * 2.0, t), compare_hic(_hic_like(seed=9, noise=1.5)[::-1, ::-1] ** 0.3, t)
     assert same["r_cm"] > 0.99 and other["r_cm"] < same["r_cm"]
     assert same["corr_h"].shape == t.shape and np.isfinite(same["row_r"]).all() and np.nanmean(same["row_r"]) > 0.99
     geom = SimpleNamespace(chrom="chr1", axis_mb=lambda: np.linspace(0, 1, len(t)), extent_mb=lambda: [0, 1, 1, 0], bp_per_bead=1e4)
-    import viz.hic_figs as hf
+    import loopsage.viz.hic_figs as hf
     saved = []
     hf.save_figure = lambda fig, name, **kw: saved.append(name)
     hic_correlation_figure(same, geom, "test")
@@ -157,7 +157,7 @@ def test_correlation_matrix_score_and_figure(tmp_path):
 
 
 def test_track_smoothing_reduces_noise_and_keeps_range():
-    from analysis.maps import compartment_from_hic, insulation_score
+    from loopsage.analysis.maps import compartment_from_hic, insulation_score
     t = _hic_like(seed=3, noise=1.5)
     rough = lambda v: np.abs(np.diff(v)).sum()
     assert rough(insulation_score(t, 5, 7.0)[5:-5]) < rough(insulation_score(t, 5)[5:-5])

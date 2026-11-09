@@ -58,8 +58,10 @@ The functions, the results and the sandbox are described on the [Python page](py
 
 | Page | What it covers |
 |---|---|
+| [Data input](data-input.md) | Which files LoopSage reads, how each must look (columns, examples), and which are mandatory or optional. |
 | [Command-line interface](cli.md) | The `loopsage` command, its general options and every option by topic, with defaults. |
 | [Python interface](python.md) | Installing with `pip` and calling LoopSage from Python (`import loopsage as ls`): one function per step, results as arrays and figures, and a sandbox for synthetic systems. |
 | [Config files](config.md) | How to write a `.ini` config file, and a table of every key (including the advanced ones that have no command-line option). |
+| [Sensitivity scans](sensitivity.md) | The `loopsage-scan` command: why scanning parameters gives biophysical insight, how to write a scan file, phase transitions and bifurcations, topology, and the report. |
 
 The command-line and config pages are generated from the same parameter list in the code, so they always agree with the program.

@@ -1,8 +1,8 @@
 """Config contract: every command-line option is also a config.ini key, and config.ini offers more (advanced) keys."""
 import pytest
 
-from settings.loader import build_parser, load_config, read_ini
-from settings.schema import BY_NAME, PARAMS
+from loopsage.settings.loader import build_parser, load_config, read_ini
+from loopsage.settings.schema import BY_NAME, PARAMS
 
 # CLI options that are not parameters themselves: help, the config file, repeatable --set, region (= 3 ini keys), -v (= verbosity)
 SPECIAL = {"help", "config", "set", "region", "verbose"}
@@ -82,7 +82,7 @@ def test_advanced_ini_only_keys_work_and_cli_overrides_ini(files, tmp_path):
 
 def test_resolved_config_is_a_valid_config(files, tmp_path):
     """The ini written at the start of a run can be loaded again and gives the same values."""
-    from settings.loader import write_ini
+    from loopsage.settings.loader import write_ini
     cfg = load_config(["-f", files["interaction_file"], "-r", "chr1:77000000-95000000", "--min-pet", "3", "--lef-speed", "maxwell"])
     out = tmp_path / "resolved.ini"
     write_ini(out, cfg.as_dict(), cfg.source)

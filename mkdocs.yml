@@ -70,7 +70,9 @@ nav:
       - Molecular Dynamics: implementation/molecular-dynamics.md
   - Reference:
       - Overview: reference/index.md
+      - Data input: reference/data-input.md
       - Command-line interface: reference/cli.md
       - Python interface: reference/python.md
       - Config files: reference/config.md
+      - Sensitivity scans: reference/sensitivity.md
   - Acknowledgments: acknowledgments/index.md

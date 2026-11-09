@@ -1,10 +1,10 @@
-"""Write markdown/reference/cli.md and config.md from the parameter schema (src/settings/schema.py).
+"""Write markdown/reference/cli.md and config.md from the parameter schema (src/loopsage/settings/schema.py).
 
-Run from the repository root:  PYTHONPATH=src python tools/make_reference.py
+Run from the repository root:  python tools/make_reference.py
 """
 from pathlib import Path
 
-from settings.schema import PARAMS, SECTIONS
+from loopsage.settings.schema import PARAMS, SECTIONS
 
 HEADING = {"input": "Input data", "output": "Output", "parallel": "Parallelism", "monte_carlo": "Monte Carlo", "energy": "Energy",
            "molecular_dynamics": "Molecular dynamics", "structure_3d": "3D structures", "analysis": "Analysis", "optimizer": "Optimizer",
@@ -19,7 +19,7 @@ def show(v) -> str:
     if v is None or v == []:
         return "*(empty)*"
     if isinstance(v, str) and v.endswith("classic_sm_ff.xml"):          # bundled file: show it relative to the repository
-        v = "src/molecular_dynamics/forcefields/classic_sm_ff.xml"
+        v = "src/loopsage/molecular_dynamics/forcefields/classic_sm_ff.xml"
     return f"`{', '.join(map(str, v))}`" if isinstance(v, list) else f"`{v}`"
 
 
@@ -122,8 +122,8 @@ The pipeline has seven stages: reading the input, Monte Carlo, molecular dynamic
 Each stage can also be started alone with the same options; it re-uses the saved result of the earlier stages from the latest run.
 
 ```bash
-python src/pipeline/stage_mc.py -c config.ini      # Monte Carlo (and the input before it)
-python src/pipeline/stage_md.py -c config.ini      # up to the 3D molecular dynamics
+python -m loopsage.pipeline.stage_mc -c config.ini      # Monte Carlo (and the input before it)
+python -m loopsage.pipeline.stage_md -c config.ini      # up to the 3D molecular dynamics
 ```
 """
 

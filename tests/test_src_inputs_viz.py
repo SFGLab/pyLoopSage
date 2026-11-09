@@ -4,9 +4,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from analysis.inputs import CONF_MIN, anchor_table, config_summary, orientation_summary
-from analysis.inputs import compartment_summary, domains
-from common.genome import Geometry
+from loopsage.analysis.inputs import CONF_MIN, anchor_table, config_summary, orientation_summary
+from loopsage.analysis.inputs import compartment_summary, domains
+from loopsage.common.genome import Geometry
 
 GEOM = Geometry("chr1", 0, 1_000_000, 100)
 
@@ -67,8 +67,8 @@ def test_demo_inputs_produce_all_input_figures(tmp_path, demo_bedpe):
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "demo"))
     from make_demo_data import write_compartments
-    from pipeline.runner import run_pipeline
-    from settings.loader import load_config
+    from loopsage.pipeline.runner import run_pipeline
+    from loopsage.settings.loader import load_config
     comp = write_compartments(tmp_path / "c.bed")
     ctx = run_pipeline(load_config(["-f", str(demo_bedpe), "-r", "chr1:77000000-95000000", "-n", "100", "-o", str(tmp_path / "r"),
                                     "--mc-steps", "1500", "--sample-every", "100", "--burnin", "300", "--no-run-MD",

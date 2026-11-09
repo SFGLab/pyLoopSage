@@ -2,9 +2,9 @@
 import numpy as np
 import pytest
 
-from preproc.loader import load_inputs
-from preproc.loader import build_geometry
-from settings.loader import load_config
+from loopsage.preproc.loader import load_inputs
+from loopsage.preproc.loader import build_geometry
+from loopsage.settings.loader import load_config
 
 
 def _inputs(args):
@@ -40,7 +40,7 @@ def test_unsupported_extension(tmp_path, tiny_args):
 
 
 def test_input_cache_roundtrip(tiny_args, tmp_path):
-    from preproc.loader import InputData
+    from loopsage.preproc.loader import InputData
     _, _, inp = _inputs(tiny_args)
     inp.save(tmp_path / "in.npz")
     back = InputData.load(tmp_path / "in.npz")
@@ -70,7 +70,7 @@ def test_contrastive_adds_loop_coverage(tiny_args):
 
 
 def test_contrast_cover_penalises_only_loop_free_beads():
-    from preproc.readers import contrast_cover
+    from loopsage.preproc.readers import contrast_cover
     c = contrast_cover(np.array([0, 0, 1, 2, 5, 10, 10.0]))      # mean 4: beads with 1 or 2 loops are sparse, not empty
     assert list(c[:2]) == [-1, -1] and (c[2:] >= 0).all() and c[-1] == 1.0
 
@@ -95,7 +95,7 @@ def _peaks(n=1800, centres=(400, 1300)):
 
 
 def test_binding_track_is_smoothed_like_l_and_r(demo_bedpe, tmp_path):
-    from preproc.loader import load_inputs
+    from loopsage.preproc.loader import load_inputs
     bw = _bigwig(tmp_path / "t.bw", _peaks() + 0.01)
     args = ["-f", str(demo_bedpe), "-r", "chr1:77000000-95000000", "-n", "120", "--set", f"bw_files={bw}"]
     on = load_inputs(load_config(args), build_geometry(load_config(args)))
@@ -106,7 +106,7 @@ def test_binding_track_is_smoothed_like_l_and_r(demo_bedpe, tmp_path):
 
 
 def test_binding_track_cleaning():
-    from preproc.readers import binding_track
+    from loopsage.preproc.readers import binding_track
     v = np.array([0.0, 1.0, -0.2, 0.5, 0.0])
     assert binding_track(v).min() == 0 and binding_track(v, 1.0).sum() > 0
     with pytest.raises(ValueError, match="no signal"):
@@ -130,7 +130,7 @@ def test_binding_track_energy_pulls_legs_to_the_signal(demo_bedpe, tmp_path):
 
 
 def test_binding_energy_update_matches_the_full_energy():
-    from monte_carlo.energy import dE_bw, E_bw
+    from loopsage.monte_carlo.energy import dE_bw, E_bw
     rng = np.random.default_rng(0)
     tracks, r = rng.random((2, 60)), np.array([-6.0, -3.0])
     ms, ns = np.array([5, 20]), np.array([30, 50])

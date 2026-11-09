@@ -60,7 +60,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 
 | Option | Type (unit) | Default | What it does |
 |---|---|---|---|
-| `-o`, `--out` | text | *(empty)* | Results folder (empty = <project>/results); each run gets its own subfolder |
+| `-o`, `--out` | text | *(empty)* | Results folder (empty = ./results in the current folder); each run gets its own subfolder |
 | `--run` | integer | *(empty)* | Run number in the folder name (empty = next free; standalone stages reuse the latest) |
 | `-q`, `--quiet` / `--no-quiet` | true / false | `False` | Print nothing to the console (the log file and the report are still written) |
 | `--seed` | integer | *(empty)* | Random seed (empty = a random one, saved in the resolved config); the same seed repeats the run exactly, MD included only with --threads 1 |
@@ -165,6 +165,6 @@ The pipeline has seven stages: reading the input, Monte Carlo, molecular dynamic
 Each stage can also be started alone with the same options; it re-uses the saved result of the earlier stages from the latest run.
 
 ```bash
-python src/pipeline/stage_mc.py -c config.ini      # Monte Carlo (and the input before it)
-python src/pipeline/stage_md.py -c config.ini      # up to the 3D molecular dynamics
+python -m loopsage.pipeline.stage_mc -c config.ini      # Monte Carlo (and the input before it)
+python -m loopsage.pipeline.stage_md -c config.ini      # up to the 3D molecular dynamics
 ```

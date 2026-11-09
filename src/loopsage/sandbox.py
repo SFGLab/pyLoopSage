@@ -1,7 +1,7 @@
 """Sandbox: build a small synthetic system by hand (single CTCF sites, loops, A/B compartments) and simulate it."""
 import numpy as np
 
-from settings.loader import parse_region
+from loopsage.settings.loader import parse_region
 
 _ORIENT = {"forward": 0.0, "reverse": 1.0, "unknown": -1.0}      # probability that the site is in the reverse orientation
 
@@ -87,7 +87,7 @@ class Sandbox:
 
     def set_compartments(self, values):
         """Your own A/B signal: one value per bead (`n_beads` values), each between -1 (B) and 1 (A); other values raise ValueError."""
-        from preproc.arrays import check_compartments
+        from loopsage.preproc.arrays import check_compartments
         self._comp = check_compartments(values, self.n_beads)
         return self
 

@@ -132,7 +132,7 @@ The result `InputData` has `loops` (the profiles `L`, `R`, the loop matrix `J`, 
 
 **Hi-C reference.** `ls.read_hic(cfg, geom, "map.hic")` returns `(matrix, info)`: the Hi-C map on the bead grid. It is the optimizer target.
 
-**Inputs as arrays.** For synthetic data, give arrays instead of paths: `loops=(left, right, weight)` with positions in bp, `sites=dict(position=..., weight=..., reverse=...)`, and per-bead arrays (one value per bead) for `tracks`, `lef_track` and `compartments`. Compartment values must lie between -1 and 1 (A positive, B negative); other values raise `ValueError`. The [sandbox](#sandbox-synthetic-systems) builds such arrays conveniently.
+**Inputs as arrays.** For synthetic data, give arrays instead of paths: `loops=(left, right, weight)` with positions in bp, `sites=dict(position=..., weight=..., reverse=...)`, and per-bead arrays (one value per bead) for `tracks`, `lef_track` and `compartments`. Compartment values must lie between -1 and 1 (A positive, B negative); other values raise `ValueError`. The [sandbox](#sandbox) builds such arrays conveniently.
 
 ## Optimizer
 
@@ -227,6 +227,14 @@ ls.main(["-c", "config.ini", "-vv"])        # exactly `loopsage -c config.ini -v
 ```
 
 `python -m loopsage -c config.ini` does the same from a shell. `main` takes the list of command-line words; mistakes in the options print the usual usage message and exit.
+
+## Sensitivity scans
+
+`ls.sweep` runs a parameter scan on a synthetic polymer and writes the combined `sensitivity_report.html`, the same as the `loopsage-scan` command. It returns a result whose `.table` holds one row per run. See the [sensitivity page](sensitivity.md).
+
+```python
+res = ls.sweep({"T": "lin(1, 16, 12)", "n_lef": [4, 12]}, system={"n_beads": 300}, out="my_scan")
+```
 
 ## Importing modules
 

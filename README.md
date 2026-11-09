@@ -89,7 +89,7 @@ python tools/run_tests.py -j 8 --html # 8 workers, also writes test_report/repor
 python tools/run_tests.py -k contrast # only tests whose name matches
 ```
 
-Plain `PYTHONPATH=src python -m pytest -q` also works, but runs the files one after another (about 15 minutes). Tests of optional packages (`hicstraw`, `pyBigWig`) are skipped when those are not installed.
+Plain `python -m pytest -q` (after `pip install -e .`) also works, but runs the files one after another (about 15 minutes). Tests of optional packages (`hicstraw`, `pyBigWig`) are skipped when those are not installed.
 
 ## Citation
 

@@ -1,8 +1,8 @@
 """Config: precedence defaults < ini < CLI, old flat configs, validation."""
 import pytest
 
-from settings.loader import load_config
-from settings.schema import BY_NAME, PARAMS
+from loopsage.settings.loader import load_config
+from loopsage.settings.schema import BY_NAME, PARAMS
 
 
 def test_every_cli_flag_maps_to_a_param():

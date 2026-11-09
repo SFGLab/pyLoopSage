@@ -95,7 +95,7 @@ Section `[output]` of the config file.
 
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
-| `out_path`<br>`--out` | text | *(empty)* | Results folder (empty = <project>/results); each run gets its own subfolder |
+| `out_path`<br>`--out` | text | *(empty)* | Results folder (empty = ./results in the current folder); each run gets its own subfolder |
 | `run_number`<br>`--run` | integer | *(empty)* | Run number in the folder name (empty = next free; standalone stages reuse the latest) |
 | `verbosity`<br>*ini only* | integer | `0` | Console detail: 0 main steps + progress bars, 1 + tables, 2 + info messages, 3 + debug (CLI: -v, -vv, -vvv) |
 | `quiet`<br>`--quiet` | true / false | `False` | Print nothing to the console (the log file and the report are still written) |
@@ -180,7 +180,7 @@ Section `[molecular_dynamics]` of the config file.
 | `comp_strength`<br>*ini only* | number | `0.25` | Block-copolymer compartment attraction: scale of the interaction table (1 = full strength of the table; lower = softer, compartments stay open instead of collapsing) |
 | `comp_range`<br>*ini only* | number | `0.03` | Block-copolymer attraction range in units of sqrt(N) nm; smaller = shorter range |
 | `md_skip_burnin`<br>*ini only* | true / false | `False` | Simulate only post-burn-in MC snapshots (False: every snapshot) |
-| `forcefield_path`<br>*ini only* | text | `src/molecular_dynamics/forcefields/classic_sm_ff.xml` | OpenMM force-field XML |
+| `forcefield_path`<br>*ini only* | text | `src/loopsage/molecular_dynamics/forcefields/classic_sm_ff.xml` | OpenMM force-field XML |
 
 ### 3D structure analysis and rendering
 

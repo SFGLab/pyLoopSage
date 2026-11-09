@@ -156,11 +156,11 @@ loss_sigma       = 2.0                # smoothing of the 2D map, in beads
 
 | File | Role |
 |---|---|
-| `src/preproc/readers.py` | BEDPE, BED and narrowPeak readers: anchors to beads, $L$ and $R$, smoothing, scaling, binding mode |
-| `src/preproc/loader.py` | region and beads, compartment files, tracks, the container of all inputs |
-| `src/preproc/hic.py` | reading `.hic` files, choosing resolution and normalisation, putting the map on the bead grid |
-| `src/analysis/maps.py` | the compartment eigenvector from a Hi-C map |
-| `src/pipeline/stage_preproc.py` | the pipeline stage: runs the steps, writes the tables and figures of the input |
+| `src/loopsage/preproc/readers.py` | BEDPE, BED and narrowPeak readers: anchors to beads, $L$ and $R$, smoothing, scaling, binding mode |
+| `src/loopsage/preproc/loader.py` | region and beads, compartment files, tracks, the container of all inputs |
+| `src/loopsage/preproc/hic.py` | reading `.hic` files, choosing resolution and normalisation, putting the map on the bead grid |
+| `src/loopsage/analysis/maps.py` | the compartment eigenvector from a Hi-C map |
+| `src/loopsage/pipeline/stage_preproc.py` | the pipeline stage: runs the steps, writes the tables and figures of the input |
 
 ### Outputs
 

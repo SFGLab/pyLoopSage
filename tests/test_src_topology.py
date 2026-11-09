@@ -2,11 +2,11 @@
 import numpy as np
 import pytest
 
-from knots.crossing import barrier_kT, crossings, strength_for_barrier
-from knots.linking import LinkResult, link_dynamics, link_examples
-from molecular_dynamics import topology as T
-from settings.loader import load_config
-from settings.schema import PARAMS
+from loopsage.knots.crossing import barrier_kT, crossings, strength_for_barrier
+from loopsage.knots.linking import LinkResult, link_dynamics, link_examples
+from loopsage.molecular_dynamics import topology as T
+from loopsage.settings.loader import load_config
+from loopsage.settings.schema import PARAMS
 
 
 def _ring(centre, axis, r=1.0, n=24):
@@ -99,7 +99,7 @@ def test_topology_settings_are_optional_config_only_except_the_knots_flag():
 
 def test_topology_is_off_by_default_and_reports_when_asked(tiny_args):
     pytest.importorskip("openmm")
-    from pipeline.runner import run_pipeline
+    from loopsage.pipeline.runner import run_pipeline
     base = [a for a in tiny_args if a != "--no-run-MD"] + ["--run-MD", "--md-steps", "300", "--n-lef", "8", "--no-render-3d", "--set", "tolerance=10"]
     plain = run_pipeline(load_config(base))
     assert "topology" not in plain.md.meta and plain.links is None
@@ -113,7 +113,7 @@ def test_topology_is_off_by_default_and_reports_when_asked(tiny_args):
 
 
 def test_vectorised_crossing_detector_matches_a_slow_reference():
-    from knots.crossing import _V, crossings as fast
+    from loopsage.knots.crossing import _V, crossings as fast
 
     def slow(prev, cur, min_sep=2):
         """Reference: every segment pair, roots with np.roots."""

@@ -16,3 +16,5 @@ Edit the file paths, then run `loopsage -c examples/<file>.ini`. All keys are li
 | `09_quick_test.ini` | Small test with the shipped demo data |
 | `10_optimize_parameters.ini` | Fit K, f and b first (`--optimize`), then run with them |
 | `11_topology_links.ini` | Optional topology study: local topoisomerase events, crossing counter and linking (`--knots`) |
+| `12_sensitivity_scan.ini` | Sensitivity scan (`loopsage-scan`): temperature transition on a sandbox polymer |
+| `13_topology_scan.ini` | Sensitivity scan of the topology metrics (`loopsage-scan --topology`) |

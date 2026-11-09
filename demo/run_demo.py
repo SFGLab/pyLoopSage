@@ -1,22 +1,21 @@
-"""Run a demo from Python (same as `python src/run.py -c demo/<name>.ini`).
+"""Run a demo from Python (same as `loopsage -c demo/<name>.ini`).
 
     python demo/run_demo.py quick     # MC only, seconds
     python demo/run_demo.py full      # + 3D MD, validation, linking numbers
     python demo/run_demo.py epigenetic # MC + epigenetic model (dynamic coupling)
     python demo/run_demo.py speed     # MC with Maxwell-Boltzmann LEF speeds (speed and phase-space figures)
-Options: --out DIR   results folder (default <project>/results)
+Options: --out DIR   results folder (default ./results)
 """
 import argparse
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "demo"))
 
 from make_demo_data import write_bedpe                  # noqa: E402
-from pipeline.runner import run_pipeline                # noqa: E402
-from settings.loader import load_config                 # noqa: E402
+from loopsage.pipeline.runner import run_pipeline                # noqa: E402
+from loopsage.settings.loader import load_config                 # noqa: E402
 
 
 def main():

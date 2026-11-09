@@ -22,8 +22,8 @@ mkdocs serve        # open http://127.0.0.1:8000
 
 ## Keeping the reference up to date
 
-`reference/cli.md` and `reference/config.md` are generated from the parameter list in `src/settings/schema.py`. After changing a parameter, regenerate them:
+`reference/cli.md` and `reference/config.md` are generated from the parameter list in `src/loopsage/settings/schema.py`. After changing a parameter, regenerate them:
 
 ```bash
-PYTHONPATH=src python tools/make_reference.py
+python tools/make_reference.py
 ```

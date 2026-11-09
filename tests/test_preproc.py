@@ -1,9 +1,9 @@
 """Input readers on tiny synthetic files (5 loops / 8 peaks on chr1:0-10000, 20 beads)."""
 import pytest
 
-from common.genome import Geometry
-from preproc.readers import vectors_from_bedpe, vectors_from_narrowpeak
-from validation.compare import detect_format
+from loopsage.common.genome import Geometry
+from loopsage.preproc.readers import vectors_from_bedpe, vectors_from_narrowpeak
+from loopsage.validation.compare import detect_format
 
 
 @pytest.fixture

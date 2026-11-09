@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from knots.linking import gauss_linking   # noqa: E402
+from loopsage.knots.linking import gauss_linking   # noqa: E402
 
 N = 48
 t = np.linspace(0, 2 * np.pi, N, endpoint=False)

@@ -5,7 +5,6 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))   # new refactored package
 
 @pytest.fixture(scope="session")
 def test_data_dir(tmp_path_factory):
@@ -64,8 +63,8 @@ def fast_args(tiny_args):
 @pytest.fixture(scope="session")
 def figure_run(demo_bedpe, tmp_path_factory):
     """One tiny run WITH figures and report, shared by all tests that look at them."""
-    from pipeline.runner import run_pipeline
-    from settings.loader import load_config
+    from loopsage.pipeline.runner import run_pipeline
+    from loopsage.settings.loader import load_config
     out = tmp_path_factory.mktemp("figure_run")
     return run_pipeline(load_config(["-f", str(demo_bedpe), "-r", "chr1:77000000-95000000", "-n", "120", "-o", str(out / "results"),
                                      "--mc-steps", "2000", "--sample-every", "100", "--burnin", "400", "--no-run-MD", "--seed", "1"]))

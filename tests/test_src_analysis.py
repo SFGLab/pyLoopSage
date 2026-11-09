@@ -2,15 +2,15 @@
 import numpy as np
 import pytest
 
-from analysis import ensemble
-from analysis.ensemble import acceptance_table, loop_lengths, occupancy
-from analysis.ensemble import acf, equilibrium_summary, integrated_time
-from analysis.maps import loop_map
-from monte_carlo.simulation import MCResult
-from monte_carlo.simulation import run_mc
-from preproc.loader import load_inputs
-from preproc.loader import build_geometry
-from settings.loader import load_config
+from loopsage.analysis import ensemble
+from loopsage.analysis.ensemble import acceptance_table, loop_lengths, occupancy
+from loopsage.analysis.ensemble import acf, equilibrium_summary, integrated_time
+from loopsage.analysis.maps import loop_map
+from loopsage.monte_carlo.simulation import MCResult
+from loopsage.monte_carlo.simulation import run_mc
+from loopsage.preproc.loader import load_inputs
+from loopsage.preproc.loader import build_geometry
+from loopsage.settings.loader import load_config
 
 
 @pytest.fixture(scope="module")
@@ -65,14 +65,14 @@ def test_insight_metrics_in_range(run):
 
 
 def test_validation_runs_on_mc_map(run):
-    from validation.compare import validate
+    from loopsage.validation.compare import validate
     cfg, geom, _, mc = run
     res = validate(loop_map(mc, geom.n_beads), cfg, geom)
     assert res.rows and all(-1 <= r["pearson"] <= 1 for r in res.rows)
 
 
 def test_md_geometry_helpers():
-    from analysis.structure import distance_scaling
+    from loopsage.analysis.structure import distance_scaling
     rng = np.random.default_rng(1)
     coords = np.cumsum(rng.normal(size=(5, 200, 3)), axis=1).astype(np.float32)   # ideal random walks
     s, r, nu = distance_scaling(coords)
@@ -92,7 +92,7 @@ class _Fake:
 
 
 def test_loop_map_dot_domain_and_symmetry():
-    from analysis.maps import loop_map
+    from loopsage.analysis.maps import loop_map
     m = loop_map(_Fake([(10, 30)]), 40, sigma=0.8)
     assert np.allclose(m, m.T)
     assert m[10, 30] > m[20, 25] > m[5, 35]            # dot > interior > outside
@@ -100,7 +100,7 @@ def test_loop_map_dot_domain_and_symmetry():
 
 
 def test_loop_map_communication_is_weaker_and_recursive():
-    from analysis.maps import loop_map
+    from loopsage.analysis.maps import loop_map
     kw = dict(domain=0, base=0, sigma=0.3)
     chain = loop_map(_Fake([(5, 15), (15, 25), (25, 35)]), 40, **kw)
     one = loop_map(_Fake([(5, 15)]), 40, **kw)
@@ -110,7 +110,7 @@ def test_loop_map_communication_is_weaker_and_recursive():
 
 
 def test_loop_map_communication_through_adjacent_anchors():
-    from analysis.maps import loop_map
+    from loopsage.analysis.maps import loop_map
     kw = dict(domain=0, base=0, sigma=0.3)
     adj = loop_map(_Fake([(5, 15), (16, 25)]), 40, **kw)             # anchors on beads 15 and 16
     far = loop_map(_Fake([(5, 15), (18, 25)]), 40, **kw)
@@ -118,7 +118,7 @@ def test_loop_map_communication_through_adjacent_anchors():
 
 
 def test_checkerboard_and_combination():
-    from analysis.maps import checkerboard, combine_maps, epigenetic_profile
+    from loopsage.analysis.maps import checkerboard, combine_maps, epigenetic_profile
     epi = np.array([[0, 0], [0, 0], [2, 2], [2, 2]])    # two B-like beads then two A-like beads, 3 states
     prof = epigenetic_profile(_Fake([(0, 1)], epi), 3)
     assert np.allclose(prof, [-1, -1, 1, 1])
@@ -129,7 +129,7 @@ def test_checkerboard_and_combination():
 
 
 def test_lef_trajectory_segments_split_at_rebinding_jumps():
-    from viz.mc_figs import _segments
+    from loopsage.viz.mc_figs import _segments
     m = np.array([10, 11, 12, 13, 80, 81, 82, 83, 84, 30, 31], float)
     n = m + 5
     assert _segments(m, n, jump=20) == [(0, 4), (4, 9)]                 # jumps at 4 and 9; the 2-snapshot stub at the end is dropped
@@ -139,7 +139,7 @@ def test_lef_trajectory_segments_split_at_rebinding_jumps():
 # ---- Validation: smoothed correlations ----
 
 def test_smoothing_helper():
-    from validation.compare import smooth
+    from loopsage.validation.compare import smooth
     v = np.zeros(50); v[25] = 10.0
     s = smooth(v, 2.0)
     assert s.max() < 10 and s.sum() == pytest.approx(v.sum(), rel=1e-6) and np.array_equal(smooth(v, 0), v)
@@ -147,7 +147,7 @@ def test_smoothing_helper():
 
 
 def test_smoothing_raises_correlation_of_noisy_signals():
-    from validation.compare import _compare, ValidationResult
+    from loopsage.validation.compare import _compare, ValidationResult
     rng = np.random.default_rng(0)
     base = np.convolve(rng.random(300), np.ones(15) / 15, "same") * 10                      # smooth shared structure
     exp, sim = base + rng.normal(0, 1.5, 300) + 5, base + rng.normal(0, 1.5, 300) + 5

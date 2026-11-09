@@ -4,11 +4,11 @@ import json
 import pytest
 import numpy as np
 
-from optimizer.nelder_mead import _clip, optimize
-from analysis.maps import loop_map
-from optimizer.objective import COMMUNICATION, loss_parts, loss_weights, weighted
-from pipeline.runner import run_pipeline
-from settings.loader import load_config
+from loopsage.optimizer.nelder_mead import _clip, optimize
+from loopsage.analysis.maps import loop_map
+from loopsage.optimizer.objective import COMMUNICATION, loss_parts, loss_weights, weighted
+from loopsage.pipeline.runner import run_pipeline
+from loopsage.settings.loader import load_config
 
 
 def _map(n=60, seed=0):
@@ -122,7 +122,7 @@ def test_reported_map_is_the_one_the_optimizer_scored(fast_args):
 
 
 def test_loop_coverage_and_decay_count_the_whole_area_between_anchors():
-    from analysis.maps import loop_coverage, loop_decay
+    from loopsage.analysis.maps import loop_coverage, loop_decay
     c = np.zeros((10, 10)); c[2, 6] = c[6, 2] = 2.0
     cov, dec = loop_coverage(c), loop_decay(c)
     assert list(cov) == [0, 0, 2, 2, 2, 2, 0, 0, 0, 0]
@@ -134,7 +134,7 @@ def test_loop_coverage_and_decay_count_the_whole_area_between_anchors():
 
 
 def test_potts_search_stays_in_bounds_and_finds_the_optimum():
-    from optimizer.nelder_mead import optimize_potts
+    from loopsage.optimizer.nelder_mead import optimize_potts
 
     def obj(e, p, longer=1):
         obj.parts = [0.1]
@@ -167,7 +167,7 @@ def test_potts_run_fits_the_loop_stage_first_and_then_the_potts_stage(fast_args,
 
 def test_size_mismatch_is_two_sided_and_uses_the_median():
     from types import SimpleNamespace
-    from optimizer.objective import size_mismatch
+    from loopsage.optimizer.objective import size_mismatch
     loops = SimpleNamespace(loop_lengths=np.r_[np.full(8, 10), [500, 500]])               # heavy tail: mean 109, median 10
     mc = lambda length: SimpleNamespace(Ms=np.zeros((1, 50)), Ns=np.full((1, 50), float(length)), production=lambda a: a)
     assert size_mismatch(mc(10), loops) == 0.0 and size_mismatch(mc(18), loops) == 0.0   # within a factor 2
@@ -176,7 +176,7 @@ def test_size_mismatch_is_two_sided_and_uses_the_median():
 
 
 def test_user_can_stop_the_search_and_keep_the_best(monkeypatch):
-    import optimizer.nelder_mead as nm
+    import loopsage.optimizer.nelder_mead as nm
 
     class Obj:
         parts = [0.0, 0.0, 0.0]

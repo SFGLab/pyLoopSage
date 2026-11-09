@@ -12,12 +12,12 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from settings.loader import Config, load_config, make_config
+from loopsage.settings.loader import Config, load_config, make_config
 
 
 def parameters(search: str = None) -> dict:
     """All parameters as {name: (default, help)}; `search` keeps those whose name or help contains the text."""
-    from settings.schema import PARAMS
+    from loopsage.settings.schema import PARAMS
     text = (search or "").lower()
     return {p.name: (p.default, p.help) for p in PARAMS if text in p.name.lower() or text in p.help.lower()}
 
@@ -29,7 +29,7 @@ def config(config=None, region=None, **params) -> Config:
 
 def geometry(cfg: Config):
     """Region and bead grid of the configuration: chrom, start, end, n_beads, bp_per_bead, bead_of(bp), ..."""
-    from preproc.loader import build_geometry
+    from loopsage.preproc.loader import build_geometry
     return build_geometry(cfg)
 
 
@@ -50,8 +50,8 @@ def read_inputs(cfg: Config, geom=None, loops=None, sites=None, compartments=Non
     of them), `lef_track` (.bw). Without `loops` and `sites` the config key `interaction_file` is used. Arrays work too (synthetic data):
     `loops=(left, right, weight)` in bp, `sites=dict(position=..., weight=..., reverse=...)`, per-bead arrays for the other inputs.
     """
-    from preproc.arrays import patch_inputs, write_loops_bedpe, write_sites_bed
-    from preproc.loader import load_inputs
+    from loopsage.preproc.arrays import patch_inputs, write_loops_bedpe, write_sites_bed
+    from loopsage.preproc.loader import load_inputs
     geom = geom or geometry(cfg)
     c, arrays, tmp = copy.copy(cfg), {}, _tmp()
     for key, given in (("interaction_file", loops), ("interaction_file", sites), ("lef_track_file", lef_track)):
@@ -83,7 +83,7 @@ def read_inputs(cfg: Config, geom=None, loops=None, sites=None, compartments=Non
 
 def read_hic(cfg: Config, geom=None, path=None):
     """Hi-C map of the region on the bead grid, as (matrix, info). `path` is a .hic file (default: config key `hic_file`)."""
-    from preproc.hic import hic_for_run
+    from loopsage.preproc.hic import hic_for_run
     c = copy.copy(cfg)
     c.hic_file = str(path or cfg.hic_file or "")
     if not c.hic_file:
@@ -94,9 +94,9 @@ def read_hic(cfg: Config, geom=None, path=None):
 def optimize(cfg: Config, inputs, geom=None, hic=None):
     """Nelder-Mead search for the number of LEFs, folding, binding and temperature. `hic` (from `read_hic`) is the target,
     otherwise the loops of `inputs`. Returns an OptResult (`.best`, `.start`, `.trace`); `apply_optimum` puts it in a config."""
-    from common.runtime import apply_threads
-    from logger import set_quiet
-    from pipeline import stage_optimize
+    from loopsage.common.runtime import apply_threads
+    from loopsage.logger import set_quiet
+    from loopsage.pipeline import stage_optimize
     set_quiet(cfg.quiet)
     apply_threads(cfg)
     geom = geom or geometry(cfg)
@@ -117,9 +117,9 @@ def apply_optimum(cfg: Config, result) -> Config:
 
 def run_mc(cfg: Config, inputs, geom=None):
     """Loop extrusion Monte Carlo: returns an MCResult (Ms, Ns, Es, Fs, Bs, Ks, Ts, ... per snapshot; `.chains` with replicas)."""
-    from common.runtime import apply_threads
-    from logger import set_quiet
-    from monte_carlo.simulation import run_mc as _run_mc
+    from loopsage.common.runtime import apply_threads
+    from loopsage.logger import set_quiet
+    from loopsage.monte_carlo.simulation import run_mc as _run_mc
     set_quiet(cfg.quiet)
     apply_threads(cfg)
     return _run_mc(cfg, inputs, geom or geometry(cfg), quiet=cfg.quiet)
@@ -128,9 +128,9 @@ def run_mc(cfg: Config, inputs, geom=None):
 def run_md(cfg: Config, mc, geom=None, folder=None):
     """3D molecular dynamics (OpenMM) from the Monte Carlo loops: returns an MDResult (coords, avg_map, rg, epot, ...).
     Without `folder` nothing is written; with a folder the structures and maps are saved there (as the command does)."""
-    from common.runtime import apply_threads, OutputDirs
-    from logger import set_quiet
-    from molecular_dynamics.engine import run_md as _run_md
+    from loopsage.common.runtime import apply_threads, OutputDirs
+    from loopsage.logger import set_quiet
+    from loopsage.molecular_dynamics.engine import run_md as _run_md
     set_quiet(cfg.quiet)
     apply_threads(cfg)
     c = copy.copy(cfg)
@@ -147,11 +147,16 @@ def run_md(cfg: Config, mc, geom=None, folder=None):
 
 def run(config=None, region=None, **params):
     """The whole pipeline like the `loopsage` command (it writes the run folder); returns the RunContext."""
-    from pipeline.runner import run_pipeline
+    from loopsage.pipeline.runner import run_pipeline
     return run_pipeline(make_config(config, region=region, **params))
 
 
 def main(argv=None):
     """The `loopsage` command from Python: `loopsage.main(["-c", "config.ini", "-vv"])`."""
-    from pipeline.runner import run_pipeline
+    from loopsage.pipeline.runner import run_pipeline
     return run_pipeline(load_config(argv))
+
+
+def cli(argv=None):
+    """Entry point of the `loopsage` command (returns None, so the exit code is 0)."""
+    main(argv)

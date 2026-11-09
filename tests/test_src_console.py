@@ -1,11 +1,11 @@
 """Console output: milestone messages at default verbosity, clean progress bars, quote only under the banner."""
 import pytest
 
-from common.banner import print_banner, QUOTES
-from common.runtime import stage_bar
-from logger import console, get_logger, setup_logging
-from pipeline.runner import run_pipeline
-from settings.loader import load_config
+from loopsage.common.banner import print_banner, QUOTES
+from loopsage.common.runtime import stage_bar
+from loopsage.logger import console, get_logger, setup_logging
+from loopsage.pipeline.runner import run_pipeline
+from loopsage.settings.loader import load_config
 
 
 @pytest.fixture(autouse=True)
@@ -52,7 +52,7 @@ def test_banner_shows_one_rotating_quote():
     assert len(seen) <= 1
     picks = set()
     for _ in range(40):
-        from common.banner import pick
+        from loopsage.common.banner import pick
         picks.add(pick())
     assert len(picks) > 1                                          # different quote on different runs
 

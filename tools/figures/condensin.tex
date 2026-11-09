@@ -27,14 +27,14 @@
     \draw[li] (4.6,0.08) .. controls (4.6,2.4) and (6.1,2.4) .. (6.1,0.08);\legdot{4.6}{0}{cohesin}\legdot{6.1}{0}{cohesin}
     \prot{1.0}{0}{f}\prot{3.1}{0}{r}\prot{4.1}{0}{f}\prot{6.6}{0}{r}
   \end{scope}
-  % d: mitosis (condensin loops around an axis)
+  % d: mitosis (condensin loops around a central axis, petals alternate left and right)
   \begin{scope}[shift={(13,-6.4)}]
-    \draw[line width=11pt,ink!12,line cap=round] (0,-0.5)--(0,2.35);
-    \draw[line width=2pt,ink!55,line cap=round] (0,-0.5)--(0,2.35);
-    \foreach \y/\wl/\wr in {2.0/1.9/1.5,1.4/1.5/1.9,0.8/2.0/1.5,0.2/1.6/1.9}{
-      \draw[lgl] (0,\y) .. controls (-\wl*0.9,\y+0.5) and (-\wl*1.1,\y-0.35) .. (0,\y-0.2);
-      \draw[lgl] (0,\y-0.05) .. controls (\wr*0.9,\y+0.4) and (\wr*1.1,\y-0.45) .. (0,\y-0.25);
-      \draw[condensin,line width=2pt,fill=white] (0,\y-0.12) ellipse (0.2 and 0.08);}
+    \draw[line width=12pt,ink!10,line cap=round] (0,-0.45) -- (0,2.55);
+    \draw[line width=2pt,ink!55,line cap=round] (0,-0.45) -- (0,2.55);
+    \foreach \y/\s/\w in {2.2/-1/1.9,1.7/1/1.7,1.2/-1/2.0,0.7/1/1.8,0.2/-1/1.9}{
+      \draw[lgl] (0,\y) .. controls (\s*0.35*\w,\y+0.75) and (\s*1.05*\w,\y+0.55) .. (\s*1.0*\w,\y+0.05)
+                        .. controls (\s*0.95*\w,\y-0.4) and (\s*0.35*\w,\y-0.15) .. (0,\y-0.2);
+      \draw[condensin,line width=2pt,fill=white] (0,\y-0.1) ellipse (0.2 and 0.08);}
     \node[note] at (0,-0.95) {central axis};
   \end{scope}
   \badge{0.5}{-2.6}{c}\badge{9.5}{-2.6}{d}

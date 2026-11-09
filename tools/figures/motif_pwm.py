@@ -8,8 +8,8 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from motif_finder.fasta import encode            # noqa: E402
-from motif_finder.pssm import load_pfm           # noqa: E402
+from loopsage.motif_finder.fasta import encode            # noqa: E402
+from loopsage.motif_finder.pssm import load_pfm           # noqa: E402
 
 P = load_pfm()                                   # default matrix, pseudocount 0.8
 L, M = P.length, P.M
