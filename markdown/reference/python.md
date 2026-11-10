@@ -54,6 +54,7 @@ cfg = ls.config(
     n_beads=120,                         # resolution: the region is cut into 120 beads
     n_steps=20000,                       # Monte Carlo steps
     n_lef=8,                             # number of loop extruders
+    n_sweep=None,                        # proposals per MC step (None = 2 * n_lef)
     folding_coeff=1.5,                   # strength of the folding energy
     seed=1,                              # random seed: the same seed gives the same result
 )

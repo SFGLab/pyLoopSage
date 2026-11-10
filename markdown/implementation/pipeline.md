@@ -14,7 +14,7 @@ Each of these steps is a **stage**. This page shows how the stages follow one an
 
 **2. Optimizer** (`--optimize`). A few numbers of the model cannot be measured: the number of extruders, the strength of the folding and the binding, the temperature. The optimizer tries many short simulations and keeps the values whose loops look most like the target (a Hi-C map or the input loops). It passes the chosen values to the next stage. See [The Optimizer](optimizer.md).
 
-**3. Monte Carlo.** The core of the model. A set of $N_{\mathrm{lef}}$ extruders, each one a loop between two beads, is moved at random and the moves are accepted or rejected with an energy rule. The stage saves a *snapshot* of all loops every few steps. See [Monte Carlo](monte-carlo.md).
+**3. Monte Carlo.** The core of the model. A set of $N_{\mathrm{lef}}$ extruders, each one a loop between two beads, is moved at random and the moves are accepted or rejected with an energy rule. One Monte Carlo step is a *sweep* of $N_{\mathrm{sweep}}$ proposals (`n_sweep`): in each proposal a random extruder is chosen and a rebinding or sliding move is tried. By default $N_{\mathrm{sweep}} = 2N_{\mathrm{lef}}$, so a step proposes about two changes per extruder; a larger value makes each step longer and the snapshots more independent. The stage saves a *snapshot* of all loops every few steps. See [Monte Carlo](monte-carlo.md).
 
 **4. Molecular dynamics** (`--run-MD`). Every Monte Carlo snapshot is turned into a 3D structure: the loops become springs in a bead-spring polymer, which is relaxed with a Langevin simulation in OpenMM. See [Molecular Dynamics](molecular-dynamics.md).
 

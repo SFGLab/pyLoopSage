@@ -1,7 +1,7 @@
 # Example configuration files
 
 Each file changes only the settings needed for one use case; everything else keeps its default.
-Edit the file paths, then run `loopsage -c examples/<file>.ini`. All keys are listed in `config_example.ini`.
+Edit the file paths, then run `loopsage -c examples/<file>.ini` (most use `n_beads = 2000`). All keys are listed in `config_example.ini`.
 
 | File | Use case |
 |---|---|
@@ -14,7 +14,10 @@ Edit the file paths, then run `loopsage -c examples/<file>.ini`. All keys are li
 | `07_two_lef_families.ini` | Two LEF families with different folding strength |
 | `08_cluster_replicas.ini` | Long production run with replicas and a GPU |
 | `09_quick_test.ini` | Small test with the shipped demo data |
-| `10_optimize_parameters.ini` | Fit K, f and b first (`--optimize`), then run with them |
+| `10_optimize_parameters.ini` | Fit LEFs, folding, binding and temperatures (`--optimize`), then run |
 | `11_topology_links.ini` | Optional topology study: local topoisomerase events, crossing counter and linking (`--knots`) |
 | `12_sensitivity_scan.ini` | Sensitivity scan (`loopsage-scan`): temperature transition on a sandbox polymer |
 | `13_topology_scan.ini` | Sensitivity scan of the topology metrics (`loopsage-scan --topology`) |
+| `14_motif_optimizer_compartments.ini` | Full workflow: loops without orientation, CTCF motif search, optimizer, compartments, 3D |
+| `15_hic_optimizer.ini` | Optimize and validate against a Hi-C map |
+| `16_python_interface.py` | The same workflow from Python, one function per step |

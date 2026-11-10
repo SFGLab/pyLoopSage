@@ -109,7 +109,7 @@ GLOSSARY = [
     ("Bead", "One coarse-grained segment of the chromatin fibre. Its genomic size (bp per bead) is region length / number of beads."),
     ("LEF", "Loop extrusion factor (cohesin or condensin). It holds two legs (m, n) and the chromatin between them forms a loop."),
     ("Anchor", "A bead where a loop starts or ends, typically a CTCF binding site. L / R mark left / right anchors."),
-    ("Monte Carlo (MC) step", "One sweep of 2 x (number of LEFs) random proposals. Snapshots are saved every <code>sample-every</code> steps."),
+    ("Monte Carlo (MC) step", "One sweep of <code>n_sweep</code> random proposals (default: 2 x the number of LEFs). Snapshots are saved every <code>sample-every</code> steps."),
     ("Burn-in", "Initial MC steps discarded because the system has not yet equilibrated."),
     ("Metropolis / Annealing", "Metropolis keeps a constant temperature; Annealing lowers it from T<sub>init</sub> to T<sub>final</sub> to find low-energy states."),
     ("a.u.", "Arbitrary units: the MC energy and temperature have no physical unit; only ratios matter."),

@@ -95,7 +95,8 @@ def load_compartments_bed(path, geom, use_score=True, spline_s=None) -> np.ndarr
     full = pd.read_csv(path, sep="\t", header=None)
     vals = _values(full, use_score)
     gmin, gmax = vals.min(), vals.max()              # global reference keeps scale comparable
-    sel = (full[0] == geom.chrom) & (full[1] < geom.end) & (full[2] > geom.start)
+    chrom = full[0].astype(str).str.replace("^chr", "", regex=True)       # '1' and 'chr1' both match
+    sel = (chrom == str(geom.chrom).replace("chr", "", 1)) & (full[1] < geom.end) & (full[2] > geom.start)
     if not sel.any():
         raise ValueError(f"no compartments found in {geom.label}")
     df, v = full[sel].reset_index(drop=True), vals[sel.to_numpy()]

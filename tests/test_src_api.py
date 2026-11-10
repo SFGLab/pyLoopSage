@@ -212,3 +212,19 @@ def test_parameters_helper():
     import loopsage as ls
     names = ls.parameters("md steps")
     assert "sim_step" in names and ls.parameters()["n_steps"][0] == 20000
+
+
+def test_n_sweep_default_is_two_per_lef():
+    """n_sweep empty = 2 x LEFs (same chain as setting it explicitly); a smaller value changes the chain."""
+    import numpy as np
+    import loopsage as ls
+    run = {}
+    for sw in (None, 16, 4):
+        kw = dict(region="chr14:22500000-24000000", n_beads=120, n_steps=600, mc_step=100, burnin=200, seed=1, quiet=True, n_lef=8, threads=1)
+        if sw:
+            kw["n_sweep"] = sw
+        cfg = ls.config(**kw)
+        geom = ls.geometry(cfg)
+        run[sw] = ls.run_mc(cfg, ls.read_inputs(cfg, geom, loops="tests/data/tiny.bedpe"), geom)
+    assert np.array_equal(run[None].Ms, run[16].Ms)
+    assert not np.array_equal(run[None].Ms, run[4].Ms)

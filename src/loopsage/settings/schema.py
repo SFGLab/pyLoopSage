@@ -80,6 +80,7 @@ PARAMS = (
     Param("t_final", "monte_carlo", "float", 1.0, "Final temperature (Annealing only)", "a.u.", flag="--t-final"),
     Param("method", "monte_carlo", "str", "Annealing", "Sampling method", flag="--method", choices=("Metropolis", "Annealing")),
     Param("n_lef", "monte_carlo", "int", None, "Loop extrusion factors (empty = N_anchors / 2)", "LEFs", flag="--n-lef"),
+    Param("n_sweep", "monte_carlo", "int", None, "Proposals per Monte Carlo step: how many random LEFs are proposed for a change in each step (empty = 2 x the number of LEFs)", "proposals", flag="--n-sweep"),
     Param("n_lef2", "monte_carlo", "int", 0, "Second LEF family (different speed)", "LEFs"),
     Param("device", "molecular_dynamics", "str", "", "Device index for CUDA or OpenCL (count from 0; empty = default)"),
     Param("lef_drift", "monte_carlo", "bool", False, "Unused; accepted only so older config files still load"),
@@ -146,7 +147,7 @@ PARAMS = (
     Param("opt_interactive", "optimizer", "bool", True, "Pressing Enter during the optimizer shows the best parameters so far and asks whether to keep them and stop (only in a terminal)", flag="--opt-interactive"),
     Param("opt_patience", "optimizer", "int", 20, "Early stopping: evaluations without a real improvement (see opt_min_gain) before the optimizer stops", "evaluations", flag="--opt-patience"),
     Param("opt_min_gain", "optimizer", "float", 0.01, "Early stopping: smallest drop of the best loss that counts as an improvement (the loss is about 1-4 at the start)"),
-    Param("opt_steps", "optimizer", "int", 4000, "Monte Carlo steps of one optimizer evaluation (each step is a sweep over all LEFs; the first quarter is burn-in, 200 snapshots; the final candidate check runs 3x longer)", "MC steps", flag="--opt-steps"),
+    Param("opt_steps", "optimizer", "int", 4000, "Monte Carlo steps of one optimizer evaluation (each step is n_sweep proposals, by default 2 per LEF; the first quarter is burn-in, 200 snapshots; the final candidate check runs 3x longer)", "MC steps", flag="--opt-steps"),
     Param("opt_max_beads", "optimizer", "int", 1500, "Largest region the optimizer simulates: bigger regions are optimized on the window of this many beads with most loops, and the number of LEFs is scaled back to the full region", "beads", flag="--opt-max-beads"),
 
     # ---- topology (optional, advanced: nothing here runs by default) ----

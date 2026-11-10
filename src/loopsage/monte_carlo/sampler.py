@@ -15,7 +15,7 @@ from loopsage.monte_carlo.energy import dE_edge, dE_epi, dE_epi_dyn, E_bind_inne
 
 # Energy terms are scaled so coefficients (f, b, kappa) are comparable across systems.
 MCParams = namedtuple("MCParams", [
-    "N_beads", "N_lef", "N_lef2",
+    "N_beads", "N_lef", "N_lef2", "N_sweep",
     "fold_norm", "fold_norm2", "bind_norm", "k_norm", "epi_norm",
     "cross_loop", "between", "loss_mode", "epi_dynamic", "p_epigenetic", "n_epi", "step_length", "rw",
     "annealing", "T", "T_min",
@@ -31,6 +31,9 @@ def build_params(cfg, inputs, n_beads: int, n_lef: int) -> MCParams:
     if lo.n_sites == 0:
         raise ValueError("no anchors found in the region")
 
+    n_sweep = int(cfg.n_sweep or 2 * n_tot)                  # proposals per MC step (default: 2 per LEF)
+    if n_sweep < 1:
+        raise ValueError("n_sweep must be >= 1 (empty = 2 x number of LEFs)")
     fold = -n_beads / (n_tot * np.log(n_beads / n_tot))
     n_bw = inputs.BWs.shape[0]
     r = np.array(cfg.bw_strengths, float) if cfg.bw_strengths else np.full(n_bw, -n_beads / 10)
@@ -47,7 +50,7 @@ def build_params(cfg, inputs, n_beads: int, n_lef: int) -> MCParams:
     cov_norm = bind_norm / max(float(np.mean(lo.loop_lengths)), 1.0) if cover else 0.0     # per bead: a mean-length loop in a dense region ~ one anchor
 
     return MCParams(
-        n_beads, n_lef, cfg.n_lef2,
+        n_beads, n_lef, cfg.n_lef2, n_sweep,
         fold * cfg.folding_coeff, fold * cfg.folding_coeff2, bind_norm,
         cfg.cross_coeff * 1e4, float(cfg.epi_coeff),
         bool(cfg.cross_loop), bool(cfg.between_families_penalty), int(cfg.data_loss_mode), cfg.epigenetic_mode == "dynamic",
@@ -152,7 +155,7 @@ def mc_block(p, i0, i1, n_steps, mc_step, ms, ns, S, E, rec, acc):
     n_tot = p.N_lef + p.N_lef2
     for i in range(i0, i1):
         T = p.T - (p.T - p.T_min) * (i + 1) / n_steps if p.annealing else p.T
-        for _ in range(2 * n_tot):
+        for _ in range(p.N_sweep):                  # one MC step = N_sweep random proposals
             if p.epi_norm != 0.0 and np.random.rand() < p.p_epigenetic:
                 k, s_new = np.random.randint(0, p.N_beads), np.random.randint(0, p.n_epi)
                 if s_new == S[k]:
