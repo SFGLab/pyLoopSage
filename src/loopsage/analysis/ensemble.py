@@ -200,3 +200,44 @@ def epigenetic_energy_series(p, res) -> tuple:
         ms, ns = res.Ms[:, k].astype(np.int64), res.Ns[:, k].astype(np.int64)
         out[k] = E_epi_dyn(S, ms, ns, p.h, p.epi_norm) if p.epi_dynamic else E_epi(S, p.J, p.h, p.epi_norm)
     return np.arange(res.n_samples) * res.meta["mc_step"], out
+
+
+def epigenetic_free_energy(p, res, n_states, bins=24, smooth=1.0) -> dict:
+    """Free-energy landscape of the epigenetic states.
+
+    Two coordinates per snapshot: m = share of A-like beads (mean state / (n_states - 1); 0 = all B, 1 = all A) and
+    q = share of links (chain neighbours and loops) that join beads in the same state (domain order).
+    landscape: F(m, q) = -ln P (kT, smoothed, NaN where nothing was sampled); path: (m, q) of every snapshot.
+    profile: F(m), energy U(m) = <E_epi / T> and entropy term -TS(m) = F - U along m, all relative to the minimum of F.
+    """
+    from scipy.ndimage import gaussian_filter
+    steps, epi_e = epigenetic_energy_series(p, res)
+    S, Ms, Ns = res.epi.astype(np.int64), res.Ms.astype(np.int64), res.Ns.astype(np.int64)
+    m = S.mean(axis=0) / max(n_states - 1, 1)
+    q = np.empty(res.n_samples)
+    for k in range(res.n_samples):
+        s = S[:, k]
+        edges = {(a, a + 1) for a in range(len(s) - 1)} | {(a, b) for a, b in zip(Ms[:, k], Ns[:, k]) if b > a + 1}
+        e = np.array(sorted(edges))
+        q[k] = np.mean(s[e[:, 0]] == s[e[:, 1]])
+    k0 = res.burnin_idx
+    mp, qp, up = m[k0:], q[k0:], epi_e[k0:] / np.asarray(res.Ts, float)[k0:]
+    edges_m = edges_q = np.linspace(0, 1, bins + 1)
+    H, _, _ = np.histogram2d(mp, qp, bins=[edges_m, edges_q])
+    Hs = gaussian_filter(H, smooth)
+    land = np.where(Hs > 1e-3 * Hs.max(), -np.log(np.maximum(Hs / Hs.sum(), 1e-300)), np.nan)
+    land -= np.nanmin(land)
+    nb = 8
+    eb = np.linspace(0, 1, nb + 1)
+    which = np.clip(np.digitize(mp, eb) - 1, 0, nb - 1)
+    cnt = np.bincount(which, minlength=nb)
+    F, U = np.full(nb, np.nan), np.full(nb, np.nan)
+    ok = cnt >= 3                                      # skip rarely visited shares: too noisy
+    F[ok] = -np.log(cnt[ok] / cnt.sum())
+    U[ok] = np.bincount(which, weights=up, minlength=nb)[ok] / cnt[ok]
+    if not ok.any():
+        return dict(landscape=land, edges=edges_m, path=np.column_stack([m, q]), burnin=k0, steps=steps, centres=(eb[:-1] + eb[1:]) / 2, F=F, U=U, TS=F)
+    ref = np.nanargmin(F)
+    F, U = F - F[ref], U - U[ref]
+    return dict(landscape=land, edges=edges_m, path=np.column_stack([m, q]), burnin=k0, steps=steps,
+                centres=(eb[:-1] + eb[1:]) / 2, F=F, U=U, TS=F - U)

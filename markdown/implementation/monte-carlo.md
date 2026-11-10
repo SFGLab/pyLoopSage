@@ -82,9 +82,11 @@ epigenetic_mode = dynamic    # J follows the current loops (dynamic) or is fixed
 p_epigenetic    = 0.5        # share of the steps that change a state instead of moving a LEF
 ```
 
+**How the states shape the free energy.** With the epigenetic model on, the report adds the figure *Epigenetic model: free-energy landscape*. Every production snapshot is described by two numbers: $m$, the share of beads in the A-like state (0 = all B, 1 = all A), and $q$, the *domain order*, the share of links (chain neighbours and loops) that join beads in the same state. The histogram of $(m,q)$ gives the **landscape** $F(m,q)=-\ln P(m,q)$ in units of $k_BT$, shifted so that its minimum is 0; dark basins are the states the region prefers, and two basins mean coexisting A/B balances. The second panel follows $F$ along $m$ and splits it as $F=U-TS$, where $U=\langle E_{\mathrm{epi}}/T\rangle$ is the mean epigenetic energy and $-TS$ is the entropy term, all measured from the minimum of $F$: the coupling lowers $U$ for ordered, uniform states, while entropy favours the many mixed ones, and the minimum of $F$ is where they balance.
+
 ## The moves
 
-One **Monte Carlo step** consists of $2N_{\mathrm{lef}}$ attempted moves, so on average every LEF is touched twice. Each attempt does the following:
+One **Monte Carlo step** consists of $N_{\mathrm{sweep}}$ attempted moves (the setting `n_sweep`, default $2N_{\mathrm{lef}}$), so by default every LEF is touched twice on average. A smaller $N_{\mathrm{sweep}}$ makes a step shorter, a larger one makes it longer; `sample-every` counts these steps. Each attempt does the following:
 
 1. With probability `p_epigenetic` (only if the epigenetic model is on) it changes the state of one random bead. Otherwise it picks one LEF at random and tries one of two moves with equal chance:
 2. **Rebinding.** The LEF is removed and loaded again somewhere else as the smallest possible loop, $(m,m+2)$. The place is a random bead, or, if you give a loading track, chosen in proportion to that track.

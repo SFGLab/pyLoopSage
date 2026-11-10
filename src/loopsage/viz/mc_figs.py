@@ -371,6 +371,31 @@ def epigenetic_model(res, geom, steps, energy, comp, n_states):
     save_figure(fig, "epigenetic_model")
 
 
+def epigenetic_free_energy(res, geom, fe, n_states):
+    """Free-energy landscape over (A-like share, domain order) and its split into energy and entropy along the A/B share."""
+    fig, axs = make_fig(1, 2, cell=(6.2, 4.8))
+    land, e, path = fe["landscape"], fe["edges"], fe["path"]
+    c = (e[:-1] + e[1:]) / 2
+    top = np.nanmax(land)
+    cs = axs[0].contourf(c, c, land.T, levels=np.linspace(0, top, 14), cmap="viridis_r", alpha=0.95)
+    axs[0].contour(c, c, land.T, levels=np.linspace(0, top, 14), colors="white", linewidths=0.4, alpha=0.6)
+    k0 = fe["burnin"]
+    axs[0].plot(path[:k0 + 1, 0], path[:k0 + 1, 1], color="#111", lw=0.8, alpha=0.55, label="burn-in path")
+    axs[0].scatter(path[k0:, 0], path[k0:, 1], s=9, color="white", edgecolor="#111", linewidth=0.4, zorder=3, label="production snapshots")
+    axs[0].scatter(*path[0], marker="D", s=36, color=ORANGE, edgecolor="#111", zorder=4, label="start")
+    cb = fig.colorbar(cs, ax=axs[0], shrink=0.85)
+    cb.set_label("Free energy F = -ln P (kT)")
+    axs[0].set(title="Free-energy landscape", xlabel="Share of A-like beads  (0 = all B, 1 = all A)", ylabel="Domain order  (links joining equal states)", xlim=(0, 1), ylim=(0, 1))
+    axs[0].legend(loc="lower right", fontsize=7, frameon=True, facecolor="white", framealpha=0.85)
+    x = fe["centres"]
+    for y, col, lab in ((fe["F"], VIOLET, "free energy  F"), (fe["U"], ORANGE, "energy  U"), (fe["TS"], AQUA, "entropy term  -TS")):
+        axs[1].plot(x, y, color=col, lw=2.0, marker="o", ms=4, label=lab)
+    axs[1].axhline(0, color=MUTED, lw=0.8)
+    axs[1].set(title="Energy against entropy along the A/B share", xlabel="Share of A-like beads  (0 = all B, 1 = all A)", ylabel="Relative to the free-energy minimum (kT)", xlim=(0, 1))
+    axs[1].legend(fontsize=8, frameon=False)
+    save_figure(fig, "epigenetic_free_energy")
+
+
 def epigenetic_maps(loops, board, combined, geom):
     """Loop map, epigenetic checkerboard and their product."""
     from loopsage.analysis.maps import minmax

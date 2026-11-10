@@ -14,6 +14,7 @@ def _epigenetic(ctx, mc, g):
     _epigenetic_maps(ctx, mc, g)
     mc_figs.epigenetic_model(mc, g, steps, energy, ctx.inputs.comp, n)
     mc_figs.epigenetic_loops(mc, g, n)
+    mc_figs.epigenetic_free_energy(mc, g, ensemble.epigenetic_free_energy(p, mc, n), n)
     ag = ensemble.loop_state_agreement(mc, n)
     emit_table("Epigenetic model", ["Quantity", "Value", "Unit"], [
         ["Coupling mode", cfg.epigenetic_mode, ""], ["Coupling strength", cfg.epi_coeff, "a.u."], ["Epigenetic states", n, ""],

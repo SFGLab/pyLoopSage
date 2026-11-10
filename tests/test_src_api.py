@@ -228,3 +228,19 @@ def test_n_sweep_default_is_two_per_lef():
         run[sw] = ls.run_mc(cfg, ls.read_inputs(cfg, geom, loops="tests/data/tiny.bedpe"), geom)
     assert np.array_equal(run[None].Ms, run[16].Ms)
     assert not np.array_equal(run[None].Ms, run[4].Ms)
+
+
+def test_epigenetic_free_energy():
+    """Free-energy landscape of the epigenetic states: shapes, F = U - TS and one figure."""
+    import numpy as np
+    import loopsage as ls
+    from loopsage.analysis import ensemble
+    from loopsage.monte_carlo.sampler import build_params
+    cfg = ls.config(region="chr14:22500000-24000000", n_beads=120, n_steps=3000, mc_step=50, burnin=1000, seed=1, quiet=True, n_lef=8, threads=1, epi_coeff=1.0)
+    geom = ls.geometry(cfg)
+    inputs = ls.read_inputs(cfg, geom, loops="tests/data/tiny.bedpe")
+    mc = ls.run_mc(cfg, inputs, geom)
+    fe = ensemble.epigenetic_free_energy(build_params(cfg, inputs, geom.n_beads, 8), mc, cfg.n_epi_states)
+    assert np.nanmin(fe["landscape"]) == 0.0 and fe["path"].shape == (mc.n_samples, 2)
+    assert np.allclose(fe["F"], fe["U"] + fe["TS"], equal_nan=True)
+    assert ls.plots.epigenetic_free_energy(mc, geom, fe, cfg.n_epi_states) is not None

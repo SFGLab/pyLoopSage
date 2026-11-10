@@ -377,6 +377,17 @@ EXPLAIN = {
                 "fluctuate around a plateau, the dashed line marks the end of burn-in. Right: the probability that two beads "
                 "are in the <b>same epigenetic state</b>; bright squares on the diagonal are epigenetic domains, bright "
                 "off-diagonal patches are distant regions of the same type (like A/B compartments)."),
+    "epigenetic_free_energy": dict(
+        section="monte_carlo", title="Epigenetic model: free-energy landscape",
+        caption="How the A/B share and the domain order set the free energy, and how energy and entropy balance along the A/B share.",
+        explain="Left: the <b>free-energy landscape</b> F = -ln P in units of kT, measured from the production snapshots. The horizontal axis is the "
+                "<b>share of A-like beads</b> (0 = every bead B-like, 1 = every bead A-like). The vertical axis is the <b>domain order</b>, the "
+                "share of links (chain neighbours and loops) that join beads in the same state. Dark = low free energy, the states the system "
+                "prefers; the white dots are the production snapshots, the black line is the path from the start (orange diamond) through burn-in. "
+                "One dark basin means one stable state of the region; two basins mean coexisting A/B balances. Right: the free energy along the "
+                "A/B share, split as F = U - TS. <b>U</b> (orange) is the mean epigenetic energy, <b>-TS</b> (blue) the entropy term, how many "
+                "ways the beads can reach that A/B share. Where U falls and -TS rises, the coupling pulls towards that share while entropy "
+                "resists it; the minimum of F is where the two balance. Only shares that were visited are drawn."),
     "epigenetic_loops": dict(
         section="monte_carlo", title="Epigenetic model: loops and epigenetic state",
         caption="Do loop ends share an epigenetic state, and how large is each state's share over time?",

@@ -127,6 +127,7 @@ Section `[monte_carlo]` of the config file.
 | `t_final`<br>`--t-final` | number (a.u.) | `1.0` | Final temperature (Annealing only) |
 | `method`<br>`--method` | text | `Annealing` | Sampling method |
 | `n_lef`<br>`--n-lef` | integer (LEFs) | *(empty)* | Loop extrusion factors (empty = N_anchors / 2) |
+| `n_sweep`<br>`--n-sweep` | integer (proposals) | *(empty)* | Proposals per Monte Carlo step: how many random LEFs are proposed for a change in each step (empty = 2 x the number of LEFs) |
 | `n_lef2`<br>*ini only* | integer (LEFs) | `0` | Second LEF family (different speed) |
 | `lef_drift`<br>*ini only* | true / false | `False` | Unused; accepted only so older config files still load |
 | `lef_rw`<br>`--lef-rw` | true / false | `True` | LEF legs slide as a random walk (True) or only extrude outward (False) |
@@ -221,7 +222,7 @@ Section `[optimizer]` of the config file.
 | `opt_interactive`<br>`--opt-interactive` | true / false | `True` | Pressing Enter during the optimizer shows the best parameters so far and asks whether to keep them and stop (only in a terminal) |
 | `opt_patience`<br>`--opt-patience` | integer (evaluations) | `20` | Early stopping: evaluations without a real improvement (see opt_min_gain) before the optimizer stops |
 | `opt_min_gain`<br>*ini only* | number | `0.01` | Early stopping: smallest drop of the best loss that counts as an improvement (the loss is about 1-4 at the start) |
-| `opt_steps`<br>`--opt-steps` | integer (MC steps) | `4000` | Monte Carlo steps of one optimizer evaluation (each step is a sweep over all LEFs; the first quarter is burn-in, 200 snapshots; the final candidate check runs 3x longer) |
+| `opt_steps`<br>`--opt-steps` | integer (MC steps) | `4000` | Monte Carlo steps of one optimizer evaluation (each step is n_sweep proposals, by default 2 per LEF; the first quarter is burn-in, 200 snapshots; the final candidate check runs 3x longer) |
 | `opt_max_beads`<br>`--opt-max-beads` | integer (beads) | `1500` | Largest region the optimizer simulates: bigger regions are optimized on the window of this many beads with most loops, and the number of LEFs is scaled back to the full region |
 | `target_smooth`<br>`--target-smooth` | number (beads) | `0.8` | Smoothing of the optimizer target built from the input loops, so that the sparse loops look like a Hi-C map (0 = none) |
 | `hic_denoise`<br>`--hic-denoise` | number (beads) | `1.0` | Denoising of the Hi-C target of the optimizer, to bring out the TAD pattern (0 = none); validation always uses the raw map |
