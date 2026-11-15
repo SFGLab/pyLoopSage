@@ -179,11 +179,12 @@ class LoopMD:
         pdb = PDBxFile(str(self.struct_dir / "init_structure.cif"))
         self.topology = pdb.topology
         self.system = ForceField(cfg.forcefield_path).createSystem(pdb.topology, nonbondedCutoff=1 * u.nanometer)
-        self.ev = forces.add_excluded_volume(self.system, self.n, cfg.ev_ff_strength, cfg.ev_ff_power)
+        self.ev = forces.add_excluded_volume(self.system, self.n, cfg.ev_ff_strength, cfg.ev_ff_power, cfg.nonbonded_cutoff)
         forces.add_bonds(self.system, self.n)
         forces.add_angles(self.system, self.n, cfg.angle_ff_strength)
         if self.comps:
-            self.comp = forces.add_compartments(self.system, self.mc.epi[:, self.frames[0]], np.sqrt(self.n) * cfg.comp_range, cfg.comp_strength)
+            width = np.sqrt(self.n) * cfg.comp_range                          # long range: kept out to comp_cutoff widths
+            self.comp = forces.add_compartments(self.system, self.mc.epi[:, self.frames[0]], width, cfg.comp_strength, cfg.comp_cutoff * width)
         self.loop_force = None
         self._set_loops(self.frames[0])
 

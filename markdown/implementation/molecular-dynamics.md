@@ -13,7 +13,7 @@ Think of the chromatin fibre as a string of $N$ beads. In each frame:
 3. the system is simulated for a number of MD steps, so the chain can find a shape that agrees with all springs;
 4. the final positions are saved, and the next frame starts from them with the loops of the next snapshot.
 
-Step 4 matters. The simulation is *not* restarted for every frame. It continues from the previous structure, and only the springs are exchanged. Neighbouring snapshots have almost the same loops, so the structure changes gradually and a few thousand steps per frame are enough to relax it. The number of steps per frame, `sim_step`, is therefore the *relaxation time* between two sets of loops: a larger number gives the chain more time to adapt, a smaller one gives faster but more correlated structures.
+Step 4 matters. The simulation is *not* restarted for every frame. It continues from the previous structure, and only the springs are exchanged. Neighbouring snapshots have almost the same loops, so the structure changes gradually and a few hundred steps per frame are enough to apply the new loops. The number of steps per frame, `sim_step`, is therefore the *relaxation time* between two sets of loops: a larger number gives the chain more time to adapt, a smaller one gives faster but more correlated structures.
 
 !!! note "Units"
     Lengths are in nanometres and energies in kJ/mol, but the model is coarse-grained: a bead is a few kb of chromatin and the bond length is 0.1 nm in the force field. The numbers are model units, not real nanometres of a nucleus, and the time of a frame is a model time, not a measured one. Only ratios, contact patterns and shapes are meant to be compared with data.
@@ -26,9 +26,9 @@ The force field is a sum of simple terms. They are all *potential energies*: the
 |---|---|---|---|
 | **Bonds** | keeps neighbouring beads at distance $r_0=0.1$ nm | $\tfrac12 k\,(r-r_0)^2$, $k=3\cdot10^{5}$ kJ/mol/nm² (fixed) | |
 | **Angles** | stiffness: penalises bending away from a straight line | $\tfrac12 k_\theta(\theta-\pi)^2$ | `angle_ff_strength` |
-| **Excluded volume** | beads repel when they come close, so the chain cannot pass through itself | a soft power law, see below | `ev_ff_strength`, `ev_ff_power` |
+| **Excluded volume** | beads repel when they come close, so the chain cannot pass through itself | a soft power law, see below | `ev_ff_strength`, `ev_ff_power`, `nonbonded_cutoff` |
 | **Loop springs** | pulls the two anchors of every loop together | $\tfrac12 k_L(r-r_L)^2$ | `le_ff_length` ($r_L$), `le_ff_strength` ($k_L$) |
-| **Compartments** (optional) | beads in the same epigenetic state attract each other | a Gaussian well | `do_compartments`, `comp_strength`, `comp_range` |
+| **Compartments** (optional) | beads in the same epigenetic state attract each other | a Gaussian well | `do_compartments`, `comp_strength`, `comp_range`, `comp_cutoff` |
 
 **Excluded volume.** The repulsion between two beads at distance $r$ is
 
@@ -37,6 +37,8 @@ U_{\mathrm{ev}}(r)=\left(\frac{\varepsilon^2\,\sigma^2}{r+r_s}\right)^{p},\qquad
 $$
 
 It is large when two beads overlap and decays quickly with distance; the exponent $p$ decides how steep: a larger $p$ gives a harder, shorter-ranged wall, and a smaller $p$ a softer, longer-ranged one (the default is $p=6$: a hard core at contact, but a weaker push at a distance than $p=3$, so the chain is not over-avoiding; at the default strength the crossing barrier is about $15\,k_BT$, against $5\,k_BT$ for $p=3$). The softening $r_s$ keeps the force finite when beads touch. How *hard* the wall must be is a real question: if it is too soft, two strands can pass through each other, which creates unphysical knots and links; see [Topology](../theory/topology.md), where the same force is used to set a barrier of a chosen height.
+
+**Cutoff.** Computing a force between *every* pair of beads costs a time proportional to $N^2$, which makes big polymers very slow. A *cutoff* skips the pairs that are farther apart than a chosen distance; the force is switched off smoothly over the last 20% of that distance, so that there is no jump. The excluded volume is negligible beyond 1 nm (at 1 nm it is below $10^{-3}$ of its value at contact), so `nonbonded_cutoff = 1.0` nm (the default) changes the structures only marginally and makes the cost grow about linearly with $N$. The compartment attraction is a *long-range* force: its range $w$ grows as $\sqrt N$. It is therefore cut at `comp_cutoff` $\times\,w$ (default 4 widths, where the Gaussian is only 0.03% of its peak), so the attraction acts over its whole range. Setting a cutoff to 0 uses all pairs (exact, but slow for large $N$). Both keys are in the config file only.
 
 **Loop springs.** The springs are the only link between the Monte Carlo and the 3D structure. They are *replaced* in every frame: the old springs are removed and the springs of the new snapshot added. A stiff spring ($k_L=6\cdot10^4$) and a short rest length ($r_L=0.1$ nm) mean that the two anchors of a loop are practically in contact.
 
@@ -70,7 +72,7 @@ A larger time step makes the simulation faster, but too large a step makes it un
 
 **Frames.** For every Monte Carlo snapshot (after the burn-in when `md_skip_burnin` is on, otherwise all of them): swap the loop springs and the compartment states, run `sim_step` integrator steps, then record the positions, the radius of gyration, the potential energy, the distance matrix and the contact map. Each structure is also written as a `.cif` file when `save_ensemble` is on.
 
-The simulated time of one frame is `sim_step` $\times$ `integrator_step` (with the defaults $5000\times100$ fs $=500$ ps). The default of 5000 steps per frame was chosen so that the chain relaxes between two sets of loops.
+The simulated time of one frame is `sim_step` $\times$ `integrator_step` (with the defaults $250\times100$ fs $=25$ ps). The default of 250 steps per frame is the *smallest* value that still applies every loop change, chosen for speed. In test runs, the anchors of newly added loops (10 to 250 beads long) were pulled together within 150 to 250 steps, and with 250 steps every new loop was closed at the end of its frame, while with 100 steps some loops stayed open. The contact maps did not change measurably between 100 and 5000 steps. What a short frame does *not* give is time for the *global* shape to relax: the radius of gyration of the chain keeps growing with the total simulated time (in a test with 500 beads it was 0.90 nm after 250 steps per frame, 1.03 nm after 1000 and 1.22 nm after 5000). If you care about the overall size of the structure more than speed, raise it (`--md-steps 1000` or more); if loops look incomplete in the structures, do not go below 250. The time step of 100 fs stays: 50 to 200 fs gave the same bond lengths and radius of gyration, while 300 fs blew up, so 100 fs keeps a safety factor of 2 to 3. The number of steps per frame does not need to grow with the number of beads, because a loop relaxes locally; only the cost of every step grows with the size of the polymer.
 
 **Contact maps.** A contact map is built from the distances $d_{ij}$ of every frame with a Gaussian kernel $e^{-d_{ij}^2/2\rho^2}$, where $\rho$ is `contact_radius` (default 1 nm), and averaged over the frames. Its comparison with Hi-C is part of the [Analysis](pipeline.md) stage.
 
@@ -90,7 +92,7 @@ initial_structure_type = rw  # rw, confined_rw, self_avoiding_rw, circle, helix,
                              #                                                 (CLI: --init-structure)
 # integrator (Langevin)
 integrator_step = 100.0      # time step, fs                                   (CLI: --step-size)
-sim_step        = 5000       # MD steps per Monte Carlo snapshot (frame)       (CLI: --md-steps)
+sim_step        = 250        # MD steps per Monte Carlo snapshot (frame)       (CLI: --md-steps)
 sim_temp        = 310.0      # temperature, K                                  (CLI: --temperature)
 friction        = 0.1        # 1/ps
 tolerance       = 0.001      # energy minimisation, kJ/mol/nm
@@ -99,6 +101,7 @@ tolerance       = 0.001      # energy minimisation, kJ/mol/nm
 angle_ff_strength = 50.0     # stiffness, kJ/mol/rad^2
 ev_ff_strength    = 100.0    # excluded volume strength, kJ/mol
 ev_ff_power       = 6.0      # excluded volume exponent
+nonbonded_cutoff  = 1.0      # excluded volume cutoff, nm (0 = all pairs, slow for big polymers)
 le_ff_length      = 0.1      # loop spring rest length, nm
 le_ff_strength    = 60000.0  # loop spring constant, kJ/mol/nm^2
 
@@ -106,6 +109,7 @@ le_ff_strength    = 60000.0  # loop spring constant, kJ/mol/nm^2
 do_compartments = False
 comp_strength   = 0.25       # scale of the interaction table
 comp_range      = 0.03       # range in units of sqrt(N) nm
+comp_cutoff     = 4.0        # compartment cutoff in Gaussian widths (0 = all pairs)
 
 md_skip_burnin  = False      # only use snapshots after the Monte Carlo burn-in
 save_ensemble   = True       # write the structures (frames as .cif, trajectory)  (CLI: --save-ensemble)

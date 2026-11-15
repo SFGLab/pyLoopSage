@@ -168,7 +168,7 @@ Section `[molecular_dynamics]` of the config file.
 | `platform`<br>`--platform` | text | `auto` | OpenMM platform: auto (try CUDA, then OpenCL, then parallel CPU), CUDA, OpenCL, CPU or Reference |
 | `initial_structure_type`<br>`--init-structure` | text | `rw` | Initial polymer shape |
 | `integrator_step`<br>`--step-size` | number (fs) | `100.0` | Integrator time step |
-| `sim_step`<br>`--md-steps` | integer (MD steps) | `5000` | MD steps per MC snapshot (per frame) |
+| `sim_step`<br>`--md-steps` | integer (MD steps) | `250` | MD steps per MC snapshot (per frame) |
 | `sim_temp`<br>`--temperature` | number (K) | `310.0` | Simulation temperature |
 | `friction`<br>*ini only* | number (1/ps) | `0.1` | Langevin friction |
 | `tolerance`<br>*ini only* | number (kJ/mol/nm) | `0.001` | Energy-minimisation tolerance |
@@ -177,9 +177,11 @@ Section `[molecular_dynamics]` of the config file.
 | `le_ff_strength`<br>*ini only* | number (kJ/mol/nm^2) | `60000.0` | Loop-anchor spring constant |
 | `ev_ff_strength`<br>*ini only* | number (kJ/mol) | `100.0` | Excluded-volume strength |
 | `ev_ff_power`<br>*ini only* | number | `6.0` | Excluded-volume exponent (larger = harder, shorter-ranged wall; 6 keeps the chain from passing through itself without making it over-avoiding) |
+| `nonbonded_cutoff`<br>*ini only* | number (nm) | `1.0` | Excluded-volume cutoff: pairs farther apart are skipped (the repulsion is negligible there), so the cost grows ~linearly with the beads instead of quadratically (0 = all pairs, exact but slow for big polymers) |
 | `do_compartments`<br>*ini only* | true / false | `False` | Add block-copolymer compartment force (needs epi_coeff > 0) |
 | `comp_strength`<br>*ini only* | number | `0.25` | Block-copolymer compartment attraction: scale of the interaction table (1 = full strength of the table; lower = softer, compartments stay open instead of collapsing) |
 | `comp_range`<br>*ini only* | number | `0.03` | Block-copolymer attraction range in units of sqrt(N) nm; smaller = shorter range |
+| `comp_cutoff`<br>*ini only* | number (widths) | `4.0` | Compartment-attraction cutoff in units of its Gaussian width: the long-range attraction is kept out to this distance, where it is ~0.03% of its peak (0 = all pairs) |
 | `md_skip_burnin`<br>*ini only* | true / false | `False` | Simulate only post-burn-in MC snapshots (False: every snapshot) |
 | `forcefield_path`<br>*ini only* | text | `src/loopsage/molecular_dynamics/forcefields/classic_sm_ff.xml` | OpenMM force-field XML |
 

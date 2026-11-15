@@ -108,7 +108,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | `--platform` | text | `auto` | OpenMM platform: auto (try CUDA, then OpenCL, then parallel CPU), CUDA, OpenCL, CPU or Reference |
 | `--init-structure` | text | `rw` | Initial polymer shape |
 | `--step-size` | number (fs) | `100.0` | Integrator time step |
-| `--md-steps` | integer (MD steps) | `5000` | MD steps per MC snapshot (per frame) |
+| `--md-steps` | integer (MD steps) | `250` | MD steps per MC snapshot (per frame) |
 | `--temperature` | number (K) | `310.0` | Simulation temperature |
 
 ### 3D structure analysis and rendering

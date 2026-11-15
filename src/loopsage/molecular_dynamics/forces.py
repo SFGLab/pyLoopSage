@@ -11,14 +11,24 @@ _COMP_TABLE = [-1.0, 0.0, 0.0,
                0.0, 0.0, -0.2]
 
 
-def add_excluded_volume(system, n, strength, power):
-    """Soft repulsion between all bead pairs. Returns the force (update with set_ev)."""
+def _set_cutoff(f, cutoff, switch=0.8):
+    """Pair interactions beyond `cutoff` nm are dropped, with a smooth switch-off from switch*cutoff (0 = all pairs)."""
+    if cutoff and cutoff > 0:
+        f.setNonbondedMethod(mm.CustomNonbondedForce.CutoffNonPeriodic)
+        f.setCutoffDistance(cutoff)
+        f.setUseSwitchingFunction(True)
+        f.setSwitchingDistance(switch * cutoff)
+
+
+def add_excluded_volume(system, n, strength, power, cutoff=0.0):
+    """Soft repulsion between bead pairs (all pairs if cutoff = 0). Returns the force (update with set_ev)."""
     f = mm.CustomNonbondedForce(f"(epsilon1*epsilon2*(sigma1*sigma2)/(r+r_small))^{power}")
     f.addGlobalParameter("r_small", EV_R_SMALL)
     f.addPerParticleParameter("sigma")
     f.addPerParticleParameter("epsilon")
     for _ in range(n):
         f.addParticle([np.sqrt(strength), EV_EPSILON])
+    _set_cutoff(f, cutoff)
     system.addForce(f)
     return f
 
@@ -57,7 +67,7 @@ def add_angles(system, n, strength):
     system.addForce(f)
 
 
-def add_compartments(system, states, width, strength=1.0):
+def add_compartments(system, states, width, strength=1.0, cutoff=0.0):
     """Block-copolymer force: same-compartment beads attract within `width` nm; `strength` scales the table."""
     f = mm.CustomNonbondedForce("E(s1,s2)*exp(-(r-r0)^2/(2*sigma^2))")
     f.setForceGroup(1)
@@ -67,6 +77,7 @@ def add_compartments(system, states, width, strength=1.0):
     f.addTabulatedFunction("E", mm.Discrete2DFunction(3, 3, [strength * v for v in _COMP_TABLE]))
     for s in states:
         f.addParticle([int(s)])
+    _set_cutoff(f, cutoff)
     system.addForce(f)
     return f
 
