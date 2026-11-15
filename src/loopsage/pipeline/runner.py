@@ -102,10 +102,10 @@ def _run_stage(ctx, st, compute: bool, k: int = 0, n: int = 0):
     path = ctx.dirs.data / st.CACHE if st.CACHE else None
     title = TITLES.get(st.NAME, st.NAME)
     if not compute and path is not None and path.exists():
-        log.step("[%d/%d] %s: loading the saved result (%s)", k, n, title, path.name)
+        log.stage("[%d/%d] %s: loading the saved result (%s)", k, n, title, path.name)
         obj = st.load(path)
     else:
-        log.step("[%d/%d] %s", k, n, title)
+        log.stage("[%d/%d] %s", k, n, title)
         with Timer() as t:
             obj = st.compute(ctx)
         REGISTRY.timings.append((st.NAME, fmt_duration(t.seconds)))
@@ -130,7 +130,7 @@ def run_pipeline(cfg, only=None) -> RunContext:
             log.info("Stage '%s' disabled", st.NAME)
     for k, (i, st) in enumerate(active, 1):
         _run_stage(ctx, st, compute=(only is None or i == last or st is stage_report), k=k, n=len(active))
-    log.step("All done. Results are in %s", ctx.dirs.root)
+    log.stage("All done. Results are in %s", ctx.dirs.root)
     return ctx
 
 

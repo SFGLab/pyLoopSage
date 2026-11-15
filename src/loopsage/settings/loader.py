@@ -159,9 +159,9 @@ _EPILOG = """\
 examples:
   loopsage -f loops.bedpe -r chr1:75000000-95000000 -n 1000 -o out
   loopsage -c config.ini                 # sectioned config file
-  loopsage -c config.ini --no-run-MD -vv # file + overrides, MC only, info messages
+  loopsage -c config.ini --no-run-MD -vv # file + overrides, MC only, tables + info
 
-verbosity: none = main steps + progress bars | -v + tables | -vv + info messages | -vvv + debug | -q = no console output
+verbosity: none = stages + progress bars | -v + details | -vv + info and tables | -vvv + debug | -q = no console output
 Anything not listed here can be set in config.ini, or one-off with --set KEY=VALUE.
 """
 
@@ -174,7 +174,7 @@ def build_parser() -> argparse.ArgumentParser:
                                  formatter_class=argparse.RawDescriptionHelpFormatter, epilog=_EPILOG)
     ap.add_argument("-c", "--config", metavar="FILE", help="sectioned config .ini (flags override it)")
     ap.add_argument("-r", "--region", metavar="CHR:START-END", help="genomic region in bp, e.g. chr1:75000000-95000000")
-    ap.add_argument("-v", "--verbose", action="count", default=0, help="-v tables, -vv info, -vvv debug")
+    ap.add_argument("-v", "--verbose", action="count", default=0, help="-v details, -vv info + tables, -vvv debug")
     ap.add_argument("-s", "--set", action="append", metavar="KEY=VALUE", help="set any config parameter (repeatable)")
     groups = {s: ap.add_argument_group(title) for s, title in SECTIONS.items()}
     for p in PARAMS:

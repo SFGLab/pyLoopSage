@@ -33,7 +33,7 @@ loopsage -c config.ini -s epi_coeff=0.5 -s bind_coeff=2
 | `-h`, `--help` | Show the help text and exit. |
 | `-c FILE`, `--config FILE` | Read settings from a sectioned `.ini` file (see [Config files](config.md)). |
 | `-r CHR:START-END`, `--region CHR:START-END` | Genomic region in base pairs, for example `chr1:75000000-95000000`. |
-| `-v`, `-vv`, `-vvv` | Console detail. None: main steps and progress bars. `-v`: plus tables. `-vv`: plus info messages. `-vvv`: plus debug. |
+| `-v`, `-vv`, `-vvv` | Console detail. None: stages and progress bars. `-v`: plus detail messages (run folder, input counts, motif summary, MD platform). `-vv`: plus info messages and tables. `-vvv`: plus debug. `-q`: no output at all. |
 | `-s KEY=VALUE`, `--set KEY=VALUE` | Set any config key from the command line. Can be repeated. |
 
 ## Options by topic
@@ -108,7 +108,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | `--platform` | text | `auto` | OpenMM platform: auto (try CUDA, then OpenCL, then parallel CPU), CUDA, OpenCL, CPU or Reference |
 | `--init-structure` | text | `rw` | Initial polymer shape |
 | `--step-size` | number (fs) | `100.0` | Integrator time step |
-| `--md-steps` | integer (MD steps) | `250` | MD steps per MC snapshot (per frame) |
+| `--md-steps` | integer (MD steps) | `5000` | MD steps per MC snapshot (per frame) |
 | `--temperature` | number (K) | `310.0` | Simulation temperature |
 
 ### 3D structure analysis and rendering

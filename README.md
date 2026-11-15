@@ -11,7 +11,7 @@
   <a href="https://numpy.org"><img alt="NumPy" src="https://img.shields.io/badge/NumPy-013243?logo=numpy&logoColor=white"></a>
   <a href="https://scipy.org"><img alt="SciPy" src="https://img.shields.io/badge/SciPy-8CAAE6?logo=scipy&logoColor=white"></a>
   <a href="https://mdtraj.org"><img alt="MDTraj" src="https://img.shields.io/badge/MDTraj-trajectories-1a1a1f"></a>
-  <a href="tests"><img alt="pytest" src="https://img.shields.io/badge/tested%20with-pytest-0A9EDC?logo=pytest&logoColor=white"></a>
+  <a href="https://github.com/SFGLab/pyLoopSage/tree/main/tests"><img alt="pytest" src="https://img.shields.io/badge/tested%20with-pytest-0A9EDC?logo=pytest&logoColor=white"></a>
   <a href="https://www.gnu.org/licenses/gpl-3.0.html"><img alt="GPL v3 license" src="https://img.shields.io/badge/License-GPL%20v3-blue"></a>
 </p>
 
@@ -31,7 +31,7 @@ conda install -c conda-forge "openmm>=8.5.1" pybigwig -y
 pip install -r requirements.txt && pip install -e .
 ```
 
-Then install the package (`pip install -e .`) to get the `loopsage` command (version 2.0.0rc2).
+Then install the package (`pip install -e .`) to get the `loopsage` command (version 2.0.0).
 
 ## Usage
 
@@ -58,7 +58,7 @@ loopsage -h
 - **Parallelism:** `-t/--threads` sets worker threads and `--n-replicas` runs independent Monte Carlo chains (default 1).
 - **Demo:** `python demo/run_demo.py quick` runs a small example in seconds.
 
-Detailed documentation of the model, parameters and outputs: **[sfglab.github.io/pyLoopSage](https://sfglab.github.io/pyLoopSage/)** (sources in [`markdown/`](markdown/)).
+Detailed documentation of the model, parameters and outputs: **[sfglab.github.io/pyLoopSage](https://sfglab.github.io/pyLoopSage/)** (sources in [`markdown/`](https://github.com/SFGLab/pyLoopSage/tree/main/markdown)).
 
 ## Use from Python
 

@@ -97,7 +97,7 @@ Section `[output]` of the config file.
 |---|---|---|---|
 | `out_path`<br>`--out` | text | *(empty)* | Results folder (empty = ./results in the current folder); each run gets its own subfolder |
 | `run_number`<br>`--run` | integer | *(empty)* | Run number in the folder name (empty = next free; standalone stages reuse the latest) |
-| `verbosity`<br>*ini only* | integer | `0` | Console detail: 0 main steps + progress bars, 1 + tables, 2 + info messages, 3 + debug (CLI: -v, -vv, -vvv) |
+| `verbosity`<br>*ini only* | integer | `0` | Console detail: 0 stages + progress bars, 1 + detail messages, 2 + info and tables, 3 + debug (CLI: -v, -vv, -vvv) |
 | `quiet`<br>`--quiet` | true / false | `False` | Print nothing to the console (the log file and the report are still written) |
 | `seed`<br>`--seed` | integer | *(empty)* | Random seed (empty = a random one, saved in the resolved config); the same seed repeats the run exactly, MD included only with --threads 1 |
 | `report`<br>`--report` | true / false | `True` | Write report.html |

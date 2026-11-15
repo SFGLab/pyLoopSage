@@ -14,6 +14,12 @@ setup(
     author='Sebastian Korsak',
     author_email='s.korsak@datascience.edu.pl',
     url='https://github.com/SFGLab/pyLoopSage',  # GitHub repository URL
+    project_urls={
+        'Documentation': 'https://sfglab.github.io/pyLoopSage/',
+        'Source': 'https://github.com/SFGLab/pyLoopSage',
+        'Changelog': 'https://github.com/SFGLab/pyLoopSage/blob/main/CHANGELOG.md',
+        'Issues': 'https://github.com/SFGLab/pyLoopSage/issues',
+    },
     license='GNU General Public License v3.0',
     package_dir={'': 'src'},
     packages=find_packages('src', include=['loopsage', 'loopsage.*']),

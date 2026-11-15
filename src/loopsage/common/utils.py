@@ -1,7 +1,7 @@
 """Wall-clock timer.
 
 - Basic statistics used across stages.
-- Tables: shown in the terminal at -v and always stored for the report.
+- Tables: shown in the terminal at -vv and always stored for the report.
 """
 import time
 
@@ -75,9 +75,9 @@ def moving_average(y, window: int) -> np.ndarray:
     return np.convolve(y, k, "same") / np.convolve(np.ones_like(y), k, "same")
 
 
-# ---- Tables: shown in the terminal at -v and always stored for the report ----
+# ---- Tables: shown in the terminal at -vv and always stored for the report ----
 
-def emit_table(title, columns, rows, caption="", section="overview", level=1):
+def emit_table(title, columns, rows, caption="", section="overview", level=2):
     """Register a table for the report; print it if verbosity >= level."""
     rows = [[c if isinstance(c, str) else fmt_num(c) for c in r] for r in rows]
     REGISTRY.add_table(title, columns, rows, caption, section)

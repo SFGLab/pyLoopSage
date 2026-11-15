@@ -1,7 +1,8 @@
 """Verbosity-aware logging.
 
-Console level by -v count: 0/1 -> main steps (log.step) and warnings (tables are printed
-separately at -v), 2 -> info, 3 -> debug. The log file (if any) always records debug.
+Console level by -v count: 0 -> stages (log.stage) + progress bars + warnings,
+1 -> plus detail messages (log.step), 2 -> plus info and tables, 3 -> debug.
+-q silences everything. The log file (if any) always records debug.
 """
 import logging
 from pathlib import Path
@@ -15,10 +16,12 @@ install(show_locals=False)
 console = Console()
 
 ROOT = "loopsage"
-STEP = 25                                         # between INFO and WARNING: milestones always shown
+STEP, STAGE = 25, 26                              # between INFO and WARNING: detail (-v) / stage headers (always)
 logging.addLevelName(STEP, "STEP")
+logging.addLevelName(STAGE, "STAGE")
 logging.Logger.step = lambda self, msg, *a, **k: self.log(STEP, msg, *a, **k)
-_LEVELS = {0: STEP, 1: STEP, 2: logging.INFO, 3: logging.DEBUG}
+logging.Logger.stage = lambda self, msg, *a, **k: self.log(STAGE, msg, *a, **k)
+_LEVELS = {0: STAGE, 1: STEP, 2: logging.INFO, 3: logging.DEBUG}
 _verbosity = 0
 
 
@@ -26,7 +29,7 @@ class _Handler(RichHandler):
     """Rich handler that marks milestone messages with an arrow instead of a level name."""
 
     def get_level_text(self, record):
-        return Text("▸", style="bold #6250d6") if record.levelno == STEP else super().get_level_text(record)
+        return Text("▸", style="bold #6250d6") if record.levelno in (STEP, STAGE) else super().get_level_text(record)
 
 
 def get_verbosity() -> int:

@@ -224,7 +224,7 @@ ctx = ls.run(interaction_file="loops.bedpe", region="chr1:77000000-95000000", ou
 ## The command from Python
 
 ```python
-ls.main(["-c", "config.ini", "-vv"])        # exactly `loopsage -c config.ini -vv`
+ls.main(["-c", "config.ini", "-vv"])        # exactly `loopsage -c config.ini -vv` (tables + info)
 ```
 
 `python -m loopsage -c config.ini` does the same from a shell. `main` takes the list of command-line words; mistakes in the options print the usual usage message and exit.
