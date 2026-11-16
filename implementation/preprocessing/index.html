@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -1754,7 +1754,18 @@ This page explains what is read, how every file type is modelled, and the two wa
 <li><strong>Binding mode</strong> (next section): optionally add the coverage of the input loops, so that loop-free beads are penalised.</li>
 </ol>
 <h3 id="the-loop-maps">The loop maps<a class="headerlink" href="#the-loop-maps" title="Permanent link">&para;</a></h3>
-<p>Besides <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span> the stage keeps two <span class="arithmatex">\(N\times N\)</span> matrices. <span class="arithmatex">\(J\)</span> is binary: 1 on the chain backbone (neighbouring beads) and on every input loop. <span class="arithmatex">\(J^{\mathrm{loss}}\)</span> keeps the weights of the loops. By default the energy uses only <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span> (<code>data_loss_mode = 0</code>); with <code>data_loss_mode = 1</code> it uses <span class="arithmatex">\(J^{\mathrm{loss}}\)</span> instead, which scores a <em>pair</em> of legs and not each leg alone. In that mode <span class="arithmatex">\(J^{\mathrm{loss}}\)</span> is smoothed with a Gaussian of width <code>loss_sigma</code> beads, so that the extruder legs see a continuous landscape and not isolated dots.</p>
+<p>Besides <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span> the stage keeps two <span class="arithmatex">\(N\times N\)</span> matrices. <span class="arithmatex">\(J\)</span> is binary: 1 on the chain backbone (neighbouring beads) and on every input loop. It is the coupling for the epigenetic states. <span class="arithmatex">\(J^{\mathrm{loss}}\)</span> keeps the weights of the loops. By default the energy uses only <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span> (<code>data_loss_mode = 0</code>): every leg is scored alone. With <code>data_loss_mode = 1</code> it uses <span class="arithmatex">\(J^{\mathrm{loss}}\)</span> instead, which scores a <em>pair</em> of legs, so an extruder is rewarded for sitting on an input loop as a whole and not for sitting on two good anchors that belong to different loops.</p>
+<p><strong>How <span class="arithmatex">\(J^{\mathrm{loss}}\)</span> is built (2D mode)</strong></p>
+<ol>
+<li>Every loop adds its weight (the score column) at its bead pair <span class="arithmatex">\((m,n)\)</span>. With orientation columns (8 and 9) the weight is split by the orientation probabilities, so a loop with the wrong CTCF orientation counts less. The map is then symmetrised, <span class="arithmatex">\(J^{\mathrm{loss}}_{mn}=J^{\mathrm{loss}}_{nm}\)</span>.</li>
+<li>A 2D Gaussian filter of width <span class="arithmatex">\(\sigma_{\mathrm{loss}}\)</span> (<code>loss_sigma</code>, in beads, default 2) spreads every dot into a smooth hill, so the legs see a continuous landscape and a loop that is one bead off still gains energy. <code>loss_sigma = 0</code> keeps the isolated dots. If the general input smoothing is also on, the map first gets that Gaussian too, so the total width is larger.</li>
+<li>The map is multiplied by <span class="arithmatex">\(\sqrt{N_{\mathrm{anchors}}}\)</span>, so the strength of the term does not depend on how many loops the file has.</li>
+</ol>
+<p>The binding energy of a loop is then <span class="arithmatex">\(\tfrac12\,(J^{\mathrm{loss}}_{mn}+J^{\mathrm{loss}}_{nm})\)</span> times <span class="arithmatex">\(b\,c_b\)</span>, see <a href="../monte-carlo/">Monte Carlo</a>. The <code>loss_sigma</code> smoothing is applied only to BEDPE input, not to peak files.</p>
+<div class="admonition tip">
+<p class="admonition-title">Choosing the mode</p>
+<p>The 1D mode (default) rewards single anchors, so it also works when the partner of a loop is missing from the data. The 2D mode rewards complete loops, so it needs a loop list you trust. <code>loss_sigma</code> sets how tolerant the 2D mode is to a loop that is a bead or two off. The report figure <em>Loop maps J and J_loss</em> shows the map the simulation uses.</p>
+</div>
 <h2 id="peak-files-bed-narrowpeak">Peak files (BED, narrowPeak)<a class="headerlink" href="#peak-files-bed-narrowpeak" title="Permanent link">&para;</a></h2>
 <p>If you have only CTCF ChIP-seq peaks and no loops, give a <code>.bed</code> or <code>.narrowPeak</code> file. Each peak is a binding site with a weight (the score column); a peak spanning several beads spreads its weight over them. There are no loop pairs in such a file, so only <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span> are built (the 2D mode and the loop-based optimizer target are not available). An optional probability column gives the direction of each site in the same way as for BEDPE.</p>
 <h2 id="preferential-and-contrastive-binding">Preferential and contrastive binding<a class="headerlink" href="#preferential-and-contrastive-binding" title="Permanent link">&para;</a></h2>
@@ -1957,7 +1968,7 @@ This page explains what is read, how every file type is modelled, and the two wa
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

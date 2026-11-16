@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -1739,8 +1739,10 @@ E_{\mathrm{bind}} = b\,c_b\sum_i\Big[\big(L_{m_i}+R_{n_i}\big)+\frac{1}{\bar\ell
 <p>where <span class="arithmatex">\(\hat c_k\in[-1,1]\)</span> is the coverage score of bead <span class="arithmatex">\(k\)</span> (−1 only where the input has no loops, 0 where it has some, up to +1 where it has many) (see <a href="../preprocessing/#preferential-and-contrastive-binding">Preprocessing</a>) and <span class="arithmatex">\(\bar\ell\)</span> is the mean input loop length, which keeps the second part on the scale of one anchor. Since <span class="arithmatex">\(c_b&lt;0\)</span>, a loop is rewarded for spanning beads with <span class="arithmatex">\(\hat c&gt;0\)</span> and penalised for spanning loop-free beads (<span class="arithmatex">\(\hat c=-1\)</span>). The inner sum is a difference of prefix sums, <span class="arithmatex">\(P_{n_i}-P_{m_i}\)</span> with <span class="arithmatex">\(P_j=\sum_{k&lt;j}\hat c_k\)</span>, so a move costs <span class="arithmatex">\(O(1)\)</span>. In preferential mode only the first part is used.</p>
 <h3 id="crossing-loops-should-not-cross">Crossing: loops should not cross<a class="headerlink" href="#crossing-loops-should-not-cross" title="Permanent link">&para;</a></h3>
 <div class="arithmatex">\[
-E_{\mathrm{cross}} = \kappa\,10^{4}\sum_{i&lt;j}K_{ij}, \qquad
-K_{ij}=\begin{cases}1 &amp; \text{if loops } i,j \text{ interleave } (m_i&lt;m_j&lt;n_i&lt;n_j)\\ 1 &amp; \text{if they share a leg position}\\ 0 &amp; \text{otherwise.}\end{cases}
+\begin{aligned}
+E_{\mathrm{cross}} &amp;= \kappa\,10^{4}\sum_{i&lt;j}K_{ij},\\
+K_{ij}&amp;=\begin{cases}1 &amp; \text{if loops } i,j \text{ interleave } (m_i&lt;m_j&lt;n_i&lt;n_j)\\ 1 &amp; \text{if they share a leg position}\\ 0 &amp; \text{otherwise.}\end{cases}
+\end{aligned}
 \]</div>
 <p>Two loops that cross, or that sit on the same bead, would be hard to build in 3D without the polymer passing through itself. The huge constant <span class="arithmatex">\(10^4\)</span> makes this penalty act almost as a <em>rule</em>: the sampler practically never keeps such a state. Nested loops (one inside the other) and neighbouring loops are free. The coefficient is <span class="arithmatex">\(\kappa\)</span> (<code>cross_coeff</code>).</p>
 <div class="highlight"><pre><span></span><code><span class="na">cross_loop</span><span class="w">               </span><span class="o">=</span><span class="w"> </span><span class="s">True</span><span class="w">    </span><span class="c1"># penalise interleaved loops, not only shared legs</span>
@@ -1759,8 +1761,9 @@ E_{\mathrm{epi}} = -\varepsilon\Big[\sum_{i&lt;j}J_{ij}\,\delta(S_i,S_j)\;+\;\su
 <span class="na">epigenetic_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">dynamic</span><span class="w">    </span><span class="c1"># J follows the current loops (dynamic) or is fixed from the input (static)</span>
 <span class="na">p_epigenetic</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">0.5</span><span class="w">        </span><span class="c1"># share of the steps that change a state instead of moving a LEF</span>
 </code></pre></div>
+<p><strong>How the states shape the free energy.</strong> With the epigenetic model on, the report adds the figure <em>Epigenetic model: free-energy landscape</em>. Every production snapshot is described by two numbers: <span class="arithmatex">\(m\)</span>, the share of beads in the A-like state (0 = all B, 1 = all A), and <span class="arithmatex">\(q\)</span>, the <em>domain order</em>, the share of links (chain neighbours and loops) that join beads in the same state. The histogram of <span class="arithmatex">\((m,q)\)</span> gives the <strong>landscape</strong> <span class="arithmatex">\(F(m,q)=-\ln P(m,q)\)</span> in units of <span class="arithmatex">\(k_BT\)</span>, shifted so that its minimum is 0; dark basins are the states the region prefers, and two basins mean coexisting A/B balances. The second panel follows <span class="arithmatex">\(F\)</span> along <span class="arithmatex">\(m\)</span> and splits it as <span class="arithmatex">\(F=U-TS\)</span>, where <span class="arithmatex">\(U=\langle E_{\mathrm{epi}}/T\rangle\)</span> is the mean epigenetic energy and <span class="arithmatex">\(-TS\)</span> is the entropy term, all measured from the minimum of <span class="arithmatex">\(F\)</span>: the coupling lowers <span class="arithmatex">\(U\)</span> for ordered, uniform states, while entropy favours the many mixed ones, and the minimum of <span class="arithmatex">\(F\)</span> is where they balance.</p>
 <h2 id="the-moves">The moves<a class="headerlink" href="#the-moves" title="Permanent link">&para;</a></h2>
-<p>One <strong>Monte Carlo step</strong> consists of <span class="arithmatex">\(2N_{\mathrm{lef}}\)</span> attempted moves, so on average every LEF is touched twice. Each attempt does the following:</p>
+<p>One <strong>Monte Carlo step</strong> consists of <span class="arithmatex">\(N_{\mathrm{sweep}}\)</span> attempted moves (the setting <code>n_sweep</code>, default <span class="arithmatex">\(2N_{\mathrm{lef}}\)</span>), so by default every LEF is touched twice on average. A smaller <span class="arithmatex">\(N_{\mathrm{sweep}}\)</span> makes a step shorter, a larger one makes it longer; <code>sample-every</code> counts these steps. Each attempt does the following:</p>
 <ol>
 <li>With probability <code>p_epigenetic</code> (only if the epigenetic model is on) it changes the state of one random bead. Otherwise it picks one LEF at random and tries one of two moves with equal chance:</li>
 <li><strong>Rebinding.</strong> The LEF is removed and loaded again somewhere else as the smallest possible loop, <span class="arithmatex">\((m,m+2)\)</span>. The place is a random bead, or, if you give a loading track, chosen in proportion to that track.</li>
@@ -1966,7 +1969,7 @@ p_{\mathrm{accept}}=\min\!\big(1,\;e^{-\Delta E/T}\big).
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -1854,7 +1854,7 @@ Pass it with <code>-c</code>:</p>
 <td><code>verbosity</code><br><em>ini only</em></td>
 <td>integer</td>
 <td><code>0</code></td>
-<td>Console detail: 0 main steps + progress bars, 1 + tables, 2 + info messages, 3 + debug (CLI: -v, -vv, -vvv)</td>
+<td>Console detail: 0 stages + progress bars, 1 + detail messages, 2 + info and tables, 3 + debug (CLI: -v, -vv, -vvv)</td>
 </tr>
 <tr>
 <td><code>quiet</code><br><code>--quiet</code></td>
@@ -1973,6 +1973,12 @@ Pass it with <code>-c</code>:</p>
 <td>integer (LEFs)</td>
 <td><em>(empty)</em></td>
 <td>Loop extrusion factors (empty = N_anchors / 2)</td>
+</tr>
+<tr>
+<td><code>n_sweep</code><br><code>--n-sweep</code></td>
+<td>integer (proposals)</td>
+<td><em>(empty)</em></td>
+<td>Proposals per Monte Carlo step: how many random LEFs are proposed for a change in each step (empty = 2 x the number of LEFs)</td>
 </tr>
 <tr>
 <td><code>n_lef2</code><br><em>ini only</em></td>
@@ -2161,7 +2167,7 @@ Pass it with <code>-c</code>:</p>
 <tr>
 <td><code>sim_step</code><br><code>--md-steps</code></td>
 <td>integer (MD steps)</td>
-<td><code>5000</code></td>
+<td><code>250</code></td>
 <td>MD steps per MC snapshot (per frame)</td>
 </tr>
 <tr>
@@ -2213,6 +2219,12 @@ Pass it with <code>-c</code>:</p>
 <td>Excluded-volume exponent (larger = harder, shorter-ranged wall; 6 keeps the chain from passing through itself without making it over-avoiding)</td>
 </tr>
 <tr>
+<td><code>nonbonded_cutoff</code><br><em>ini only</em></td>
+<td>number (nm)</td>
+<td><code>1.0</code></td>
+<td>Excluded-volume cutoff: pairs farther apart are skipped (the repulsion is negligible there), so the cost grows ~linearly with the beads instead of quadratically (0 = all pairs, exact but slow for big polymers)</td>
+</tr>
+<tr>
 <td><code>do_compartments</code><br><em>ini only</em></td>
 <td>true / false</td>
 <td><code>False</code></td>
@@ -2229,6 +2241,12 @@ Pass it with <code>-c</code>:</p>
 <td>number</td>
 <td><code>0.03</code></td>
 <td>Block-copolymer attraction range in units of sqrt(N) nm; smaller = shorter range</td>
+</tr>
+<tr>
+<td><code>comp_cutoff</code><br><em>ini only</em></td>
+<td>number (widths)</td>
+<td><code>4.0</code></td>
+<td>Compartment-attraction cutoff in units of its Gaussian width: the long-range attraction is kept out to this distance, where it is ~0.03% of its peak (0 = all pairs)</td>
 </tr>
 <tr>
 <td><code>md_skip_burnin</code><br><em>ini only</em></td>
@@ -2402,7 +2420,7 @@ Pass it with <code>-c</code>:</p>
 <td><code>opt_steps</code><br><code>--opt-steps</code></td>
 <td>integer (MC steps)</td>
 <td><code>4000</code></td>
-<td>Monte Carlo steps of one optimizer evaluation (each step is a sweep over all LEFs; the first quarter is burn-in, 200 snapshots; the final candidate check runs 3x longer)</td>
+<td>Monte Carlo steps of one optimizer evaluation (each step is n_sweep proposals, by default 2 per LEF; the first quarter is burn-in, 200 snapshots; the final candidate check runs 3x longer)</td>
 </tr>
 <tr>
 <td><code>opt_max_beads</code><br><code>--opt-max-beads</code></td>
@@ -2614,7 +2632,7 @@ Pass it with <code>-c</code>:</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -1727,7 +1727,7 @@ loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class=
 </tr>
 <tr>
 <td><code>-v</code>, <code>-vv</code>, <code>-vvv</code></td>
-<td>Console detail. None: main steps and progress bars. <code>-v</code>: plus tables. <code>-vv</code>: plus info messages. <code>-vvv</code>: plus debug.</td>
+<td>Console detail. None: stages and progress bars. <code>-v</code>: plus detail messages (run folder, input counts, motif summary, MD platform). <code>-vv</code>: plus info messages and tables. <code>-vvv</code>: plus debug. <code>-q</code>: no output at all.</td>
 </tr>
 <tr>
 <td><code>-s KEY=VALUE</code>, <code>--set KEY=VALUE</code></td>
@@ -1956,6 +1956,12 @@ loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class=
 <td>Loop extrusion factors (empty = N_anchors / 2)</td>
 </tr>
 <tr>
+<td><code>--n-sweep</code></td>
+<td>integer (proposals)</td>
+<td><em>(empty)</em></td>
+<td>Proposals per Monte Carlo step: how many random LEFs are proposed for a change in each step (empty = 2 x the number of LEFs)</td>
+</tr>
+<tr>
 <td><code>--lef-rw</code> / <code>--no-lef-rw</code></td>
 <td>true / false</td>
 <td><code>True</code></td>
@@ -2138,7 +2144,7 @@ loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class=
 <td><code>--opt-steps</code></td>
 <td>integer (MC steps)</td>
 <td><code>4000</code></td>
-<td>Monte Carlo steps of one optimizer evaluation (each step is a sweep over all LEFs; the first quarter is burn-in, 200 snapshots; the final candidate check runs 3x longer)</td>
+<td>Monte Carlo steps of one optimizer evaluation (each step is n_sweep proposals, by default 2 per LEF; the first quarter is burn-in, 200 snapshots; the final candidate check runs 3x longer)</td>
 </tr>
 <tr>
 <td><code>--opt-max-beads</code></td>
@@ -2324,7 +2330,7 @@ python<span class="w"> </span>-m<span class="w"> </span>loopsage.pipeline.stage_
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

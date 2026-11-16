@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -1539,7 +1539,7 @@
 <li>the system is simulated for a number of MD steps, so the chain can find a shape that agrees with all springs;</li>
 <li>the final positions are saved, and the next frame starts from them with the loops of the next snapshot.</li>
 </ol>
-<p>Step 4 matters. The simulation is <em>not</em> restarted for every frame. It continues from the previous structure, and only the springs are exchanged. Neighbouring snapshots have almost the same loops, so the structure changes gradually and a few thousand steps per frame are enough to relax it. The number of steps per frame, <code>sim_step</code>, is therefore the <em>relaxation time</em> between two sets of loops: a larger number gives the chain more time to adapt, a smaller one gives faster but more correlated structures.</p>
+<p>Step 4 matters. The simulation is <em>not</em> restarted for every frame. It continues from the previous structure, and only the springs are exchanged. Neighbouring snapshots have almost the same loops, so the structure changes gradually and a few hundred steps per frame are enough to apply the new loops. The number of steps per frame, <code>sim_step</code>, is therefore the <em>relaxation time</em> between two sets of loops: a larger number gives the chain more time to adapt, a smaller one gives faster but more correlated structures.</p>
 <div class="admonition note">
 <p class="admonition-title">Units</p>
 <p>Lengths are in nanometres and energies in kJ/mol, but the model is coarse-grained: a bead is a few kb of chromatin and the bond length is 0.1 nm in the force field. The numbers are model units, not real nanometres of a nucleus, and the time of a frame is a model time, not a measured one. Only ratios, contact patterns and shapes are meant to be compared with data.</p>
@@ -1572,7 +1572,7 @@
 <td><strong>Excluded volume</strong></td>
 <td>beads repel when they come close, so the chain cannot pass through itself</td>
 <td>a soft power law, see below</td>
-<td><code>ev_ff_strength</code>, <code>ev_ff_power</code></td>
+<td><code>ev_ff_strength</code>, <code>ev_ff_power</code>, <code>nonbonded_cutoff</code></td>
 </tr>
 <tr>
 <td><strong>Loop springs</strong></td>
@@ -1584,20 +1584,23 @@
 <td><strong>Compartments</strong> (optional)</td>
 <td>beads in the same epigenetic state attract each other</td>
 <td>a Gaussian well</td>
-<td><code>do_compartments</code>, <code>comp_strength</code>, <code>comp_range</code></td>
+<td><code>do_compartments</code>, <code>comp_strength</code>, <code>comp_range</code>, <code>comp_cutoff</code></td>
 </tr>
 </tbody>
 </table>
 <p><strong>Excluded volume.</strong> The repulsion between two beads at distance <span class="arithmatex">\(r\)</span> is</p>
 <div class="arithmatex">\[
-U_{\mathrm{ev}}(r)=\left(\frac{\varepsilon^2\,\sigma^2}{r+r_s}\right)^{p},\qquad \sigma^2=\texttt{ev\_ff\_strength},\ \ \varepsilon=0.05,\ \ r_s=0.1\ \mathrm{nm},\ \ p=\texttt{ev\_ff\_power}.
+U_{\mathrm{ev}}(r)=\left(\frac{\varepsilon^2\,\sigma^2}{r+r_s}\right)^{p},
 \]</div>
+<p>Here <span class="arithmatex">\(\sigma^2\)</span> is the strength (<code>ev_ff_strength</code>), <span class="arithmatex">\(\varepsilon=0.05\)</span> a fixed constant, <span class="arithmatex">\(r_s=0.1\)</span> nm the softening length and <span class="arithmatex">\(p\)</span> the exponent (<code>ev_ff_power</code>).</p>
 <p>It is large when two beads overlap and decays quickly with distance; the exponent <span class="arithmatex">\(p\)</span> decides how steep: a larger <span class="arithmatex">\(p\)</span> gives a harder, shorter-ranged wall, and a smaller <span class="arithmatex">\(p\)</span> a softer, longer-ranged one (the default is <span class="arithmatex">\(p=6\)</span>: a hard core at contact, but a weaker push at a distance than <span class="arithmatex">\(p=3\)</span>, so the chain is not over-avoiding; at the default strength the crossing barrier is about <span class="arithmatex">\(15\,k_BT\)</span>, against <span class="arithmatex">\(5\,k_BT\)</span> for <span class="arithmatex">\(p=3\)</span>). The softening <span class="arithmatex">\(r_s\)</span> keeps the force finite when beads touch. How <em>hard</em> the wall must be is a real question: if it is too soft, two strands can pass through each other, which creates unphysical knots and links; see <a href="../../theory/topology/">Topology</a>, where the same force is used to set a barrier of a chosen height.</p>
+<p><strong>Cutoff.</strong> Computing a force between <em>every</em> pair of beads costs a time proportional to <span class="arithmatex">\(N^2\)</span>, which makes big polymers very slow. A <em>cutoff</em> skips the pairs that are farther apart than a chosen distance; the force is switched off smoothly over the last 20% of that distance, so that there is no jump. The excluded volume is negligible beyond 1 nm (at 1 nm it is below <span class="arithmatex">\(10^{-3}\)</span> of its value at contact), so <code>nonbonded_cutoff = 1.0</code> nm (the default) changes the structures only marginally and makes the cost grow about linearly with <span class="arithmatex">\(N\)</span>. The compartment attraction is a <em>long-range</em> force: its range <span class="arithmatex">\(w\)</span> grows as <span class="arithmatex">\(\sqrt N\)</span>. It is therefore cut at <code>comp_cutoff</code> <span class="arithmatex">\(\times\,w\)</span> (default 4 widths, where the Gaussian is only 0.03% of its peak), so the attraction acts over its whole range. Setting a cutoff to 0 uses all pairs (exact, but slow for large <span class="arithmatex">\(N\)</span>). Both keys are in the config file only.</p>
 <p><strong>Loop springs.</strong> The springs are the only link between the Monte Carlo and the 3D structure. They are <em>replaced</em> in every frame: the old springs are removed and the springs of the new snapshot added. A stiff spring (<span class="arithmatex">\(k_L=6\cdot10^4\)</span>) and a short rest length (<span class="arithmatex">\(r_L=0.1\)</span> nm) mean that the two anchors of a loop are practically in contact.</p>
 <p><strong>Compartments.</strong> When the epigenetic model was on in the Monte Carlo (<code>epi_coeff</code> &gt; 0) and you set <code>do_compartments = True</code>, every bead carries the state it had in the snapshot, and two beads in the same state attract each other,</p>
 <div class="arithmatex">\[
-U_{\mathrm{comp}}(r)=s\,E_{ab}\,e^{-r^2/2w^2},\qquad w=\texttt{comp\_range}\cdot\sqrt N\ \mathrm{nm}.
+U_{\mathrm{comp}}(r)=s\,E_{ab}\,e^{-r^2/2w^2},
 \]</div>
+<p>where the width is <span class="arithmatex">\(w=w_0\sqrt N\)</span> nm and <span class="arithmatex">\(w_0\)</span> is <code>comp_range</code>.</p>
 <p><span class="arithmatex">\(E_{ab}\)</span> is a small table: it is non-zero only for two beads of the same state, and it is largest for state 0 (B) and weaker for the others, so that B beads aggregate more strongly than A beads. The scale <span class="arithmatex">\(s\)</span> is <code>comp_strength</code>: 1 is the full strength of the table, lower values give softer compartments that stay open instead of collapsing into one dense ball. The states are updated in every frame, so compartments follow the Monte Carlo.</p>
 <h2 id="the-integrator">The integrator<a class="headerlink" href="#the-integrator" title="Permanent link">&para;</a></h2>
 <p>An <em>integrator</em> is the rule that moves the beads from one time step to the next. LoopSage uses one: the <strong>Langevin integrator</strong> of OpenMM. It solves Newton's equation of motion for every bead, with two extra ingredients that mimic the surrounding fluid: a <em>friction</em> force that slows the bead down, and <em>random kicks</em> that keep it moving. Friction and kicks are tied together so that the chain reaches the temperature you set, and the structures it samples are those of a polymer in thermal equilibrium with the springs of the current loops.</p>
@@ -1633,7 +1636,7 @@ U_{\mathrm{comp}}(r)=s\,E_{ab}\,e^{-r^2/2w^2},\qquad w=\texttt{comp\_range}\cdot
 <p><strong>Build.</strong> The initial chain is made in a chosen shape (<code>initial_structure_type</code>: <code>rw</code> random walk, <code>confined_rw</code>, <code>self_avoiding_rw</code>, <code>circle</code>, <code>helix</code>, <code>spiral</code> or <code>sphere</code>), the forces are added, and the energy is <em>minimised</em> once (the beads are moved downhill until the force is below <code>tolerance</code>), so that the first frame does not start from overlapping beads.</p>
 <p><strong>Platform.</strong> OpenMM can run on a GPU or on CPU cores. With <code>platform = auto</code> LoopSage tries CUDA, then OpenCL, then the CPU; if a platform is listed but cannot start (a driver problem), it moves on to the next one. On the CPU the number of threads is the <code>--threads</code> value (all cores if you gave none). <code>device</code> picks a GPU when there are several.</p>
 <p><strong>Frames.</strong> For every Monte Carlo snapshot (after the burn-in when <code>md_skip_burnin</code> is on, otherwise all of them): swap the loop springs and the compartment states, run <code>sim_step</code> integrator steps, then record the positions, the radius of gyration, the potential energy, the distance matrix and the contact map. Each structure is also written as a <code>.cif</code> file when <code>save_ensemble</code> is on.</p>
-<p>The simulated time of one frame is <code>sim_step</code> <span class="arithmatex">\(\times\)</span> <code>integrator_step</code> (with the defaults <span class="arithmatex">\(5000\times100\)</span> fs <span class="arithmatex">\(=500\)</span> ps). The default of 5000 steps per frame was chosen so that the chain relaxes between two sets of loops.</p>
+<p>The simulated time of one frame is <code>sim_step</code> <span class="arithmatex">\(\times\)</span> <code>integrator_step</code> (with the defaults <span class="arithmatex">\(250\times100\)</span> fs <span class="arithmatex">\(=25\)</span> ps). The default of 250 steps per frame is the <em>smallest</em> value that still applies every loop change, chosen for speed. In test runs, the anchors of newly added loops (10 to 250 beads long) were pulled together within 150 to 250 steps, and with 250 steps every new loop was closed at the end of its frame, while with 100 steps some loops stayed open. The contact maps did not change measurably between 100 and 5000 steps. What a short frame does <em>not</em> give is time for the <em>global</em> shape to relax: the radius of gyration of the chain keeps growing with the total simulated time (in a test with 500 beads it was 0.90 nm after 250 steps per frame, 1.03 nm after 1000 and 1.22 nm after 5000). If you care about the overall size of the structure more than speed, raise it (<code>--md-steps 1000</code> or more); if loops look incomplete in the structures, do not go below 250. The time step of 100 fs stays: 50 to 200 fs gave the same bond lengths and radius of gyration, while 300 fs blew up, so 100 fs keeps a safety factor of 2 to 3. The number of steps per frame does not need to grow with the number of beads, because a loop relaxes locally; only the cost of every step grows with the size of the polymer.</p>
 <p><strong>Contact maps.</strong> A contact map is built from the distances <span class="arithmatex">\(d_{ij}\)</span> of every frame with a Gaussian kernel <span class="arithmatex">\(e^{-d_{ij}^2/2\rho^2}\)</span>, where <span class="arithmatex">\(\rho\)</span> is <code>contact_radius</code> (default 1 nm), and averaged over the frames. Its comparison with Hi-C is part of the <a href="../pipeline/">Analysis</a> stage.</p>
 <h2 id="topoisomerase-options">Topoisomerase options<a class="headerlink" href="#topoisomerase-options" title="Permanent link">&para;</a></h2>
 <p>Real chromatin is not a polymer that can never cross itself: topoisomerases let strands pass through each other. Two optional modes switch the excluded volume off for a short time, so that strands can cross (<code>topo_mode = random</code> with <code>ev_p</code>, or <code>topo_mode = local</code> with <code>topo_rate</code>, <code>topo_radius</code>, <code>topo_width</code>, <code>topo_window</code>, <code>topo_keep</code>). Whether the chain crosses itself without help can be counted with <code>track_crossings</code>. This is the subject of the <a href="../../theory/topology/">Topology</a> page.</p>
@@ -1647,7 +1650,7 @@ U_{\mathrm{comp}}(r)=s\,E_{ab}\,e^{-r^2/2w^2},\qquad w=\texttt{comp\_range}\cdot
 <span class="w">                             </span><span class="c1">#                                                 (CLI: --init-structure)</span>
 <span class="c1"># integrator (Langevin)</span>
 <span class="na">integrator_step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">100.0</span><span class="w">      </span><span class="c1"># time step, fs                                   (CLI: --step-size)</span>
-<span class="na">sim_step</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="s">5000</span><span class="w">       </span><span class="c1"># MD steps per Monte Carlo snapshot (frame)       (CLI: --md-steps)</span>
+<span class="na">sim_step</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="s">250</span><span class="w">        </span><span class="c1"># MD steps per Monte Carlo snapshot (frame)       (CLI: --md-steps)</span>
 <span class="na">sim_temp</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="s">310.0</span><span class="w">      </span><span class="c1"># temperature, K                                  (CLI: --temperature)</span>
 <span class="na">friction</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="s">0.1</span><span class="w">        </span><span class="c1"># 1/ps</span>
 <span class="na">tolerance</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s">0.001</span><span class="w">      </span><span class="c1"># energy minimisation, kJ/mol/nm</span>
@@ -1656,6 +1659,7 @@ U_{\mathrm{comp}}(r)=s\,E_{ab}\,e^{-r^2/2w^2},\qquad w=\texttt{comp\_range}\cdot
 <span class="na">angle_ff_strength</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">50.0</span><span class="w">     </span><span class="c1"># stiffness, kJ/mol/rad^2</span>
 <span class="na">ev_ff_strength</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">100.0</span><span class="w">    </span><span class="c1"># excluded volume strength, kJ/mol</span>
 <span class="na">ev_ff_power</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s">6.0</span><span class="w">      </span><span class="c1"># excluded volume exponent</span>
+<span class="na">nonbonded_cutoff</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">1.0</span><span class="w">      </span><span class="c1"># excluded volume cutoff, nm (0 = all pairs, slow for big polymers)</span>
 <span class="na">le_ff_length</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s">0.1</span><span class="w">      </span><span class="c1"># loop spring rest length, nm</span>
 <span class="na">le_ff_strength</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">60000.0</span><span class="w">  </span><span class="c1"># loop spring constant, kJ/mol/nm^2</span>
 
@@ -1663,6 +1667,7 @@ U_{\mathrm{comp}}(r)=s\,E_{ab}\,e^{-r^2/2w^2},\qquad w=\texttt{comp\_range}\cdot
 <span class="na">do_compartments</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">False</span>
 <span class="na">comp_strength</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">0.25</span><span class="w">       </span><span class="c1"># scale of the interaction table</span>
 <span class="na">comp_range</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s">0.03</span><span class="w">       </span><span class="c1"># range in units of sqrt(N) nm</span>
+<span class="na">comp_cutoff</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s">4.0</span><span class="w">        </span><span class="c1"># compartment cutoff in Gaussian widths (0 = all pairs)</span>
 
 <span class="na">md_skip_burnin</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">False</span><span class="w">      </span><span class="c1"># only use snapshots after the Monte Carlo burn-in</span>
 <span class="na">save_ensemble</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">True</span><span class="w">       </span><span class="c1"># write the structures (frames as .cif, trajectory)  (CLI: --save-ensemble)</span>
@@ -1805,7 +1810,7 @@ U_{\mathrm{comp}}(r)=s\,E_{ab}\,e^{-r^2/2w^2},\qquad w=\texttt{comp\_range}\cdot
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

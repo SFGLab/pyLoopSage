@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -1461,7 +1461,7 @@ Each of these steps is a <strong>stage</strong>. This page shows how the stages 
 <h2 id="the-stages">The stages<a class="headerlink" href="#the-stages" title="Permanent link">&para;</a></h2>
 <p><strong>1. Preprocessing.</strong> The stage reads the loop file (BEDPE) or the CTCF peaks (BED, narrowPeak) for the chosen region and puts everything on a grid of <em>beads</em>, the simulation units (a bead is a piece of chromatin of a few kb). If you asked for it, it first runs the <a href="../motif-finder/">Motif Finder</a> to find the direction of the CTCF sites. The result is a set of arrays: the anchor profiles <span class="arithmatex">\(L\)</span> and <span class="arithmatex">\(R\)</span> (how strongly each bead holds a left or right leg of an extruder), the loop map, optional tracks, and an optional compartment field <span class="arithmatex">\(h\)</span>. If a Hi-C file is given, it is read here too. See <a href="../preprocessing/">Preprocessing</a>.</p>
 <p><strong>2. Optimizer</strong> (<code>--optimize</code>). A few numbers of the model cannot be measured: the number of extruders, the strength of the folding and the binding, the temperature. The optimizer tries many short simulations and keeps the values whose loops look most like the target (a Hi-C map or the input loops). It passes the chosen values to the next stage. See <a href="../optimizer/">The Optimizer</a>.</p>
-<p><strong>3. Monte Carlo.</strong> The core of the model. A set of <span class="arithmatex">\(N_{\mathrm{lef}}\)</span> extruders, each one a loop between two beads, is moved at random and the moves are accepted or rejected with an energy rule. The stage saves a <em>snapshot</em> of all loops every few steps. See <a href="../monte-carlo/">Monte Carlo</a>.</p>
+<p><strong>3. Monte Carlo.</strong> The core of the model. A set of <span class="arithmatex">\(N_{\mathrm{lef}}\)</span> extruders, each one a loop between two beads, is moved at random and the moves are accepted or rejected with an energy rule. One Monte Carlo step is a <em>sweep</em> of <span class="arithmatex">\(N_{\mathrm{sweep}}\)</span> proposals (<code>n_sweep</code>): in each proposal a random extruder is chosen and a rebinding or sliding move is tried. By default <span class="arithmatex">\(N_{\mathrm{sweep}} = 2N_{\mathrm{lef}}\)</span>, so a step proposes about two changes per extruder; a larger value makes each step longer and the snapshots more independent. The stage saves a <em>snapshot</em> of all loops every few steps. See <a href="../monte-carlo/">Monte Carlo</a>.</p>
 <p><strong>4. Molecular dynamics</strong> (<code>--run-MD</code>). Every Monte Carlo snapshot is turned into a 3D structure: the loops become springs in a bead-spring polymer, which is relaxed with a Langevin simulation in OpenMM. See <a href="../molecular-dynamics/">Molecular Dynamics</a>.</p>
 <p><strong>5. 3D structure.</strong> It works on the MD frames: interactive viewer, videos, and the ensemble of structures as <code>.cif</code> files. It only runs together with the MD.</p>
 <p><strong>6. Analysis.</strong> Contact maps are built from the Monte Carlo loops and from the 3D frames, and compared with the input loops and with Hi-C when it is given (correlations, insulation, decay with distance). It also extracts map features such as TAD boundaries.</p>
@@ -1663,7 +1663,7 @@ python<span class="w"> </span>-m<span class="w"> </span>loopsage.pipeline.stage_
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

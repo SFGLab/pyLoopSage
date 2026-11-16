@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -2070,6 +2070,7 @@ python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;i
     <span class="n">n_beads</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span>                         <span class="c1"># resolution: the region is cut into 120 beads</span>
     <span class="n">n_steps</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span>                       <span class="c1"># Monte Carlo steps</span>
     <span class="n">n_lef</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>                             <span class="c1"># number of loop extruders</span>
+    <span class="n">n_sweep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>                        <span class="c1"># proposals per MC step (None = 2 * n_lef)</span>
     <span class="n">folding_coeff</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>                   <span class="c1"># strength of the folding energy</span>
     <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>                              <span class="c1"># random seed: the same seed gives the same result</span>
 <span class="p">)</span>
@@ -2180,7 +2181,7 @@ python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;i
 </code></pre></div>
 <p><code>ls.run</code> takes the same arguments as <code>ls.config</code> and returns the run context (<code>ctx.mc</code>, <code>ctx.md</code>, <code>ctx.inputs</code>, ...). Like the command, it saves every output unless it is switched off, for example with <code>report=False</code> or <code>figures=False</code> (the <a href="../cli/">output switches</a> list them all).</p>
 <h2 id="the-command-from-python">The command from Python<a class="headerlink" href="#the-command-from-python" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">ls</span><span class="o">.</span><span class="n">main</span><span class="p">([</span><span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="s2">&quot;config.ini&quot;</span><span class="p">,</span> <span class="s2">&quot;-vv&quot;</span><span class="p">])</span>        <span class="c1"># exactly `loopsage -c config.ini -vv`</span>
+<div class="highlight"><pre><span></span><code><span class="n">ls</span><span class="o">.</span><span class="n">main</span><span class="p">([</span><span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="s2">&quot;config.ini&quot;</span><span class="p">,</span> <span class="s2">&quot;-vv&quot;</span><span class="p">])</span>        <span class="c1"># exactly `loopsage -c config.ini -vv` (tables + info)</span>
 </code></pre></div>
 <p><code>python -m loopsage -c config.ini</code> does the same from a shell. <code>main</code> takes the list of command-line words; mistakes in the options print the usual usage message and exit.</p>
 <h2 id="sensitivity-scans">Sensitivity scans<a class="headerlink" href="#sensitivity-scans" title="Permanent link">&para;</a></h2>
@@ -2583,7 +2584,7 @@ python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;i
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

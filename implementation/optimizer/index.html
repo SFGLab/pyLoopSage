@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -1887,7 +1887,10 @@ L_{\mathrm{size}}=\max\!\Big(0,\ \Big|\log_2\frac{\tilde\ell^{\mathrm{sim}}}{\ti
 <h3 id="weights-follow-the-region-size">Weights follow the region size<a class="headerlink" href="#weights-follow-the-region-size" title="Permanent link">&para;</a></h3>
 <p>The two weights <span class="arithmatex">\(w_{\mathrm{eig}}\)</span> and <span class="arithmatex">\(w_{\mathrm{ins}}\)</span> depend on the <em>length of the modelled region</em> <span class="arithmatex">\(S\)</span>, because the two terms describe structures of different size. TADs are domains of about 0.1–1 Mb, so in a region of a few Mb the insulation is the informative term. Compartments are blocks of a few Mb: a 5 Mb region holds at most one or two of them, so PC1 says almost nothing there. It starts to carry information when the region contains 2–3 blocks (about 10 Mb) and dominates when it contains many (30 Mb up to a whole chromosome). The switch is sharp, not linear:</p>
 <div class="arithmatex">\[
-s=\frac{1}{1+(S_0/S)^{3}},\qquad w_{\mathrm{eig}}=2s,\qquad w_{\mathrm{ins}}=\max\big(2(1-s),\,0.25\big),\qquad S_0=30\,\mathrm{Mb}.
+\begin{aligned}
+s&amp;=\frac{1}{1+(S_0/S)^{3}}, \qquad S_0=30\,\mathrm{Mb},\\
+w_{\mathrm{eig}}&amp;=2s, \qquad w_{\mathrm{ins}}=\max\big(2(1-s),\,0.25\big).
+\end{aligned}
 \]</div>
 <p>Here <span class="arithmatex">\(s\)</span> is a smooth switch from <span class="arithmatex">\(0\)</span> (small regions) to <span class="arithmatex">\(1\)</span> (large ones), and <span class="arithmatex">\(S_0\)</span> is where both weights equal <span class="arithmatex">\(1\)</span>.</p>
 <table>
@@ -2048,7 +2051,7 @@ s=\frac{1}{1+(S_0/S)^{3}},\qquad w_{\mathrm{eig}}=2s,\qquad w_{\mathrm{ins}}=\ma
 </tr>
 </tbody>
 </table>
-<p>The total cost is about <span class="arithmatex">\(\texttt{opt\_steps}\times(\texttt{opt\_evals}+12)\)</span> Monte Carlo steps: the evaluations of the search, plus four final checks of three times the length. Early stopping usually makes it shorter.</p>
+<p>The total cost is about <code>opt_steps</code> <span class="arithmatex">\(\times\)</span> (<code>opt_evals</code> <span class="arithmatex">\(+\,12\)</span>) Monte Carlo steps: the evaluations of the search, plus four final checks of three times the length. Early stopping usually makes it shorter.</p>
 <h2 id="where-the-code-is">Where the code is<a class="headerlink" href="#where-the-code-is" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2181,7 +2184,7 @@ s=\frac{1}{1+(S_0/S)^{3}},\qquad w_{\mathrm{eig}}=2s,\qquad w_{\mathrm{ins}}=\ma
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       
