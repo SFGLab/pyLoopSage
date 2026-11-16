@@ -117,7 +117,10 @@ with $\tilde\ell$ the *median* loop length. The term is zero while the simulated
 The two weights $w_{\mathrm{eig}}$ and $w_{\mathrm{ins}}$ depend on the *length of the modelled region* $S$, because the two terms describe structures of different size. TADs are domains of about 0.1–1 Mb, so in a region of a few Mb the insulation is the informative term. Compartments are blocks of a few Mb: a 5 Mb region holds at most one or two of them, so PC1 says almost nothing there. It starts to carry information when the region contains 2–3 blocks (about 10 Mb) and dominates when it contains many (30 Mb up to a whole chromosome). The switch is sharp, not linear:
 
 $$
-s=\frac{1}{1+(S_0/S)^{3}},\qquad w_{\mathrm{eig}}=2s,\qquad w_{\mathrm{ins}}=\max\big(2(1-s),\,0.25\big),\qquad S_0=30\,\mathrm{Mb}.
+\begin{aligned}
+s&=\frac{1}{1+(S_0/S)^{3}}, \qquad S_0=30\,\mathrm{Mb},\\
+w_{\mathrm{eig}}&=2s, \qquad w_{\mathrm{ins}}=\max\big(2(1-s),\,0.25\big).
+\end{aligned}
 $$
 
 Here $s$ is a smooth switch from $0$ (small regions) to $1$ (large ones), and $S_0$ is where both weights equal $1$.
@@ -200,7 +203,7 @@ Stage 2 uses a third of the evaluations of stage 1 (at least 10). Without an A/B
 | `track_smooth` (`--track-smooth`) | 7.0 | smoothing of the Hi-C insulation score and eigenvector (A/B track), in beads; raw Hi-C profiles are noisy, which makes the loss rough and slows convergence |
 | `hic_file` (`--hic`), `hic_norm`, `hic_resolution` | | the Hi-C target and how it is read |
 
-The total cost is about $\texttt{opt\_steps}\times(\texttt{opt\_evals}+12)$ Monte Carlo steps: the evaluations of the search, plus four final checks of three times the length. Early stopping usually makes it shorter.
+The total cost is about `opt_steps` $\times$ (`opt_evals` $+\,12$) Monte Carlo steps: the evaluations of the search, plus four final checks of three times the length. Early stopping usually makes it shorter.
 
 ## Where the code is
 

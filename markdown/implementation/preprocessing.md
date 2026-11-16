@@ -52,7 +52,18 @@ Three further steps make the profiles easy to use:
 
 ### The loop maps
 
-Besides $L$ and $R$ the stage keeps two $N\times N$ matrices. $J$ is binary: 1 on the chain backbone (neighbouring beads) and on every input loop. $J^{\mathrm{loss}}$ keeps the weights of the loops. By default the energy uses only $L$ and $R$ (`data_loss_mode = 0`); with `data_loss_mode = 1` it uses $J^{\mathrm{loss}}$ instead, which scores a *pair* of legs and not each leg alone. In that mode $J^{\mathrm{loss}}$ is smoothed with a Gaussian of width `loss_sigma` beads, so that the extruder legs see a continuous landscape and not isolated dots.
+Besides $L$ and $R$ the stage keeps two $N\times N$ matrices. $J$ is binary: 1 on the chain backbone (neighbouring beads) and on every input loop. It is the coupling for the epigenetic states. $J^{\mathrm{loss}}$ keeps the weights of the loops. By default the energy uses only $L$ and $R$ (`data_loss_mode = 0`): every leg is scored alone. With `data_loss_mode = 1` it uses $J^{\mathrm{loss}}$ instead, which scores a *pair* of legs, so an extruder is rewarded for sitting on an input loop as a whole and not for sitting on two good anchors that belong to different loops.
+
+**How $J^{\mathrm{loss}}$ is built (2D mode)**
+
+1. Every loop adds its weight (the score column) at its bead pair $(m,n)$. With orientation columns (8 and 9) the weight is split by the orientation probabilities, so a loop with the wrong CTCF orientation counts less. The map is then symmetrised, $J^{\mathrm{loss}}_{mn}=J^{\mathrm{loss}}_{nm}$.
+2. A 2D Gaussian filter of width $\sigma_{\mathrm{loss}}$ (`loss_sigma`, in beads, default 2) spreads every dot into a smooth hill, so the legs see a continuous landscape and a loop that is one bead off still gains energy. `loss_sigma = 0` keeps the isolated dots. If the general input smoothing is also on, the map first gets that Gaussian too, so the total width is larger.
+3. The map is multiplied by $\sqrt{N_{\mathrm{anchors}}}$, so the strength of the term does not depend on how many loops the file has.
+
+The binding energy of a loop is then $\tfrac12\,(J^{\mathrm{loss}}_{mn}+J^{\mathrm{loss}}_{nm})$ times $b\,c_b$, see [Monte Carlo](monte-carlo.md). The `loss_sigma` smoothing is applied only to BEDPE input, not to peak files.
+
+!!! tip "Choosing the mode"
+    The 1D mode (default) rewards single anchors, so it also works when the partner of a loop is missing from the data. The 2D mode rewards complete loops, so it needs a loop list you trust. `loss_sigma` sets how tolerant the 2D mode is to a loop that is a bead or two off. The report figure *Loop maps J and J_loss* shows the map the simulation uses.
 
 ## Peak files (BED, narrowPeak)
 

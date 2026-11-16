@@ -33,8 +33,10 @@ The force field is a sum of simple terms. They are all *potential energies*: the
 **Excluded volume.** The repulsion between two beads at distance $r$ is
 
 $$
-U_{\mathrm{ev}}(r)=\left(\frac{\varepsilon^2\,\sigma^2}{r+r_s}\right)^{p},\qquad \sigma^2=\texttt{ev\_ff\_strength},\ \ \varepsilon=0.05,\ \ r_s=0.1\ \mathrm{nm},\ \ p=\texttt{ev\_ff\_power}.
+U_{\mathrm{ev}}(r)=\left(\frac{\varepsilon^2\,\sigma^2}{r+r_s}\right)^{p},
 $$
+
+Here $\sigma^2$ is the strength (`ev_ff_strength`), $\varepsilon=0.05$ a fixed constant, $r_s=0.1$ nm the softening length and $p$ the exponent (`ev_ff_power`).
 
 It is large when two beads overlap and decays quickly with distance; the exponent $p$ decides how steep: a larger $p$ gives a harder, shorter-ranged wall, and a smaller $p$ a softer, longer-ranged one (the default is $p=6$: a hard core at contact, but a weaker push at a distance than $p=3$, so the chain is not over-avoiding; at the default strength the crossing barrier is about $15\,k_BT$, against $5\,k_BT$ for $p=3$). The softening $r_s$ keeps the force finite when beads touch. How *hard* the wall must be is a real question: if it is too soft, two strands can pass through each other, which creates unphysical knots and links; see [Topology](../theory/topology.md), where the same force is used to set a barrier of a chosen height.
 
@@ -45,8 +47,10 @@ It is large when two beads overlap and decays quickly with distance; the exponen
 **Compartments.** When the epigenetic model was on in the Monte Carlo (`epi_coeff` > 0) and you set `do_compartments = True`, every bead carries the state it had in the snapshot, and two beads in the same state attract each other,
 
 $$
-U_{\mathrm{comp}}(r)=s\,E_{ab}\,e^{-r^2/2w^2},\qquad w=\texttt{comp\_range}\cdot\sqrt N\ \mathrm{nm}.
+U_{\mathrm{comp}}(r)=s\,E_{ab}\,e^{-r^2/2w^2},
 $$
+
+where the width is $w=w_0\sqrt N$ nm and $w_0$ is `comp_range`.
 
 $E_{ab}$ is a small table: it is non-zero only for two beads of the same state, and it is largest for state 0 (B) and weaker for the others, so that B beads aggregate more strongly than A beads. The scale $s$ is `comp_strength`: 1 is the full strength of the table, lower values give softer compartments that stay open instead of collapsing into one dense ball. The states are updated in every frame, so compartments follow the Monte Carlo.
 

@@ -50,8 +50,10 @@ where $\hat c_k\in[-1,1]$ is the coverage score of bead $k$ (−1 only where the
 ### Crossing: loops should not cross
 
 $$
-E_{\mathrm{cross}} = \kappa\,10^{4}\sum_{i<j}K_{ij}, \qquad
-K_{ij}=\begin{cases}1 & \text{if loops } i,j \text{ interleave } (m_i<m_j<n_i<n_j)\\ 1 & \text{if they share a leg position}\\ 0 & \text{otherwise.}\end{cases}
+\begin{aligned}
+E_{\mathrm{cross}} &= \kappa\,10^{4}\sum_{i<j}K_{ij},\\
+K_{ij}&=\begin{cases}1 & \text{if loops } i,j \text{ interleave } (m_i<m_j<n_i<n_j)\\ 1 & \text{if they share a leg position}\\ 0 & \text{otherwise.}\end{cases}
+\end{aligned}
 $$
 
 Two loops that cross, or that sit on the same bead, would be hard to build in 3D without the polymer passing through itself. The huge constant $10^4$ makes this penalty act almost as a *rule*: the sampler practically never keeps such a state. Nested loops (one inside the other) and neighbouring loops are free. The coefficient is $\kappa$ (`cross_coeff`).
