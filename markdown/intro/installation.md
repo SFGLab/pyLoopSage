@@ -3,6 +3,7 @@
 ## Requirements
 
 - **Python 3.10 or newer**.
+- **numpy 2.x** (`numpy>=2.0`; `numba>=0.60` for numpy 2 support). Both are installed automatically. numpy 1.x is not supported, because numpy 1 and 2 are not binary compatible. LoopSage is tested with numpy 2.4 and 2.5.
 - A Linux, macOS or Windows (WSL) computer. A GPU is optional: it only speeds up the 3D molecular dynamics stage.
 - About 2 GB of free disk space for the packages.
 
@@ -15,7 +16,7 @@
 | **uv** | `uv pip install pyLoopSage` | fast installs, project environments |
 | **source** | `pip install -e ".[all,test]"` | development |
 
-All methods install the same core packages: numpy, scipy, pandas, numba, matplotlib, rich, OpenMM, pyvista, imageio and pillow. Nothing else is needed to run the pipeline.
+All methods install the same core packages: numpy 2.x, scipy, pandas, numba, matplotlib, rich, OpenMM, pyvista, imageio and pillow. Nothing else is needed to run the pipeline.
 
 ### pip
 
@@ -55,6 +56,8 @@ cd pyLoopSage
 pip install -e ".[all,test]"
 ```
 
+With uv, `uv sync --extra all --extra test` installs exactly the package versions pinned in `uv.lock`, so every developer and every CI run gets the same environment. After you change the dependencies in `pyproject.toml`, run `uv lock` and commit the updated `uv.lock`. The lock file is for development only: users who install from PyPI get the versions allowed by `pyproject.toml`.
+
 ## GPU (NVIDIA)
 
 By default OpenMM runs on the CPU or OpenCL. For an NVIDIA GPU install the CUDA build of OpenMM through an extra, matching your CUDA version (`nvidia-smi` shows it):
@@ -83,7 +86,8 @@ For example `pip install "pyLoopSage[bigwig,hic]"`. If you use a feature without
 ## Troubleshooting
 
 - **pip downgrades OpenMM, or the solver reports a conflict:** use version 2.0.1 or newer. Older releases required `OpenMM-cuda`, which pins OpenMM 8.1.
-- **`numpy.core.multiarray failed to import`:** a package was built against another numpy. Use a fresh environment and install everything in one command.
+- **`numpy.core.multiarray failed to import` or `_ARRAY_API not found`:** LoopSage needs numpy 2 (`numpy>=2.0`). A package in the same environment that was built for numpy 1 causes this message. Use a fresh environment.
+- **Other numpy error:** a package was built against another numpy. Use a fresh environment and install everything in one command.
 
 ## Check that it works
 

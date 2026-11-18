@@ -21,7 +21,7 @@ From one command you get an HTML report with the contact maps, loop statistics, 
 
 ## Installation
 
-Python 3.10 or newer is required. Install from [PyPI](https://pypi.org/project/pyLoopSage/) with pip (in a pyenv or any normal Python environment) or with uv. Pick **one** of the options below. A GPU (NVIDIA) is optional and only speeds up the 3D stage.
+Python 3.10 or newer is required, with **numpy 2.x** (`numpy>=2.0`, installed automatically; numpy 1.x is not supported). Install from [PyPI](https://pypi.org/project/pyLoopSage/) with pip (in a pyenv or any normal Python environment) or with uv. Pick **one** of the options below. A GPU (NVIDIA) is optional and only speeds up the 3D stage.
 
 **pip**
 

@@ -6,10 +6,10 @@ channels:
 channel_priority: strict
 dependencies:
   - python=3.11
-  - numpy>=1.26
+  - numpy>=2.0          # numpy 2.x required (numpy 1.x is not supported)
   - scipy>=1.11
   - pandas>=2.0
-  - numba>=0.59
+  - numba>=0.60
   - matplotlib-base>=3.8
   - rich>=13.7
   - openmm>=8.5.1

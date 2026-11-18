@@ -22,7 +22,7 @@ WORKDIR /app
 # Create virtual environment and install pyloopsage
 RUN python -m venv /opt/pyloopsage-env && \
     /opt/pyloopsage-env/bin/pip install --upgrade pip setuptools && \
-    /opt/pyloopsage-env/bin/pip install "pyLoopSage[cuda12,all]"
+    /opt/pyloopsage-env/bin/pip install "numpy>=2.0" "pyLoopSage[cuda12,all]"   # numpy 2.x is required
 
 # Activate environment by default
 ENV PATH="/opt/pyloopsage-env/bin:$PATH"
