@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyLoopSage"
+dynamic = ["version"]                       # read from src/loopsage/version.py
+description = "An energy-based stochastic model of loop extrusion in chromatin."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "GPL-3.0-only"
+authors = [{ name = "Sebastian Korsak", email = "s.korsak@datascience.edu.pl" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+]
+
+# Core: only what the code imports. Lower bounds only, so pip, uv and conda can always solve them together.
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "pandas>=2.0",
+    "numba>=0.59",
+    "matplotlib>=3.8",
+    "rich>=13.7",
+    "openmm>=8.5.1",            # CPU and OpenCL; GPU builds are the cuda12 / cuda13 extras
+    "pyvista>=0.43",            # 3D stills and videos
+    "imageio>=2.34",
+    "imageio-ffmpeg>=0.5",      # mp4 videos
+    "pillow>=10",
+]
+
+[project.optional-dependencies]
+cuda12 = ["openmm[cuda12]>=8.5.1"]          # NVIDIA GPU, CUDA 12
+cuda13 = ["openmm[cuda13]>=8.5.1"]          # NVIDIA GPU, CUDA 13
+cuda = ["openmm[cuda12]>=8.5.1"]            # alias of cuda12
+bigwig = ["pyBigWig>=0.3.22"]               # BigWig signal tracks
+hic = ["hic-straw>=1.3"]                    # .hic reference maps (--hic); needs a C++ compiler if no wheel
+topology = ["topoly>=1.0"]                  # linking numbers (topology mode)
+all = ["pyBigWig>=0.3.22", "hic-straw>=1.3", "topoly>=1.0"]
+test = ["pytest>=8"]
+docs = ["mkdocs-material>=9"]
+
+[project.urls]
+Documentation = "https://sfglab.github.io/pyLoopSage/"
+Source = "https://github.com/SFGLab/pyLoopSage"
+Changelog = "https://github.com/SFGLab/pyLoopSage/blob/main/CHANGELOG.md"
+Issues = "https://github.com/SFGLab/pyLoopSage/issues"
+
+[project.scripts]
+loopsage = "loopsage.api:cli"                       # the `loopsage` command
+loopsage-scan = "loopsage.sensitivity.cli:cli"      # sensitivity scans
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["loopsage", "loopsage.*"]
+
+[tool.setuptools.package-data]
+"loopsage.html" = ["*.html", "*.css"]
+"loopsage.molecular_dynamics" = ["forcefields/*.xml"]
+"loopsage.motif_finder" = ["data/*.pfm"]
+
+[tool.setuptools.dynamic]
+version = { attr = "loopsage.version.__version__" }

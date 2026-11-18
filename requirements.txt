@@ -1,40 +1,18 @@
-# ============================================================
-# requirements.txt — pyLoopSage + Boltzmann Generator
-# ============================================================
-# NOTE: openmm and pyBigWig install more reliably via conda than
-# pip on Linux/macOS. If you hit binary-compatibility errors
-# (e.g. "numpy.core.multiarray failed to import" from openmm's
-# xtc_utils), install these two via conda instead:
-#     conda install -c conda-forge "openmm>=8.5.1" pybigwig
-# and remove them from this file before running pip install.
-# ============================================================
-
-# ---- core numerics ----
-numpy>=2.0
+# Same list as pyproject.toml (lower bounds only). `pip install -e .` already installs these.
+# GPU: pip install "pyLoopSage[cuda12]" or "[cuda13]". Optional features: [bigwig] [hic] [topology] [all].
+numpy>=1.26
 scipy>=1.11
 pandas>=2.0
 numba>=0.59
-
-# ---- molecular dynamics (LoopSage MD stage) ----
-openmm>=8.5.1
-mdtraj>=1.10
-
-# ---- genomic data I/O ----
-pyBigWig>=0.3.22
-
-# ---- plotting / visualization ----
 matplotlib>=3.8
-seaborn>=0.13
-statsmodels>=0.14
-imageio>=2.34
-pillow>=10.0
-
-# ---- utilities ----
-tqdm>=4.66
 rich>=13.7
+openmm>=8.5.1
+pyvista>=0.43
+imageio>=2.34
+imageio-ffmpeg>=0.5
+pillow>=10
 
-# ---- Boltzmann generator (normalizing flow) ----
-torch>=2.2
-
-# ---- optional: auto-tuning (CMA-ES, referenced in args_definition.py) ----
-cma>=3.3
+# optional (uncomment what you need)
+# pyBigWig>=0.3.22     # BigWig tracks
+# hic-straw>=1.3       # .hic reference maps (needs a C++ compiler if no wheel)
+# topoly>=1.0          # linking numbers

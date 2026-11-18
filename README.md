@@ -21,17 +21,41 @@ From one command you get an HTML report with the contact maps, loop statistics, 
 
 ## Installation
 
-Python 3.10 or newer is required. `openmm` and `pyBigWig` install most reliably from conda. `hic-straw` (reads `.hic` files for the optional `--hic` reference) is installed with the package. It needs a C++ compiler and libcurl when no wheel exists for your system.
+Python 3.10 or newer is required. Pick **one** of the options below. A GPU (NVIDIA) is optional and only speeds up the 3D stage.
+
+**pip**
 
 ```bash
-git clone https://github.com/SFGLab/pyLoopSage.git
-cd pyLoopSage
-conda create -n loopsage python=3.11 -y && conda activate loopsage
-conda install -c conda-forge "openmm>=8.5.1" pybigwig -y
-pip install -r requirements.txt && pip install -e .
+pip install pyLoopSage                  # CPU / OpenCL
+pip install "pyLoopSage[cuda12]"        # NVIDIA GPU, CUDA 12  (or [cuda13] for CUDA 13)
+pip install "pyLoopSage[all]"           # + BigWig tracks, .hic maps, topology (see below)
 ```
 
-Then install the package (`pip install -e .`) to get the `loopsage` command (version 2.0.0).
+**uv**
+
+```bash
+uv pip install pyLoopSage               # into the active environment (add "[cuda12]" for GPU)
+uv add pyLoopSage                       # into a uv project
+uvx --from pyLoopSage loopsage -h       # run without installing
+```
+
+**conda** (from a clone of this repository; a conda-forge package is planned)
+
+```bash
+git clone https://github.com/SFGLab/pyLoopSage.git && cd pyLoopSage
+conda env create -f environment.yml && conda activate loopsage
+```
+
+For an NVIDIA GPU, uncomment the `cuda-version` line in `environment.yml` before creating the environment.
+
+**From source (development)**
+
+```bash
+git clone https://github.com/SFGLab/pyLoopSage.git && cd pyLoopSage
+pip install -e ".[all,test]"
+```
+
+Optional extras: `bigwig` (BigWig signal tracks, `pyBigWig`), `hic` (`--hic` reference maps, `hic-straw`, which needs a C++ compiler when no wheel exists for your system), `topology` (linking numbers, `topoly`), `all` (the three). Check the installation with `loopsage -h` (version 2.0.1). Details: [Installation](https://sfglab.github.io/pyLoopSage/intro/installation/).
 
 ## Usage
 

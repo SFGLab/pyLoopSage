@@ -117,7 +117,10 @@ def smooth_sparse(v, sigma: float) -> np.ndarray:
 
 def bigwig_to_beads(path, geom, roll: bool = False, scale_pm1: bool = False, smooth: float = 0.0) -> np.ndarray:
     """Mean signal per bead; smooth = Gaussian sigma in beads, roll = blur +/-3 beads, scale_pm1 = rescale to [-1, 1]."""
-    import pyBigWig                                   # optional dependency, imported lazily
+    try:
+        import pyBigWig                               # optional dependency, imported lazily
+    except ImportError as e:
+        raise ImportError("BigWig tracks need pyBigWig: pip install 'pyLoopSage[bigwig]' (conda: -c bioconda pybigwig)") from e
     bw = pyBigWig.open(str(path))
     try:
         if geom.chrom not in bw.chroms():

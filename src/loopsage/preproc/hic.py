@@ -97,7 +97,7 @@ def load_hic_region(path: str, geom, norm: str = "KR", resolution=None, min_cove
     """Hi-C map of the region on the bead grid (NaN = masked beads), by trial and error over resolutions and
     normalisations until one reads. Returns (map, info dict)."""
     if not have_hicstraw():
-        raise ImportError("reading a .hic file needs hic-straw: pip install hic-straw")
+        raise ImportError("reading a .hic file needs hic-straw: pip install 'pyLoopSage[hic]'")
     try:
         out = _run(path, "info")
         meta = json.loads(next(l for l in reversed(out.splitlines()) if l.startswith("{")))     # hic-straw may print other lines

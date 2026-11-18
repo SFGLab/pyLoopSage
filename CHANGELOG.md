@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.1
+
+- Installation fixes. The old `OpenMM-cuda` dependency pinned OpenMM 8.1 and made pip downgrade it; it is removed. GPU builds are now extras: `pip install "pyLoopSage[cuda12]"` or `[cuda13]`.
+- Only the packages the code imports are required (removed `mdtraj`, `seaborn`, `scikit-learn`, `statsmodels`, `tqdm`, `typing-extensions`, `pyvista[all]`). Optional features are extras: `[bigwig]`, `[hic]`, `[topology]`, `[all]`.
+- `pyproject.toml` replaces the metadata in `setup.py`; works with pip, uv and conda. New `environment.yml` and a conda recipe (`conda/meta.yaml`). `pyBigWig` is installed from the `bioconda` channel.
+
 ## 2.0.0
 
 First stable release of LoopSage 2 (includes everything from the release candidates).

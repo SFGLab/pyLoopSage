@@ -86,7 +86,7 @@ def test_run_py_help(capsys):
 def test_version_and_command_entry():
     from loopsage.version import __version__
     from loopsage.api import cli
-    assert __version__ == "2.0.0" and callable(cli)
+    assert __version__ == "2.0.1" and callable(cli)
 
 
 def test_example_configs_have_known_keys():
