@@ -21,7 +21,7 @@ From one command you get an HTML report with the contact maps, loop statistics, 
 
 ## Installation
 
-Python 3.10 or newer is required. Pick **one** of the options below. A GPU (NVIDIA) is optional and only speeds up the 3D stage.
+Python 3.10 or newer is required. Install from [PyPI](https://pypi.org/project/pyLoopSage/) with pip (in a pyenv or any normal Python environment) or with uv. Pick **one** of the options below. A GPU (NVIDIA) is optional and only speeds up the 3D stage.
 
 **pip**
 
@@ -31,6 +31,14 @@ pip install "pyLoopSage[cuda12]"        # NVIDIA GPU, CUDA 12  (or [cuda13] for 
 pip install "pyLoopSage[all]"           # + BigWig tracks, .hic maps, topology (see below)
 ```
 
+**pyenv** (a separate Python version and environment, then pip from PyPI)
+
+```bash
+pyenv install 3.11 && pyenv virtualenv 3.11 loopsage
+pyenv local loopsage                    # activates it in this folder (or: pyenv activate loopsage)
+pip install pyLoopSage                  # add "[cuda12]" for an NVIDIA GPU
+```
+
 **uv**
 
 ```bash
@@ -38,15 +46,6 @@ uv pip install pyLoopSage               # into the active environment (add "[cud
 uv add pyLoopSage                       # into a uv project
 uvx --from pyLoopSage loopsage -h       # run without installing
 ```
-
-**conda** (from a clone of this repository; a conda-forge package is planned)
-
-```bash
-git clone https://github.com/SFGLab/pyLoopSage.git && cd pyLoopSage
-conda env create -f environment.yml && conda activate loopsage
-```
-
-For an NVIDIA GPU, uncomment the `cuda-version` line in `environment.yml` before creating the environment.
 
 **From source (development)**
 

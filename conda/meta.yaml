@@ -1,13 +1,11 @@
-{% set name = "pyloopsage" %}
-{% set version = "2.0.1" %}
+{% set version = load_file_regex(load_file="../src/loopsage/version.py", regex_pattern='__version__ = "(.+)"', from_recipe_dir=True)[1] %}   {# single source: version.py #}
 
 package:
-  name: {{ name|lower }}
+  name: pyloopsage
   version: {{ version }}
 
 source:
-  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  sha256: REPLACE_WITH_SDIST_SHA256   # after the PyPI upload: sha256sum of the .tar.gz (or `grayskull pypi pyloopsage`)
+  path: ..                          # build from this checkout, so the conda version always matches the PyPI one
 
 build:
   noarch: python
@@ -47,12 +45,6 @@ test:
 about:
   home: https://github.com/SFGLab/pyLoopSage
   summary: An energy-based stochastic model of loop extrusion in chromatin.
-  description: Loop-extruding factors, CTCF motif search, parameter optimizer and 3D molecular dynamics (OpenMM) from one command.
   license: GPL-3.0-only
-  license_file: LICENSE            # add a LICENSE file (GPL-3.0 text) to the repository before submitting
   doc_url: https://sfglab.github.io/pyLoopSage/
   dev_url: https://github.com/SFGLab/pyLoopSage
-
-extra:
-  recipe-maintainers:
-    - GITHUB_USERNAME              # replace with the GitHub login(s) of the maintainers

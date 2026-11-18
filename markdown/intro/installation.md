@@ -11,8 +11,8 @@
 | Method | Command | Good for |
 |---|---|---|
 | **pip** | `pip install pyLoopSage` | most users |
+| **pyenv** | `pyenv virtualenv 3.11 loopsage` then `pip install pyLoopSage` | several Python versions on one machine |
 | **uv** | `uv pip install pyLoopSage` | fast installs, project environments |
-| **conda** | `conda env create -f environment.yml` | conda users, clusters |
 | **source** | `pip install -e ".[all,test]"` | development |
 
 All methods install the same core packages: numpy, scipy, pandas, numba, matplotlib, rich, OpenMM, pyvista, imageio and pillow. Nothing else is needed to run the pipeline.
@@ -25,6 +25,18 @@ pip install pyLoopSage
 loopsage -h
 ```
 
+### pyenv
+
+[pyenv](https://github.com/pyenv/pyenv) installs and switches between Python versions. With the `pyenv-virtualenv` plugin each version gets its own environment, and the package comes from [PyPI](https://pypi.org/project/pyLoopSage/):
+
+```bash
+pyenv install 3.11
+pyenv virtualenv 3.11 loopsage
+pyenv local loopsage            # activates the environment inside the current folder
+pip install pyLoopSage          # or pip install "pyLoopSage[cuda12]" for an NVIDIA GPU
+loopsage -h
+```
+
 ### uv
 
 [uv](https://docs.astral.sh/uv/) is a fast installer for Python packages. It reads the same package from PyPI:
@@ -34,20 +46,6 @@ uv venv && source .venv/bin/activate
 uv pip install pyLoopSage          # or: uv add pyLoopSage   (inside a uv project)
 uvx --from pyLoopSage loopsage -h  # one-off run without installing
 ```
-
-### conda
-
-The repository contains an `environment.yml` that installs everything from `conda-forge` and `bioconda` (the `pyBigWig` package is on bioconda, not conda-forge, so `-c conda-forge` alone reports `PackagesNotFoundError: pybigwig`):
-
-```bash
-git clone https://github.com/SFGLab/pyLoopSage.git
-cd pyLoopSage
-conda env create -f environment.yml
-conda activate loopsage
-loopsage -h
-```
-
-A package on conda-forge (`conda install -c conda-forge pyloopsage`) is planned; the recipe is in `conda/meta.yaml`.
 
 ### From source
 
@@ -67,7 +65,7 @@ pip install "pyLoopSage[cuda13]"    # CUDA 13
 uv pip install "pyLoopSage[cuda12]" # the same with uv
 ```
 
-With conda, uncomment `cuda-version=12` (or `13`) in `environment.yml`. Do not install the separate `OpenMM-cuda` package: it is outdated and forces OpenMM 8.1.
+Do not install the separate `OpenMM-cuda` package: it is outdated and forces OpenMM 8.1.
 
 ## Optional features
 
@@ -85,7 +83,6 @@ For example `pip install "pyLoopSage[bigwig,hic]"`. If you use a feature without
 ## Troubleshooting
 
 - **pip downgrades OpenMM, or the solver reports a conflict:** use version 2.0.1 or newer. Older releases required `OpenMM-cuda`, which pins OpenMM 8.1.
-- **`PackagesNotFoundError: pybigwig` in conda:** add the bioconda channel (`-c conda-forge -c bioconda`), or use `environment.yml`.
 - **`numpy.core.multiarray failed to import`:** a package was built against another numpy. Use a fresh environment and install everything in one command.
 
 ## Check that it works
