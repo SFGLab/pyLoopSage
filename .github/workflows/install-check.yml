@@ -35,16 +35,3 @@ jobs:
           uv pip install --python .uvenv/bin/python .
           .uvenv/bin/loopsage -h
 
-  conda:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -el {0}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          miniforge-version: latest
-          environment-file: environment.yml
-          activate-environment: loopsage
-      - run: loopsage -h
