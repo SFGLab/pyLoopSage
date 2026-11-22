@@ -1,0 +1,2453 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Energy-based stochastic modelling of chromatin loop extrusion and 3D genome structure">
+      
+      
+      
+        <link rel="canonical" href="https://sfglab.github.io/pyLoopSage/reference/output/">
+      
+      
+        <link rel="prev" href="../sensitivity/">
+      
+      
+        <link rel="next" href="../../acknowledgments/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Output - LoopSage</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/loopsage.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#output" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="LoopSage" class="md-header__button md-logo" aria-label="LoopSage" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            LoopSage
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Output
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/SFGLab/pyLoopSage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SFGLab/pyLoopSage
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../intro/" class="md-tabs__link">
+          
+  
+  
+  Intro
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../theory/" class="md-tabs__link">
+          
+  
+  
+  Theory
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../implementation/" class="md-tabs__link">
+          
+  
+  
+  Implementation
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../acknowledgments/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Acknowledgments
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="LoopSage" class="md-nav__button md-logo" aria-label="LoopSage" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    LoopSage
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/SFGLab/pyLoopSage" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    SFGLab/pyLoopSage
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Intro
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Intro
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/inspiration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspiration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Theory
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Theory
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/scope/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scope
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/loop-extrusion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loop extrusion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/mechanics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mechanics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/mcmc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCMC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/molecular-dynamics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Molecular dynamics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/topology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Topology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Implementation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Implementation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/motif-finder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Motif Finder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/optimizer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Optimizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/monte-carlo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monte Carlo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/molecular-dynamics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Molecular Dynamics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command-line interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sensitivity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sensitivity scans
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-run-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The run folder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The run folder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-run-number" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The run number
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-in-each-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is in each folder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What is in each folder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reportreporthtml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        report/report.html
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visualizations-the-figures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        visualizations/: the figures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visualizations3d-viewer-and-videos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        visualizations/3d/: viewer and videos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structures-the-3d-polymer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        structures/: the 3D polymer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logsloopsagelog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        logs/loopsage.log
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#config_resolvedini" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        config_resolved.ini
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-saved-data-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The saved data: data/
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The saved data: data/">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#monte-carlo-arrays-mcnpz" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monte Carlo arrays (mc.npz)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#molecular-dynamics-arrays-mdnpz" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Molecular dynamics arrays (md.npz)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-metadata-datametadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The metadata: data/metadata/
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#switching-outputs-on-and-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Switching outputs on and off
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Switching outputs on and off">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stopping-and-continuing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stopping and continuing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-the-data-in-your-own-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using the data in your own analysis
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using the data in your own analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#comparing-many-runs-meta-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparing many runs (meta-analysis)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../acknowledgments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acknowledgments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-run-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The run folder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The run folder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-run-number" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The run number
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-in-each-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is in each folder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What is in each folder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reportreporthtml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        report/report.html
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visualizations-the-figures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        visualizations/: the figures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visualizations3d-viewer-and-videos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        visualizations/3d/: viewer and videos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structures-the-3d-polymer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        structures/: the 3D polymer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logsloopsagelog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        logs/loopsage.log
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#config_resolvedini" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        config_resolved.ini
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-saved-data-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The saved data: data/
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The saved data: data/">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#monte-carlo-arrays-mcnpz" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monte Carlo arrays (mc.npz)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#molecular-dynamics-arrays-mdnpz" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Molecular dynamics arrays (md.npz)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-metadata-datametadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The metadata: data/metadata/
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#switching-outputs-on-and-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Switching outputs on and off
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Switching outputs on and off">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stopping-and-continuing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stopping and continuing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-the-data-in-your-own-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using the data in your own analysis
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using the data in your own analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#comparing-many-runs-meta-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparing many runs (meta-analysis)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h1>
+<p>Every run writes <strong>one folder</strong> that holds everything it produced: the report, the figures, the 3D structures, the saved data and the settings that were used. This page explains where each thing is, what the numbers in the files mean, how to switch outputs on and off, and how to reuse the saved data for your own analysis.</p>
+<h2 id="the-run-folder">The run folder<a class="headerlink" href="#the-run-folder" title="Permanent link">&para;</a></h2>
+<p>By default results go to a <code>results/</code> folder inside the project (change it with <code>--out</code>). Each run gets its own subfolder:</p>
+<div class="highlight"><pre><span></span><code>results/
+└── chr1_77000000_95000000_1/          &lt;chromosome&gt;_&lt;start&gt;_&lt;end&gt;_&lt;run number&gt;
+    ├── report/
+    │   └── report.html                the full report: open this first
+    ├── visualizations/                every figure, as .png and .svg
+    │   └── 3d/                        interactive viewer and videos
+    ├── structures/                    3D structures of the polymer
+    │   └── ensemble/                  one .cif file per MD frame
+    ├── data/                          saved results of each stage (for reuse)
+    │   └── metadata/                  small arrays: maps, optimized parameters
+    ├── logs/
+    │   └── loopsage.log               everything the run printed, in detail
+    └── config_resolved.ini            every setting the run used
+</code></pre></div>
+<h3 id="the-run-number">The run number<a class="headerlink" href="#the-run-number" title="Permanent link">&para;</a></h3>
+<p>The last part of the folder name, <code>_1</code> in the example, is the <strong>run number</strong>. It separates repeated runs of the <em>same region</em>, so a new run never overwrites an old one:</p>
+<ul>
+<li>By default LoopSage takes the <strong>next free number</strong> for that region: <code>chr1_77000000_95000000_1</code>, then <code>..._2</code>, <code>..._3</code>.</li>
+<li>Another region has its own numbering: <code>chr2_10000000_30000000_1</code>.</li>
+<li><code>--run N</code> (key <code>run_number</code>) chooses the number yourself. This is useful to put a run in a known place, or to continue a run (see <a href="#stopping-and-continuing">Stopping and continuing</a>).</li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Which run was which?</p>
+<p>The folder name only tells the region and the number. What made the runs different is written in <code>config_resolved.ini</code> inside each folder (see below), so compare those files, not the names.</p>
+</div>
+<h2 id="what-is-in-each-folder">What is in each folder<a class="headerlink" href="#what-is-in-each-folder" title="Permanent link">&para;</a></h2>
+<h3 id="reportreporthtml"><code>report/report.html</code><a class="headerlink" href="#reportreporthtml" title="Permanent link">&para;</a></h3>
+<p>A single, self-contained web page: open it in any browser, it works offline and can be sent by e-mail. It collects, in order, the input data, the optimizer (if it was used), the Monte Carlo loop extrusion, the 3D structures, the validation against Hi-C and the topology analysis. Every figure and table comes with a plain-language explanation of what it shows.</p>
+<h3 id="visualizations-the-figures"><code>visualizations/</code>: the figures<a class="headerlink" href="#visualizations-the-figures" title="Permanent link">&para;</a></h3>
+<p>All figures are saved twice with the same name: <code>name.png</code> (raster, for slides) and <code>name.svg</code> (vector, for papers). The files are flat in the folder, grouped below by the report section they belong to. The name is the <em>key</em> shown in the table.</p>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Figure files (without extension)</th>
+<th>What they show</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Input data</td>
+<td><code>binding_profiles</code>, <code>anchor_map</code>, <code>anchor_stats</code>, <code>anchor_loops</code>, <code>loop_matrices</code>, <code>tracks</code>, <code>compartments</code>, <code>hic_input</code>, <code>motif_search</code></td>
+<td>the anchors and CTCF orientation, loop strength and length, the loop maps <span class="arithmatex">\(J\)</span> and <span class="arithmatex">\(J^{\mathrm{loss}}\)</span>, extra tracks, compartments, the Hi-C map, the motif search</td>
+</tr>
+<tr>
+<td>Optimizer</td>
+<td><code>optimizer</code>, <code>optimizer_target</code>, <code>optimizer_landscape</code></td>
+<td>the loss during the search, the target map, the parameter values the search visited</td>
+</tr>
+<tr>
+<td>Monte Carlo</td>
+<td><code>energy_traces</code>, <code>convergence</code>, <code>lef_trajectories</code>, <code>kymograph</code>, <code>kymograph_zoom</code>, <code>occupancy_lengths</code>, <code>loop_landscape</code>, <code>mc_heatmap</code>, <code>loop_nesting</code>, <code>loop_parents_children</code>, <code>lef_velocity</code>, <code>lef_speed_init</code>, <code>lef_phase_space</code>, <code>lef_free_energy</code>, <code>lef_free_energy_3d</code></td>
+<td>energy and convergence, where the loop extruders (LEFs) go over time, loop sizes and occupancy, the simulated contact map, nesting, speeds, free-energy landscapes</td>
+</tr>
+<tr>
+<td>Epigenetic model (only if <code>epi_coeff</code> is not 0)</td>
+<td><code>epigenetic_model</code>, <code>epigenetic_maps</code>, <code>epigenetic_features</code>, <code>epigenetic_loops</code>, <code>epigenetic_free_energy</code>, <code>epi_trajectory</code></td>
+<td>domains and energy, the checkerboard pattern, the effect on compartments, the free-energy landscape</td>
+</tr>
+<tr>
+<td>3D structures (MD)</td>
+<td><code>md_maps</code>, <code>md_series</code>, <code>md_geometry</code>, <code>mc_vs_md</code></td>
+<td>contact maps from 3D structures, compaction and energy during the run, geometry, loops versus 3D</td>
+</tr>
+<tr>
+<td>3D diagnostics</td>
+<td><code>struct_shape</code>, <code>struct_snapshots</code>, <code>struct_pairs</code>, <code>struct_scaling</code>, <code>struct_compartments</code></td>
+<td>shape over time, start, middle and end structures, pair distances, polymer scaling, compartments in 3D</td>
+</tr>
+<tr>
+<td>Validation</td>
+<td><code>hic_validation</code>, <code>hic_correlation</code>, <code>hic_scores</code>, <code>validation_pearson</code>, <code>validation_pearson_direct</code>, <code>validation_ps_decay</code>, <code>validation_insulation</code>, <code>validation_insulation_anchor</code>, <code>validation_pc1</code>, <code>validation_summary</code></td>
+<td>agreement of the simulation with Hi-C or with the experimental loops: correlation, contact decay <span class="arithmatex">\(P(s)\)</span>, insulation, compartments</td>
+</tr>
+<tr>
+<td>Topology (only with <code>--knots</code>)</td>
+<td><code>links_map</code>, <code>links_time</code>, <code>links_dynamics</code>, <code>links_examples</code>, <code>links_approach</code>, <code>links_stills</code>, <code>crossings</code></td>
+<td>linking numbers between loops and chain crossings</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Figures that do not appear</p>
+<p>A figure is only drawn when the stage that makes it ran. No Hi-C file means no <code>hic_*</code> and fewer <code>validation_*</code> figures; <code>--no-run-MD</code> removes all 3D sections. This is normal.</p>
+</div>
+<h3 id="visualizations3d-viewer-and-videos"><code>visualizations/3d/</code>: viewer and videos<a class="headerlink" href="#visualizations3d-viewer-and-videos" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>3d_viewer.html</code></td>
+<td>an interactive 3D player of the whole trajectory: rotate, zoom, play. One self-contained file with no downloads needed</td>
+</tr>
+<tr>
+<td><code>structure_&lt;colouring&gt;.mp4</code></td>
+<td>a video of the trajectory. One per colouring in <code>colorings</code>: <code>purple</code>, <code>rainbow</code>, and <code>compartments</code> (added automatically when compartment data exist)</td>
+</tr>
+<tr>
+<td><code>structure_&lt;colouring&gt;.png</code></td>
+<td>the poster image of that video</td>
+</tr>
+</tbody>
+</table>
+<h3 id="structures-the-3d-polymer"><code>structures/</code>: the 3D polymer<a class="headerlink" href="#structures-the-3d-polymer" title="Permanent link">&para;</a></h3>
+<p>One bead of the model is one residue of the structure. The coordinates are in Ångström, as the CIF format expects (1 Å = 0.1 nm).</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>init_structure.cif</code></td>
+<td>the starting shape of the chain, before any simulation</td>
+</tr>
+<tr>
+<td><code>topology.psf</code></td>
+<td>the bond list, to load the trajectory in VMD or PyMOL</td>
+</tr>
+<tr>
+<td><code>trajectory.dcd</code></td>
+<td>the full MD trajectory, one frame every <code>sim_step</code> steps</td>
+</tr>
+<tr>
+<td><code>ensemble/MDLE_1.cif</code>, <code>MDLE_2.cif</code>, ...</td>
+<td>one structure per MD frame, in time order. <code>MDLE</code> stands for <em>molecular dynamics loop extrusion</em>. Each file is built from one snapshot of the loop-extrusion simulation</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>.cif</code> files open in ChimeraX, PyMOL and VMD.</p>
+<h3 id="logsloopsagelog"><code>logs/loopsage.log</code><a class="headerlink" href="#logsloopsagelog" title="Permanent link">&para;</a></h3>
+<p>Everything the run reported, including the detail that the console hides at the default verbosity. The log always records the most detailed level, whatever <code>-v</code> you used.</p>
+<h3 id="config_resolvedini"><code>config_resolved.ini</code><a class="headerlink" href="#config_resolvedini" title="Permanent link">&para;</a></h3>
+<p>Every setting of the run, in the same format as a config file, so you can <strong>repeat the run exactly</strong> with <code>loopsage -c config_resolved.ini</code>. Each setting carries a note on where its value came from: <code>default</code>, the config file, the command line, or <code>optimizer</code> (when the optimizer changed it). It also holds the <strong>random seed</strong> of the run, even if you did not choose one. This is the file to read when you compare runs.</p>
+<h2 id="the-saved-data-data">The saved data: <code>data/</code><a class="headerlink" href="#the-saved-data-data" title="Permanent link">&para;</a></h2>
+<p>Each stage stores its result here, so that later steps and your own scripts can use it without repeating the computation. The files are compressed NumPy archives (<code>.npz</code>), plain JSON or tab-separated tables, so they open without LoopSage.</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Written by</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>inputs.npz</code></td>
+<td>input processing</td>
+<td>the model inputs at bead resolution: binding profiles <code>L</code>, <code>R</code>; loop maps <code>J</code>, <code>J_loss</code>; <code>lengths</code>; <code>cover</code>; extra tracks <code>BWs</code>; <code>lef_track</code>; compartment signal <code>comp</code>; loop statistics in <code>meta</code></td>
+</tr>
+<tr>
+<td><code>loops_annotated.bedpe</code></td>
+<td>motif finder</td>
+<td>your loops with the CTCF orientation probabilities as columns 8 and 9</td>
+</tr>
+<tr>
+<td><code>motif_loops.tsv</code>, <code>motif_anchors.tsv</code>, <code>motif_stats.json</code></td>
+<td>motif finder</td>
+<td>one row per kept loop and per scanned anchor with the motif scores, and the counts at each filtering step</td>
+</tr>
+<tr>
+<td><code>optimization.json</code></td>
+<td>optimizer</td>
+<td>the full record of the search</td>
+</tr>
+<tr>
+<td><code>mc.npz</code></td>
+<td>Monte Carlo</td>
+<td>the loop-extrusion simulation of replica 0 (arrays below). Further replicas: <code>mc_r1.npz</code>, <code>mc_r2.npz</code>, ...</td>
+</tr>
+<tr>
+<td><code>md.npz</code></td>
+<td>molecular dynamics</td>
+<td>the 3D coordinates and maps (arrays below)</td>
+</tr>
+<tr>
+<td><code>links.npz</code></td>
+<td>topology</td>
+<td>linking numbers per frame (only with <code>--knots</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Because these files exist, you can stop and continue a run (see below).</p>
+<h3 id="monte-carlo-arrays-mcnpz">Monte Carlo arrays (<code>mc.npz</code>)<a class="headerlink" href="#monte-carlo-arrays-mcnpz" title="Permanent link">&para;</a></h3>
+<p>A <strong>snapshot</strong> is the state of the simulation saved every <code>mc_step</code> Monte Carlo steps. There are <span class="arithmatex">\(n_s\)</span> snapshots, <span class="arithmatex">\(N_{\mathrm{lef}}\)</span> loop extruders and <span class="arithmatex">\(N\)</span> beads. Positions are <strong>bead indices</strong> (0 to <span class="arithmatex">\(N-1\)</span>).</p>
+<table>
+<thead>
+<tr>
+<th>Array</th>
+<th>Shape</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Ms</code></td>
+<td><span class="arithmatex">\(N_{\mathrm{lef}}\times n_s\)</span></td>
+<td>left leg of every loop extruder over time</td>
+</tr>
+<tr>
+<td><code>Ns</code></td>
+<td><span class="arithmatex">\(N_{\mathrm{lef}}\times n_s\)</span></td>
+<td>right leg. The loop of extruder <span class="arithmatex">\(i\)</span> at snapshot <span class="arithmatex">\(t\)</span> is the pair <code>(Ms[i,t], Ns[i,t])</code></td>
+</tr>
+<tr>
+<td><code>Es</code></td>
+<td><span class="arithmatex">\(n_s\)</span></td>
+<td>total energy of the snapshot (arbitrary units)</td>
+</tr>
+<tr>
+<td><code>Fs</code>, <code>Ks</code>, <code>Bs</code></td>
+<td><span class="arithmatex">\(n_s\)</span></td>
+<td>the three energy terms: folding, crossing and binding (data)</td>
+</tr>
+<tr>
+<td><code>ufs</code></td>
+<td><span class="arithmatex">\(n_s\)</span></td>
+<td>fraction of the chain that is not inside any loop (<em>unfolded fraction</em>)</td>
+</tr>
+<tr>
+<td><code>Ts</code></td>
+<td><span class="arithmatex">\(n_s\)</span></td>
+<td>temperature at the snapshot (changes during Annealing)</td>
+</tr>
+<tr>
+<td><code>epi</code></td>
+<td>per bead and snapshot</td>
+<td>epigenetic state of the beads over time (only meaningful with <code>epi_coeff</code> not 0)</td>
+</tr>
+<tr>
+<td><code>acc</code></td>
+<td>small</td>
+<td>counts of proposed and accepted moves</td>
+</tr>
+<tr>
+<td><code>meta</code></td>
+<td>JSON text</td>
+<td>the settings of this chain: <code>n_beads</code>, <code>n_lef</code>, <code>n_steps</code>, <code>mc_step</code>, <code>burnin</code>, <code>method</code>, <code>runtime_s</code>, <code>replicas</code>, <code>threads</code>, <code>seed</code>, ...</td>
+</tr>
+</tbody>
+</table>
+<p>The first <code>burnin</code> steps are the <em>burn-in</em>: the simulation is still forgetting its random start. Snapshots before index <code>burnin // mc_step</code> should not be averaged.</p>
+<h3 id="molecular-dynamics-arrays-mdnpz">Molecular dynamics arrays (<code>md.npz</code>)<a class="headerlink" href="#molecular-dynamics-arrays-mdnpz" title="Permanent link">&para;</a></h3>
+<p>There are <span class="arithmatex">\(F\)</span> frames (one per MC snapshot that was simulated).</p>
+<table>
+<thead>
+<tr>
+<th>Array</th>
+<th>Shape</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>coords</code></td>
+<td><span class="arithmatex">\(F\times N\times 3\)</span></td>
+<td>bead positions in <strong>nm</strong></td>
+</tr>
+<tr>
+<td><code>avg_map</code>, <code>std_map</code></td>
+<td><span class="arithmatex">\(N\times N\)</span></td>
+<td>mean and standard deviation over frames of the contact strength: a smooth function of the distance <span class="arithmatex">\(d\)</span> that is 1 for touching beads and falls to 0 beyond the contact radius <code>contact_radius</code> (default Gaussian, <span class="arithmatex">\(e^{-d^2/2\rho^2}\)</span> with <span class="arithmatex">\(\rho\)</span> = <code>contact_radius</code>)</td>
+</tr>
+<tr>
+<td><code>avg_dist</code>, <code>std_dist</code></td>
+<td><span class="arithmatex">\(N\times N\)</span></td>
+<td>mean and standard deviation over frames of the pairwise distance, in nm</td>
+</tr>
+<tr>
+<td><code>rg</code></td>
+<td><span class="arithmatex">\(F\)</span></td>
+<td>radius of gyration of every frame, in nm (the size of the chain)</td>
+</tr>
+<tr>
+<td><code>epot</code></td>
+<td><span class="arithmatex">\(F\)</span></td>
+<td>potential energy of every frame, in kJ/mol</td>
+</tr>
+<tr>
+<td><code>frame_idx</code></td>
+<td><span class="arithmatex">\(F\)</span></td>
+<td>the Monte Carlo snapshot each frame was built from</td>
+</tr>
+<tr>
+<td><code>meta</code></td>
+<td>JSON text</td>
+<td><code>platform</code>, <code>runtime_s</code>, <code>n_frames</code>, <code>dt_fs</code> (time step), <code>steps_per_frame</code>, <code>ps_per_frame</code>, <code>temperature_K</code>, <code>contact_radius_nm</code>, ...</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-metadata-datametadata">The metadata: <code>data/metadata/</code><a class="headerlink" href="#the-metadata-datametadata" title="Permanent link">&para;</a></h2>
+<p>The <em>metadata</em> are the <strong>small matrices and numbers that summarise a run</strong>. They are the part you want for comparing many runs, so they are saved separately and are cheap to keep. All matrices are <span class="arithmatex">\(N\times N\)</span> on the bead grid of the region: row and column <span class="arithmatex">\(i\)</span> is the genomic window starting at <code>start + i × bp_per_bead</code>, where <code>bp_per_bead</code> = (end − start) / <span class="arithmatex">\(N\)</span>.</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Content</th>
+<th>Saved when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mc_loop_counts.npy</code></td>
+<td>mean number of loops that join beads <span class="arithmatex">\(i\)</span> and <span class="arithmatex">\(j\)</span> over the post-burn-in ensemble (all replicas pooled)</td>
+<td><code>save_metadata</code></td>
+</tr>
+<tr>
+<td><code>mc_contact_map.npy</code></td>
+<td>the loop map built from the same ensemble, with communication between loops (the map the optimizer scores)</td>
+<td><code>save_metadata</code></td>
+</tr>
+<tr>
+<td><code>md_avg_distance.npy</code>, <code>md_std_distance.npy</code></td>
+<td>mean and standard deviation of the 3D distance in nm, over the MD frames</td>
+<td><code>save_metadata</code>, MD on</td>
+</tr>
+<tr>
+<td><code>md_avg_strength.npy</code>, <code>md_std_strength.npy</code></td>
+<td>mean and standard deviation of the contact strength over the MD frames</td>
+<td><code>save_metadata</code>, MD on</td>
+</tr>
+<tr>
+<td><code>optimized_parameters.json</code></td>
+<td>the values the optimizer chose (<code>chosen</code>: <code>n_lef</code>, <code>folding_coeff</code>, <code>bind_coeff</code>, temperatures), the starting point (<code>start</code>), the best result (<code>best</code>), whether it converged, number of evaluations and time</td>
+<td><code>--optimize</code>. Always saved, it is tiny</td>
+</tr>
+<tr>
+<td><code>hic_map.npy</code>, <code>hic_info.json</code></td>
+<td>the Hi-C reference map of the region and where it came from (file, normalisation, resolution)</td>
+<td>a Hi-C file is given (<code>--hic</code>)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="switching-outputs-on-and-off">Switching outputs on and off<a class="headerlink" href="#switching-outputs-on-and-off" title="Permanent link">&para;</a></h2>
+<p>Each output has a switch. Boolean switches come in pairs on the command line (<code>--figures</code> and <code>--no-figures</code>), and every one is also a key in the <code>[output]</code> section of a config file. Keys without a flag are set in the config file, or on the command line with <code>--set KEY=VALUE</code>.</p>
+<table>
+<thead>
+<tr>
+<th>What</th>
+<th>Command line</th>
+<th>Config key</th>
+<th>Default</th>
+<th>Effect when off</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Report</td>
+<td><code>--no-report</code></td>
+<td><code>report</code></td>
+<td>on</td>
+<td>no <code>report/report.html</code></td>
+</tr>
+<tr>
+<td>Figures</td>
+<td><code>--no-figures</code></td>
+<td><code>figures</code></td>
+<td>on</td>
+<td>no <code>.png</code> / <code>.svg</code> files; tables and data are still produced. Much faster for big or repeated runs</td>
+</tr>
+<tr>
+<td>Map matrices</td>
+<td><code>--no-metadata</code></td>
+<td><code>save_metadata</code></td>
+<td>on</td>
+<td>no <code>.npy</code> files in <code>data/metadata/</code> (the optimizer file stays)</td>
+</tr>
+<tr>
+<td>3D structures</td>
+<td><code>--no-save-ensemble</code></td>
+<td><code>save_ensemble</code></td>
+<td>on</td>
+<td>no <code>structures/</code> files (<code>.cif</code>, <code>.psf</code>, <code>.dcd</code>)</td>
+</tr>
+<tr>
+<td>3D stage altogether</td>
+<td><code>--no-run-MD</code></td>
+<td><code>run_md</code></td>
+<td>on</td>
+<td>no molecular dynamics, so no <code>structures/</code>, no <code>3d/</code>, no 3D diagnostics</td>
+</tr>
+<tr>
+<td>Viewer and videos</td>
+<td><code>--no-render-3d</code></td>
+<td><code>render_3d</code></td>
+<td>on</td>
+<td>no <code>3d_viewer.html</code> and no videos</td>
+</tr>
+<tr>
+<td>Videos only</td>
+<td><code>--set make_videos=false</code></td>
+<td><code>make_videos</code></td>
+<td>on</td>
+<td>the viewer is written, the <code>.mp4</code> files are not</td>
+</tr>
+<tr>
+<td>Which videos</td>
+<td><code>--set colorings=purple</code></td>
+<td><code>colorings</code></td>
+<td><code>purple, rainbow</code></td>
+<td>only the listed colourings are rendered</td>
+</tr>
+<tr>
+<td>Optimizer</td>
+<td><code>--optimize</code></td>
+<td><code>optimize</code></td>
+<td>off</td>
+<td>with it on: <code>optimization.json</code>, <code>optimized_parameters.json</code> and the optimizer figures</td>
+</tr>
+<tr>
+<td>Topology</td>
+<td><code>--knots</code></td>
+<td><code>detect_knots</code></td>
+<td>off</td>
+<td>with it on: <code>links.npz</code> and the <code>links_*</code> figures</td>
+</tr>
+<tr>
+<td>Console output</td>
+<td><code>-q</code>, <code>-v</code>, <code>-vv</code>, <code>-vvv</code></td>
+<td><code>quiet</code>, <code>verbosity</code></td>
+<td>normal</td>
+<td><code>-q</code> prints nothing; the log file and report are still written</td>
+</tr>
+</tbody>
+</table>
+<p>Where the files go and how they are numbered:</p>
+<table>
+<thead>
+<tr>
+<th>What</th>
+<th>Command line</th>
+<th>Config key</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Results folder</td>
+<td><code>--out PATH</code>, <code>-o PATH</code></td>
+<td><code>out_path</code></td>
+<td>the folder that holds the run folders (default <code>results/</code>)</td>
+</tr>
+<tr>
+<td>Run number</td>
+<td><code>--run N</code></td>
+<td><code>run_number</code></td>
+<td>choose the number instead of the next free one</td>
+</tr>
+<tr>
+<td>Random seed</td>
+<td><code>--seed N</code></td>
+<td><code>seed</code></td>
+<td>repeat a run exactly. Without it a random seed is chosen and stored in <code>config_resolved.ini</code></td>
+</tr>
+</tbody>
+</table>
+<p>A few examples:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># fastest useful run: data and tables only, no figures, no 3D</span>
+loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class="w"> </span>--no-figures<span class="w"> </span>--no-run-MD
+
+<span class="c1"># keep the 3D viewer but skip the videos and the large structure folder</span>
+loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class="w"> </span>--set<span class="w"> </span><span class="nv">make_videos</span><span class="o">=</span><span class="nb">false</span><span class="w"> </span>--no-save-ensemble
+
+<span class="c1"># only the maps, a small result folder</span>
+loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class="w"> </span>--no-save-ensemble<span class="w"> </span>--no-render-3d<span class="w"> </span>--no-report
+</code></pre></div>
+<p>The same switches in a config file:</p>
+<div class="highlight"><pre><span></span><code><span class="k">[output]</span>
+<span class="na">figures</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="s">False</span>
+<span class="na">save_metadata</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
+<span class="na">save_ensemble</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">False</span>
+<span class="na">report</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
+</code></pre></div>
+<p>All keys, with their units and defaults, are in the <a href="../config/">config reference</a>; the command-line forms are in the <a href="../cli/">command-line reference</a>.</p>
+<h3 id="stopping-and-continuing">Stopping and continuing<a class="headerlink" href="#stopping-and-continuing" title="Permanent link">&para;</a></h3>
+<p>Every stage saves its result in <code>data/</code>. If you run a <strong>single stage</strong> again on an existing run, the stages before it are loaded from <code>data/</code> instead of being computed again, and only the chosen stage runs. For example, to redo the Monte Carlo stage with new settings on top of the saved inputs:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>loopsage.pipeline.stage_mc<span class="w"> </span>-c<span class="w"> </span>config.ini<span class="w"> </span>--run<span class="w"> </span><span class="m">1</span>
+</code></pre></div>
+<p>The stage modules are <code>stage_preproc</code>, <code>stage_optimize</code>, <code>stage_mc</code>, <code>stage_md</code>, <code>stage_structure</code> and <code>stage_report</code> (all in <code>loopsage.pipeline</code>). Without <code>--run</code>, the <strong>latest</strong> existing run of the region is used.</p>
+<h2 id="using-the-data-in-your-own-analysis">Using the data in your own analysis<a class="headerlink" href="#using-the-data-in-your-own-analysis" title="Permanent link">&para;</a></h2>
+<p>Everything above can be read without LoopSage. In Python:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">run</span> <span class="o">=</span> <span class="s2">&quot;results/chr1_77000000_95000000_1&quot;</span>
+
+<span class="n">mc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">run</span><span class="si">}</span><span class="s2">/data/mc.npz&quot;</span><span class="p">)</span>
+<span class="n">meta</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">mc</span><span class="p">[</span><span class="s2">&quot;meta&quot;</span><span class="p">]))</span>                   <span class="c1"># run settings stored with the arrays</span>
+<span class="n">first</span> <span class="o">=</span> <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;burnin&quot;</span><span class="p">]</span> <span class="o">//</span> <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;mc_step&quot;</span><span class="p">]</span>            <span class="c1"># first snapshot after burn-in</span>
+
+<span class="n">lengths</span> <span class="o">=</span> <span class="p">(</span><span class="n">mc</span><span class="p">[</span><span class="s2">&quot;Ns&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">mc</span><span class="p">[</span><span class="s2">&quot;Ms&quot;</span><span class="p">])[:,</span> <span class="n">first</span><span class="p">:]</span>           <span class="c1"># loop lengths in beads, after burn-in</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">lengths</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">mc</span><span class="p">[</span><span class="s2">&quot;Es&quot;</span><span class="p">][</span><span class="n">first</span><span class="p">:]</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>       <span class="c1"># mean loop length (beads) and mean energy</span>
+
+<span class="n">md</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">run</span><span class="si">}</span><span class="s2">/data/md.npz&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">md</span><span class="p">[</span><span class="s2">&quot;coords&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">md</span><span class="p">[</span><span class="s2">&quot;rg&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>           <span class="c1"># frames x beads x 3, mean radius of gyration (nm)</span>
+
+<span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">run</span><span class="si">}</span><span class="s2">/data/metadata/md_avg_distance.npy&quot;</span><span class="p">)</span>   <span class="c1"># N x N mean 3D distance (nm)</span>
+</code></pre></div>
+<p>LoopSage's own classes read the same files and handle the replicas for you: <code>MCResult.load(".../data/mc.npz")</code> (module <code>loopsage.monte_carlo.simulation</code>) and <code>MDResult.load(".../data/md.npz")</code> (module <code>loopsage.molecular_dynamics.engine</code>). The helper functions in <code>loopsage.results</code> (<code>loop_lengths</code>, <code>energies</code>, <code>contact_map</code>, <code>distance</code>, ...) then work on them; see the <a href="../python/">Python interface</a>.</p>
+<h3 id="comparing-many-runs-meta-analysis">Comparing many runs (meta-analysis)<a class="headerlink" href="#comparing-many-runs-meta-analysis" title="Permanent link">&para;</a></h3>
+<p>Because every run keeps its settings (<code>config_resolved.ini</code>) next to a small summary (<code>data/metadata/</code>), you can collect many runs into one table and see which settings change which result. This is also what <a href="../sensitivity/">sensitivity scans</a> automate.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">configparser</span><span class="o">,</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;results&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;chr1_77000000_95000000_*&quot;</span><span class="p">)):</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">configparser</span><span class="o">.</span><span class="n">ConfigParser</span><span class="p">(</span><span class="n">inline_comment_prefixes</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;;&quot;</span><span class="p">,))</span>
+    <span class="n">cfg</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">run</span> <span class="o">/</span> <span class="s2">&quot;config_resolved.ini&quot;</span><span class="p">)</span>
+    <span class="n">mc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">run</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;mc.npz&quot;</span><span class="p">)</span>
+    <span class="n">meta</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">mc</span><span class="p">[</span><span class="s2">&quot;meta&quot;</span><span class="p">]))</span>
+    <span class="n">first</span> <span class="o">=</span> <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;burnin&quot;</span><span class="p">]</span> <span class="o">//</span> <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;mc_step&quot;</span><span class="p">]</span>
+    <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">run</span><span class="o">=</span><span class="n">run</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="n">n_lef</span><span class="o">=</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;n_lef&quot;</span><span class="p">],</span>
+        <span class="n">folding</span><span class="o">=</span><span class="n">cfg</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">][</span><span class="s2">&quot;folding_coeff&quot;</span><span class="p">],</span>      <span class="c1"># a setting that differed between runs</span>
+        <span class="n">loop_beads</span><span class="o">=</span><span class="nb">float</span><span class="p">((</span><span class="n">mc</span><span class="p">[</span><span class="s2">&quot;Ns&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">mc</span><span class="p">[</span><span class="s2">&quot;Ms&quot;</span><span class="p">])[:,</span> <span class="n">first</span><span class="p">:]</span><span class="o">.</span><span class="n">mean</span><span class="p">()),</span>
+        <span class="n">energy</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">mc</span><span class="p">[</span><span class="s2">&quot;Es&quot;</span><span class="p">][</span><span class="n">first</span><span class="p">:]</span><span class="o">.</span><span class="n">mean</span><span class="p">()),</span>
+        <span class="n">seed</span><span class="o">=</span><span class="n">cfg</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">][</span><span class="s2">&quot;seed&quot;</span><span class="p">],</span>
+    <span class="p">))</span>
+
+<span class="n">table</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>                                              <span class="c1"># one row per run, ready for plots or regression</span>
+</code></pre></div>
+<p>Three habits make such a comparison reliable:</p>
+<ul>
+<li><strong>Compare after burn-in only</strong>, as above, so the random start does not enter the numbers.</li>
+<li><strong>Use replicas.</strong> With <code>--n-replicas 4</code> the four chains are stored in <code>mc.npz</code> and <code>mc_r1.npz</code> to <code>mc_r3.npz</code>; the spread between them is the noise level, and a difference smaller than that is not a result.</li>
+<li><strong>Fix the seed</strong> (<code>--seed</code>) when you want a difference to come from a setting and not from chance. Monte Carlo is exactly repeatable with the same seed; the 3D stage is repeatable only with <code>--threads 1</code>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../sensitivity/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Sensitivity scans">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Sensitivity scans
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../acknowledgments/" class="md-footer__link md-footer__link--next" aria-label="Next: Acknowledgments">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Acknowledgments
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

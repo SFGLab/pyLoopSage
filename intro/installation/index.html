@@ -498,10 +498,93 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-recommended-conda" class="md-nav__link">
+  <a href="#choose-an-installation-method" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step by step (recommended: conda)
+        Choose an installation method
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Choose an installation method">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pip
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pyenv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pyenv
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        uv
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From source
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gpu-nvidia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GPU (NVIDIA)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional features
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
       
     </span>
   </a>
@@ -1337,6 +1420,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1409,10 +1520,93 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-recommended-conda" class="md-nav__link">
+  <a href="#choose-an-installation-method" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step by step (recommended: conda)
+        Choose an installation method
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Choose an installation method">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pip
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pyenv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pyenv
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        uv
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From source
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gpu-nvidia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GPU (NVIDIA)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional features
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
       
     </span>
   </a>
@@ -1498,29 +1692,115 @@
 <h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Python 3.10 or newer</strong>.</li>
+<li><strong>numpy 2.x</strong> (<code>numpy&gt;=2.0</code>; <code>numba&gt;=0.60</code> for numpy 2 support). Both are installed automatically. numpy 1.x is not supported, because numpy 1 and 2 are not binary compatible. LoopSage is tested with numpy 2.4 and 2.5.</li>
 <li>A Linux, macOS or Windows (WSL) computer. A GPU is optional: it only speeds up the 3D molecular dynamics stage.</li>
 <li>About 2 GB of free disk space for the packages.</li>
 </ul>
-<h2 id="step-by-step-recommended-conda">Step by step (recommended: conda)<a class="headerlink" href="#step-by-step-recommended-conda" title="Permanent link">&para;</a></h2>
-<p><code>openmm</code> (the molecular dynamics engine) and <code>pyBigWig</code> install most reliably from conda, so the packages are installed in two parts. <code>hic-straw</code>, which reads <code>.hic</code> files for the optional <code>--hic</code> reference, is installed with the package; it builds from source when no wheel exists for your system and then needs a C++ compiler and libcurl.</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># 1. get the code</span>
-git<span class="w"> </span>clone<span class="w"> </span>https://github.com/SFGLab/pyLoopSage.git
-<span class="nb">cd</span><span class="w"> </span>pyLoopSage
-
-<span class="c1"># 2. create an isolated environment</span>
-conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>loopsage<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.11<span class="w"> </span>-y
-conda<span class="w"> </span>activate<span class="w"> </span>loopsage
-
-<span class="c1"># 3. packages that are best installed from conda</span>
-conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span><span class="s2">&quot;openmm&gt;=8.5.1&quot;</span><span class="w"> </span>pybigwig<span class="w"> </span>-y
-
-<span class="c1"># 4. all other packages</span>
-pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-
-<span class="c1"># 5. install pyLoopSage itself (creates the `loopsage` command)</span>
-pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+<h2 id="choose-an-installation-method">Choose an installation method<a class="headerlink" href="#choose-an-installation-method" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Command</th>
+<th>Good for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>pip</strong></td>
+<td><code>pip install pyLoopSage</code></td>
+<td>most users</td>
+</tr>
+<tr>
+<td><strong>pyenv</strong></td>
+<td><code>pyenv virtualenv 3.11 loopsage</code> then <code>pip install pyLoopSage</code></td>
+<td>several Python versions on one machine</td>
+</tr>
+<tr>
+<td><strong>uv</strong></td>
+<td><code>uv pip install pyLoopSage</code></td>
+<td>fast installs, project environments</td>
+</tr>
+<tr>
+<td><strong>source</strong></td>
+<td><code>pip install -e ".[all,test]"</code></td>
+<td>development</td>
+</tr>
+</tbody>
+</table>
+<p>All methods install the same core packages: numpy 2.x, scipy, pandas, numba, matplotlib, rich, OpenMM, pyvista, imageio and pillow. Nothing else is needed to run the pipeline.</p>
+<h3 id="pip">pip<a class="headerlink" href="#pip" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>loopsage-env<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">source</span><span class="w"> </span>loopsage-env/bin/activate
+pip<span class="w"> </span>install<span class="w"> </span>pyLoopSage
+loopsage<span class="w"> </span>-h
 </code></pre></div>
-<p>Check the installation with <code>loopsage -h</code>. The same command also runs as <code>python -m loopsage</code>.</p>
+<h3 id="pyenv">pyenv<a class="headerlink" href="#pyenv" title="Permanent link">&para;</a></h3>
+<p><a href="https://github.com/pyenv/pyenv">pyenv</a> installs and switches between Python versions. With the <code>pyenv-virtualenv</code> plugin each version gets its own environment, and the package comes from <a href="https://pypi.org/project/pyLoopSage/">PyPI</a>:</p>
+<div class="highlight"><pre><span></span><code>pyenv<span class="w"> </span>install<span class="w"> </span><span class="m">3</span>.11
+pyenv<span class="w"> </span>virtualenv<span class="w"> </span><span class="m">3</span>.11<span class="w"> </span>loopsage
+pyenv<span class="w"> </span><span class="nb">local</span><span class="w"> </span>loopsage<span class="w">            </span><span class="c1"># activates the environment inside the current folder</span>
+pip<span class="w"> </span>install<span class="w"> </span>pyLoopSage<span class="w">          </span><span class="c1"># or pip install &quot;pyLoopSage[cuda12]&quot; for an NVIDIA GPU</span>
+loopsage<span class="w"> </span>-h
+</code></pre></div>
+<h3 id="uv">uv<a class="headerlink" href="#uv" title="Permanent link">&para;</a></h3>
+<p><a href="https://docs.astral.sh/uv/">uv</a> is a fast installer for Python packages. It reads the same package from PyPI:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>venv<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyLoopSage<span class="w">          </span><span class="c1"># or: uv add pyLoopSage   (inside a uv project)</span>
+uvx<span class="w"> </span>--from<span class="w"> </span>pyLoopSage<span class="w"> </span>loopsage<span class="w"> </span>-h<span class="w">  </span><span class="c1"># one-off run without installing</span>
+</code></pre></div>
+<h3 id="from-source">From source<a class="headerlink" href="#from-source" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/SFGLab/pyLoopSage.git
+<span class="nb">cd</span><span class="w"> </span>pyLoopSage
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[all,test]&quot;</span>
+</code></pre></div>
+<p>With uv, <code>uv sync --extra all --extra test</code> installs exactly the package versions pinned in <code>uv.lock</code>, so every developer and every CI run gets the same environment. After you change the dependencies in <code>pyproject.toml</code>, run <code>uv lock</code> and commit the updated <code>uv.lock</code>. The lock file is for development only: users who install from PyPI get the versions allowed by <code>pyproject.toml</code>.</p>
+<h2 id="gpu-nvidia">GPU (NVIDIA)<a class="headerlink" href="#gpu-nvidia" title="Permanent link">&para;</a></h2>
+<p>By default OpenMM runs on the CPU or OpenCL. For an NVIDIA GPU install the CUDA build of OpenMM through an extra, matching your CUDA version (<code>nvidia-smi</code> shows it):</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;pyLoopSage[cuda12]&quot;</span><span class="w">    </span><span class="c1"># CUDA 12</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;pyLoopSage[cuda13]&quot;</span><span class="w">    </span><span class="c1"># CUDA 13</span>
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;pyLoopSage[cuda12]&quot;</span><span class="w"> </span><span class="c1"># the same with uv</span>
+</code></pre></div>
+<p>Do not install the separate <code>OpenMM-cuda</code> package: it is outdated and forces OpenMM 8.1.</p>
+<h2 id="optional-features">Optional features<a class="headerlink" href="#optional-features" title="Permanent link">&para;</a></h2>
+<p>Some inputs need a package that is not installed by default, so that a plain install never fails on a missing compiler or channel:</p>
+<table>
+<thead>
+<tr>
+<th>Extra</th>
+<th>Package</th>
+<th>Needed for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bigwig</code></td>
+<td><code>pyBigWig</code></td>
+<td>BigWig signal tracks (<code>bw_files</code> in the config file)</td>
+</tr>
+<tr>
+<td><code>hic</code></td>
+<td><code>hic-straw</code></td>
+<td><code>.hic</code> reference maps (<code>--hic</code>); builds from source, needs a C++ compiler and libcurl when no wheel exists</td>
+</tr>
+<tr>
+<td><code>topology</code></td>
+<td><code>topoly</code></td>
+<td>linking numbers (topology mode)</td>
+</tr>
+<tr>
+<td><code>all</code></td>
+<td>all three</td>
+<td>everything</td>
+</tr>
+</tbody>
+</table>
+<p>For example <code>pip install "pyLoopSage[bigwig,hic]"</code>. If you use a feature without its package, LoopSage stops with a message that names the extra to install.</p>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>pip downgrades OpenMM, or the solver reports a conflict:</strong> use version 2.0.1 or newer. Older releases required <code>OpenMM-cuda</code>, which pins OpenMM 8.1.</li>
+<li><strong><code>numpy.core.multiarray failed to import</code> or <code>_ARRAY_API not found</code>:</strong> LoopSage needs numpy 2 (<code>numpy&gt;=2.0</code>). A package in the same environment that was built for numpy 1 causes this message. Use a fresh environment.</li>
+<li><strong>Other numpy error:</strong> a package was built against another numpy. Use a fresh environment and install everything in one command.</li>
+</ul>
 <h2 id="check-that-it-works">Check that it works<a class="headerlink" href="#check-that-it-works" title="Permanent link">&para;</a></h2>
 <p>Run the small demo (under a minute) and open the report it writes:</p>
 <div class="highlight"><pre><span></span><code>python<span class="w"> </span>demo/run_demo.py<span class="w"> </span>quick
@@ -1532,7 +1812,7 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 <h2 id="choosing-the-3d-computing-platform">Choosing the 3D computing platform<a class="headerlink" href="#choosing-the-3d-computing-platform" title="Permanent link">&para;</a></h2>
 <p>The 3D stage runs on the fastest platform it finds, in this order: <strong>CUDA</strong> (NVIDIA GPU), <strong>OpenCL</strong>, then <strong>CPU</strong> with all cores. The chosen platform is always printed. To force one, use <code>--platform CUDA</code>, <code>--platform OpenCL</code> or <code>--platform CPU</code>.</p>
 <h2 id="docker">Docker<a class="headerlink" href="#docker" title="Permanent link">&para;</a></h2>
-<p>A <code>Dockerfile</code> with CUDA support is in the repository root:</p>
+<p>A <code>Dockerfile</code> with CUDA 12 support (installs <code>pyLoopSage[cuda12,all]</code>) is in the repository root:</p>
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>loopsage<span class="w"> </span>.
 docker<span class="w"> </span>run<span class="w"> </span>--gpus<span class="w"> </span>all<span class="w"> </span>-it<span class="w"> </span>-v<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$PWD</span><span class="s2">&quot;</span>:/app<span class="w"> </span>loopsage
 </code></pre></div>
