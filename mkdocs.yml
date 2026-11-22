@@ -75,4 +75,5 @@ nav:
       - Python interface: reference/python.md
       - Config files: reference/config.md
       - Sensitivity scans: reference/sensitivity.md
+      - Output: reference/output.md
   - Acknowledgments: acknowledgments/index.md
