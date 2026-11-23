@@ -1498,7 +1498,7 @@
 <p>Everything is given as options. Good for a quick run or a script.</p>
 <div class="highlight"><pre><span></span><code>loopsage<span class="w"> </span>-f<span class="w"> </span>loops.bedpe<span class="w"> </span>-r<span class="w"> </span>chr1:77000000-95000000<span class="w"> </span>--mc-steps<span class="w"> </span><span class="m">20000</span>
 </code></pre></div>
-<p>The results (figures, report, structures) are written to a run folder, <code>results/chr1_77000000_95000000_1/</code>. All options are listed on the <a href="cli/">command-line page</a>.</p>
+<p>The results (figures, report, structures) are written to a run folder, <code>results/chr1_77000000_95000000/</code>. All options are listed on the <a href="cli/">command-line page</a>.</p>
 <h3 id="config-file">Config file<a class="headerlink" href="#config-file" title="Permanent link">&para;</a></h3>
 <p>The settings are written in a text file, which is easy to keep, share and repeat. The command-line options still work and win over the file.</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># config.ini</span>
@@ -1553,6 +1553,10 @@
 <tr>
 <td><a href="sensitivity/">Sensitivity scans</a></td>
 <td>The <code>loopsage-scan</code> command: why scanning parameters gives biophysical insight, how to write a scan file, phase transitions and bifurcations, topology, and the report.</td>
+</tr>
+<tr>
+<td><a href="output/">Output</a></td>
+<td>What a run writes: the folder layout (with replicas: <code>replica_&lt;k&gt;</code> subfolders and <code>mc_r&lt;k&gt;.npz</code> files), every file and figure, and how to read them.</td>
 </tr>
 </tbody>
 </table>
