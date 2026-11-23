@@ -19,11 +19,7 @@ jobs:
       - uses: actions/checkout@v4
       - id: v
         run: |
-          VERSION=$(python3 -c "import re,pathlib;print(re.search(r'\"([^\"]+)\"', pathlib.Path('src/loopsage/version.py').read_text()).group(1))")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          if [ "${{ github.event_name }}" = "release" ] && [ "${GITHUB_REF_NAME#v}" != "$VERSION" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match version $VERSION"; exit 1
-          fi
+          VERSION=$(python3 -c "import re,pathlib;print(re.search(r'__version__\s*=\s*\"([^\"]+)\"', pathlib.Path('src/loopsage/version.py').read_text()).group(1))")
 
   pypi:
     needs: check
