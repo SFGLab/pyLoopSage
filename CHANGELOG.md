@@ -4,7 +4,7 @@
 
 - The run folder is named `<chrom>_<start>_<end>` without a run number; the `run_number` option and `--run` are removed (old config files only get an 'ignored' note). Running the same region again into the same `--out` folder overwrites it (a warning is logged); use another `--out` to keep both.
 - Replicas are fully independent: each has its own Monte Carlo chain (own seed, random initial loops) and its own 3D run (own start structure, loops and random stream). With one replica nothing changes in the output; with two or more, per-replica metadata, structures and figures go to `replica_<k>` subfolders and the report adds the mean and standard deviation of the contact and distance maps across replicas (`replica_maps`, `md_replica_maps`, `md_replica_distances`, `md_replicas`).
-- Replica seeds are derived independently from `--seed` (replica 0 keeps it); results of replicas > 0 differ from earlier versions, which used `seed + k`.
+- Replica `j` uses the seed `--seed + j` for its Monte Carlo chain, its random 3D start structure and its MD noise.
 - With several replicas the cached results are `mc_r0.npz`, `mc_r1.npz`, ... and `md_r0.npz`, ... (one replica: `mc.npz`, `md.npz`; `MCResult.load` / `MDResult.load` accept `mc.npz` in both cases); the Python `run_md` returns an `MDResult` with `.chains` and `.pooled()`.
 
 ## 2.0.1
