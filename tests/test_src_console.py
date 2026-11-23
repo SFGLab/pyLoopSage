@@ -18,17 +18,18 @@ def _shown(verbosity):
     setup_logging(verbosity)
     log = get_logger("test_console")
     with console.capture() as cap:
-        log.step("milestone"); log.info("detail"); log.debug("trace"); log.warning("careful")
+        log.stage("milestone"); log.step("step"); log.info("detail"); log.debug("trace"); log.warning("careful")
     return cap.get()
 
 
 def test_default_verbosity_shows_milestones_and_warnings_only():
     out = _shown(0)
-    assert "milestone" in out and "careful" in out and "detail" not in out and "trace" not in out
+    assert "milestone" in out and "careful" in out and "step" not in out and "detail" not in out and "trace" not in out
     assert "▸" in out                                              # milestones carry the arrow marker
 
 
 def test_verbosity_levels_add_detail():
+    assert "step" in _shown(1) and "detail" not in _shown(1)
     assert "detail" in _shown(2) and "trace" not in _shown(2)
     assert "trace" in _shown(3) and "milestone" in _shown(3)
 

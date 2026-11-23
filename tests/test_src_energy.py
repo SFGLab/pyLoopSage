@@ -188,6 +188,7 @@ def _engine(platform, tmp_path, threads_source="default"):
     from types import SimpleNamespace
     from loopsage.molecular_dynamics.engine import LoopMD
     e = LoopMD.__new__(LoopMD)
+    e.seed = 1
     e.cfg = SimpleNamespace(platform=platform, sim_temp=300, friction=1.0, integrator_step=10, seed=1, device="", threads=1,
                             source={"threads": threads_source})
     return e

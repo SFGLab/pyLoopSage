@@ -1,16 +1,17 @@
 """Thread settings shared by the sampler, numba kernels and OpenMM.
 
 - Stage progress bars (always shown).
-- Output layout: <results>/<chrom>_<start>_<end>_<run>/{structures,visualizations,report,logs,data}.
+- Output layout: <results>/<chrom>_<start>_<end>/{structures,visualizations,report,logs,data}; several replicas add replica_<k> subfolders.
 """
 import os
 import random
 import re
 import time
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
+import numpy as np
 from rich.live import Live
 from rich.markup import escape
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeElapsedColumn, TimeRemainingColumn
@@ -35,6 +36,33 @@ def apply_threads(cfg) -> int:
     t = min(n_threads(cfg), numba.config.NUMBA_NUM_THREADS)
     numba.set_num_threads(t)
     return t
+
+
+def replica_seed(base: int, k: int, stream: int = 0) -> int:
+    """Seed of replica k (stream 0 = Monte Carlo, 1 = molecular dynamics); replica 0 keeps `base`, the others are drawn independently from it."""
+    if k == 0:
+        return int(base)
+    return int(np.random.SeedSequence([int(base), stream, k]).generate_state(1)[0] & 0x7FFFFFFF)
+
+
+def replica_file(path, k: int, n: int) -> Path:
+    """File of replica k when n replicas are saved: `mc.npz` for one replica, `mc_r0.npz`, `mc_r1.npz`, ... for several."""
+    path = Path(path)
+    return path if n <= 1 else path.with_name(f"{path.stem}_r{k}{path.suffix}")
+
+
+def clear_stale(path, n: int) -> None:
+    """Before saving n replicas: remove files left by an earlier run of the same folder with another replica count."""
+    path = Path(path)
+    stale = [path] if n > 1 else list(path.parent.glob(f"{path.stem}_r[0-9]*{path.suffix}"))
+    stale += [f for f in path.parent.glob(f"{path.stem}_r[0-9]*{path.suffix}") if n > 1 and int(f.stem.rsplit("_r", 1)[1]) >= n]
+    for f in stale:
+        f.unlink(missing_ok=True)
+
+
+def cache_exists(path) -> bool:
+    """A saved stage result: the plain file or, with several replicas, its `_r0` file."""
+    return Path(path).exists() or replica_file(path, 0, 2).exists()
 
 
 # ---- Stage progress bars (always shown) ------------------------------------
@@ -147,7 +175,7 @@ def fun_bar(desc: str, total: float):
         view.done = view.total
 
 
-# ---- Output layout: <results>/<chrom>_<start>_<end>_<run>/{structures,visualizations,report,logs,data} ----
+# ---- Output layout: <results>/<chrom>_<start>_<end>/{structures,visualizations,report,logs,data}; replicas add replica_<k> subfolders ----
 
 log = get_logger(__name__)
 
@@ -155,18 +183,30 @@ log = get_logger(__name__)
 @dataclass(frozen=True)
 class OutputDirs:
     root: Path                                           # one run folder
+    n_replicas: int = 1
+    rep: int = None                                      # set by replica(k): per-replica views of metadata / structures / figures
+
+    def replica(self, k: int) -> "OutputDirs":
+        """Folders of replica k: `replica_<k>` subfolders when there are several replicas, the plain folders (self) when there is one."""
+        return replace(self, rep=k) if self.n_replicas > 1 else self
+
+    def _at(self, base: Path) -> Path:
+        return base / f"replica_{self.rep}" if self.rep is not None else base
 
     @property
-    def data(self) -> Path: return self.root / "data"                    # cached npz/npy arrays
+    def data(self) -> Path: return self.root / "data"                    # cached npz arrays (all replicas)
 
     @property
-    def figures(self) -> Path: return self.root / "visualizations"       # png + svg
+    def metadata(self) -> Path: return self._at(self.data / "metadata")   # npy matrices
+
+    @property
+    def figures(self) -> Path: return self._at(self.root / "visualizations")       # png + svg
 
     @property
     def viewer(self) -> Path: return self.figures / "3d"                  # 3d_viewer.html + videos
 
     @property
-    def structures(self) -> Path: return self.root / "structures"        # cif / ensemble
+    def structures(self) -> Path: return self._at(self.root / "structures")        # cif / ensemble
 
     @property
     def ensemble(self) -> Path: return self.structures / "ensemble"
@@ -184,29 +224,12 @@ class OutputDirs:
     def config(self) -> Path: return self.root / "config_resolved.ini"
 
 
-def _runs(base: Path, prefix: str) -> dict:
-    """{run_number: folder} of existing runs for one region."""
-    found = {}
-    for d in base.glob(f"{prefix}_*") if base.exists() else []:
-        m = re.fullmatch(rf"{re.escape(prefix)}_(\d+)", d.name)
-        if m and d.is_dir():
-            found[int(m.group(1))] = d
-    return found
-
-
-def create_run_dirs(base, geom, run=None, reuse_latest=False) -> OutputDirs:
-    """Folder `<chrom>_<start>_<end>_<n>` under `base` (default ./results).
-
-    run=None: next free number, or the latest existing one when reuse_latest.
-    """
+def create_run_dirs(base, geom, replicas: int = 1) -> OutputDirs:
+    """Folder `<chrom>_<start>_<end>` under `base` (default ./results); with replicas > 1 also `replica_<k>` subfolders of structures and visualizations."""
     base = Path(base).expanduser().resolve() if base else Path.cwd() / "results"
     if base.exists() and not base.is_dir():
         raise IOError(f"'{base}' exists and is not a directory.")
-    prefix, runs = f"{geom.chrom}_{geom.start}_{geom.end}", None
-    runs = _runs(base, prefix)
-    if run is None:
-        run = (max(runs) if runs else 1) if reuse_latest else (max(runs, default=0) + 1)
-    dirs = OutputDirs(base / f"{prefix}_{run}")
-    for d in (dirs.data, dirs.figures, dirs.structures, dirs.logs, dirs.report.parent, dirs.viewer):
+    dirs = OutputDirs(base / f"{geom.chrom}_{geom.start}_{geom.end}", max(int(replicas), 1))
+    for d in (dirs.data, dirs.logs, dirs.report.parent, *[v for k in range(dirs.n_replicas) for v in (dirs.replica(k).viewer, dirs.replica(k).structures)], dirs.viewer):
         d.mkdir(parents=True, exist_ok=True)
     return dirs

@@ -12,7 +12,7 @@ from loopsage.settings.loader import load_config
 def test_run_creates_organised_folder_and_report(figure_run):
     ctx = figure_run
     root = ctx.dirs.root
-    assert re.fullmatch(r"chr1_77000000_95000000_1", root.name)
+    assert re.fullmatch(r"chr1_77000000_95000000", root.name)             # no automatic number
     for sub in ("visualizations", "structures", "report", "logs", "data"):
         assert (root / sub).is_dir()
     html = (root / "report" / "report.html").read_text()
@@ -23,12 +23,11 @@ def test_run_creates_organised_folder_and_report(figure_run):
     assert (root / "visualizations" / "loop_nesting.png").exists() and (root / "visualizations" / "loop_parents_children.png").exists()
 
 
-def test_run_number_increments(fast_args):
+def test_run_folder_has_no_number(fast_args):
     first = run_pipeline(load_config(fast_args)).dirs.root
     second = run_pipeline(load_config(fast_args)).dirs.root
-    assert first.name.endswith("_1") and second.name.endswith("_2")
-    pinned = run_pipeline(load_config(fast_args + ["--run", "7"])).dirs.root
-    assert pinned.name.endswith("_7")
+    assert first.name == second.name == "chr1_77000000_95000000"              # same folder, overwritten
+    assert "already has results" in first.joinpath("logs", "loopsage.log").read_text()      # the second run said it overwrote
 
 
 def test_every_figure_has_at_most_three_panels(figure_run):
@@ -48,10 +47,10 @@ def test_standalone_stage_reuses_latest_run(fast_args):
     assert ctx.dirs.report.exists() and len(list(ctx.dirs.root.parent.iterdir())) == 1
 
 
-def test_metadata_default_and_switch(fast_args):
+def test_metadata_default_and_switch(fast_args, tmp_path):
     on = run_pipeline(load_config(fast_args)).dirs.data / "metadata"
     assert (on / "mc_contact_map.npy").exists() and (on / "mc_loop_counts.npy").exists()
-    off = run_pipeline(load_config(fast_args + ["--no-metadata"])).dirs.data
+    off = run_pipeline(load_config([x if x != str(tmp_path / "results") else str(tmp_path / "off") for x in fast_args] + ["--no-metadata"])).dirs.data
     assert not (off / "metadata").exists()
 
 
@@ -115,7 +114,7 @@ def test_quiet_flag_mutes_console(fast_args, capfd):
 
 def test_default_is_not_quiet(fast_args, capfd):
     ctx = run_pipeline(load_config(fast_args))
-    assert "Run folder" in capfd.readouterr().out
+    assert "All done" in capfd.readouterr().out          # stage headers are shown at the default verbosity
 
 
 def test_same_seed_gives_the_same_run_and_random_runs_record_their_seed(fast_args, tmp_path):
@@ -150,3 +149,58 @@ def test_every_output_is_saved_by_default_and_each_has_a_switch(fast_args, tmp_p
     assert off.md is not None                                                          # the simulation itself still runs
     assert not (off.dirs.data / "metadata").exists() or not any((off.dirs.data / "metadata").iterdir())
     assert not any(off.dirs.structures.iterdir())
+
+
+# ---- Replicas: independent chains and MD runs, tidy output folders ----------
+
+def _replica_args(fast_args, n, tmp_path, name):
+    args = [a for a in fast_args if a != "--no-run-MD"] + ["--run-MD", "--md-steps", "20", "--n-lef", "5", "--no-knots", "--threads", "2",
+                                                          "--platform", "CPU", "--no-render-3d", "--set", "tolerance=10", "--n-replicas", str(n)]
+    return [x if x != str(tmp_path / "results") else str(tmp_path / name) for x in args]
+
+
+def test_replica_seeds_are_independent_and_replica_zero_keeps_the_seed():
+    from loopsage.common.runtime import replica_seed
+    seeds = [replica_seed(7, k) for k in range(5)]
+    assert seeds[0] == 7 and len(set(seeds)) == 5
+    assert replica_seed(7, 1, stream=0) != replica_seed(7, 1, stream=1)       # MC and MD streams differ
+    assert replica_seed(7, 3) == replica_seed(7, 3)                            # reproducible
+
+
+def test_one_replica_has_no_replica_folders(fast_args, tmp_path):
+    pytest.importorskip("openmm")
+    ctx = run_pipeline(load_config(_replica_args(fast_args, 1, tmp_path, "one")))
+    names = {p.name for d in (ctx.dirs.metadata, ctx.dirs.structures, ctx.dirs.figures, ctx.dirs.data) for p in d.iterdir()}
+    assert not any(n.startswith("replica") or "_r1" in n for n in names)
+    assert (ctx.dirs.metadata / "md_avg_distance.npy").exists() and (ctx.dirs.structures / "trajectory.dcd").exists()
+
+
+def test_replicas_run_independently_and_are_organised_per_replica(demo_bedpe, tmp_path):
+    """3 replicas: own chain, own MD start structure and loops, replica_<k> folders, cross-replica maps; replica k alone reproduces replica k."""
+    pytest.importorskip("openmm")
+    import numpy as np
+    fa = ["-f", str(demo_bedpe), "-r", "chr1:77000000-95000000", "-n", "120", "-o", str(tmp_path / "results"), "--mc-steps", "2000",
+          "--sample-every", "100", "--burnin", "400", "--seed", "1"]
+    ctx = run_pipeline(load_config(_replica_args(fa, 3, tmp_path, "three")))
+    d, chains = ctx.dirs, ctx.mc.chains
+    assert len(chains) == 3 and len(ctx.md.chains) == 3
+    assert len({c.meta["seed"] for c in chains}) == 3 and len({c.meta["seed"] for c in ctx.md.chains}) == 3
+    assert not np.array_equal(chains[0].Ms, chains[1].Ms) and not np.array_equal(chains[1].Ms, chains[2].Ms)      # different random chains
+    x = [c.coords[0] for c in ctx.md.chains]
+    assert not np.allclose(x[0], x[1], atol=1e-3) and not np.allclose(x[1], x[2], atol=1e-3)                       # different MD runs
+    for k in range(3):                                                         # per-replica metadata, structures and figures
+        assert (d.data / "metadata" / f"replica_{k}" / "md_avg_distance.npy").exists() and (d.data / "metadata" / f"replica_{k}" / "mc_contact_map.npy").exists()
+        assert (d.root / "structures" / f"replica_{k}" / "trajectory.dcd").exists() and any((d.root / "structures" / f"replica_{k}" / "ensemble").glob("MDLE_*.cif"))
+        assert (d.root / "visualizations" / f"replica_{k}" / "md_maps.png").exists()
+    assert not (d.root / "structures" / "trajectory.dcd").exists()
+    for f in ("replica_maps", "md_replica_maps", "md_replica_distances", "md_replicas", "replicas"):    # diagnostics across replicas, in the main folder
+        assert (d.figures / f"{f}.png").exists(), f
+    assert (d.metadata / "md_avg_distance_replica_std.npy").exists() and (d.metadata / "mc_contact_map_replica_std.npy").exists()
+    assert not any(p.name.endswith(("_0", "_1", "_2")) for p in d.root.rglob("*") if p.is_dir() and not p.name.startswith("replica_") and p.name != d.root.name)
+    pooled_md, pooled_mc = ctx.md_ens, ctx.mc_ens                             # pooled frames index the pooled loops
+    assert pooled_md.frame_idx.max() < pooled_mc.n_samples and len(pooled_md.coords) == sum(len(c.coords) for c in ctx.md.chains)
+    solo = run_pipeline(load_config([a for a in _replica_args(fa, 1, tmp_path, "solo")] + ["--seed", str(chains[2].meta["seed"]), "--no-run-MD"]))
+    assert np.array_equal(solo.mc.Ms, chains[2].Ms)                           # replica 2 is exactly a stand-alone chain with its own seed
+    assert all((d.data / f"{n}_r{k}.npz").exists() for n in ("mc", "md") for k in range(3)) and not (d.data / "mc.npz").exists()   # one file per replica
+    again = type(ctx.md).load(d.data / "md.npz")                              # cache round trip keeps all replicas
+    assert len(again.chains) == 3 and np.allclose(again.chains[2].coords, ctx.md.chains[2].coords)

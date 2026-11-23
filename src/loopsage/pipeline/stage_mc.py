@@ -1,6 +1,17 @@
-"""Stage 2: Monte Carlo loop extrusion and its diagnostics."""
-import sys
-from pathlib import Path
+"""Stage 2: Monte Carlo loop extrusion and its diagnostics, for the pooled ensemble and (with replicas) for each replica."""
+import numpy as np
+
+from loopsage.analysis import ensemble
+from loopsage.analysis.ensemble import acceptance_table, equilibrium_summary, loop_lengths
+from loopsage.analysis.maps import loop_counts, loop_map, map_features
+from loopsage.common.genome import fmt_duration
+from loopsage.common.utils import describe_row, emit_table
+from loopsage.logger import get_logger
+from loopsage.monte_carlo.simulation import MCResult, run_mc
+from loopsage.optimizer.objective import COMMUNICATION
+from loopsage.reporting.report import REGISTRY
+from loopsage.viz import mc_figs, replica_figs
+from loopsage.viz.map_figs import map_feature_report, map_features_figure
 
 
 def _epigenetic(ctx, mc, g):
@@ -84,34 +95,43 @@ def _nesting(ctx, mc, g):
     parents_children_figure(mc, parts, g)
 
 
-def _replicas(mc, g):
-    """Table and figure for the agreement of independent chains."""
+def _replicas(ctx):
+    """Table and figures for the agreement of independent chains (several replicas only)."""
     from loopsage.analysis.ensemble import replica_summary
-    from loopsage.viz.mc_figs import replica_figure
+    mc, g = ctx.mc, ctx.geom
     s = replica_summary(mc)
     emit_table("Replicas", ["Replica", "Seed", "Mean energy", "Std", "Unit"],
                [[k, c.meta["seed"], float(s["mean"][k]), float(s["std"][k]), "a.u."] for k, c in enumerate(mc.chains)],
                f"{len(mc.chains)} independent chains; R-hat = {s['rhat']:.3f} (close to 1 = agreement), "
                f"lowest pairwise occupancy correlation = {s['min_corr']:.2f}.", "monte_carlo")
     REGISTRY.fact("Replicas", f"{len(mc.chains)} (R-hat {s['rhat']:.2f})")
-    replica_figure(mc, g, s)
+    mc_figs.replica_figure(mc, g, s)
+    replica_figs.replica_maps_figure("replica_maps", "loop contact map", ctx.mc_replica_maps, g, "Contact strength", "monte_carlo")
 
 
+def _save_maps(folder, mc, n_beads, contact_map):
+    """Mean loops joining i and j, and the contact map built from them."""
+    folder.mkdir(parents=True, exist_ok=True)
+    np.save(folder / "mc_loop_counts.npy", loop_counts(mc, n_beads))
+    np.save(folder / "mc_contact_map.npy", contact_map)
 
-import numpy as np
-from loopsage.analysis import ensemble
-from loopsage.viz.map_figs import map_feature_report
-from loopsage.analysis.ensemble import acceptance_table, loop_lengths, occupancy
-from loopsage.analysis.ensemble import equilibrium_summary
-from loopsage.analysis.maps import loop_counts, loop_map
-from loopsage.common.genome import fmt_duration
-from loopsage.common.utils import describe_row, emit_table
-from loopsage.logger import get_logger
-from loopsage.monte_carlo.simulation import MCResult
-from loopsage.optimizer.objective import COMMUNICATION
-from loopsage.monte_carlo.simulation import run_mc
-from loopsage.reporting.report import REGISTRY
-from loopsage.viz import mc_figs
+
+def _per_replica(ctx):
+    """Maps and key figures of every replica, saved in its own metadata/ and visualizations/ replica_<k> folders (not in the report)."""
+    g, comp = ctx.geom, ctx.inputs.comp
+    for k, chain in enumerate(ctx.mc.chains):
+        c, m = chain.solo(), ctx.mc_replica_maps[k]
+        if ctx.cfg.save_metadata:
+            _save_maps(ctx.dirs.replica(k).metadata, c, g.n_beads, m)
+        with REGISTRY.scope(ctx.dirs.replica(k).figures):
+            mc_figs.energy_traces(c)
+            mc_figs.convergence(c)
+            mc_figs.lef_trajectories(c, g)
+            mc_figs.kymograph(c, g, ctx.inputs)
+            mc_figs.occupancy_lengths(c, g, ctx.inputs)
+            mc_figs.mc_heatmap(m, g)
+            map_features_figure("Loop ensemble (MC)", m, map_features(m, comp), g, "mc_features", ref=comp)
+
 
 log = get_logger(__name__)
 NAME, ATTR, CACHE = "mc", "mc", "mc.npz"
@@ -172,12 +192,14 @@ def describe(ctx):
         ["Rebinding jumps", dyn["rebinding_per_1000"], "per LEF per 1000 steps"], ["LEFs never moving after burn-in", dyn["frozen_lefs"], "fraction"],
     ], "How mobile the loops are: high stability and long dwell times mean loops are locked on anchors.", "monte_carlo")
     REGISTRY.fact("Anchor recall", f"{rec['recall']:.0%}")
-    ctx.mc_map = loop_map(ctx.mc_ens, g.n_beads, **(COMMUNICATION if ctx.cfg.optimize else {}))       # all replicas pooled; the map the optimizer scored (same communication)
+    comm = COMMUNICATION if ctx.cfg.optimize else {}                  # the map the optimizer scored (same communication)
+    ctx.mc_map = loop_map(ctx.mc_ens, g.n_beads, **comm)               # all replicas pooled
+    if ctx.replicas > 1:
+        ctx.mc_replica_maps = [loop_map(c, g.n_beads, **comm) for c in mc.chains]
     if ctx.cfg.save_metadata:
-        meta = ctx.dirs.data / "metadata"
-        meta.mkdir(exist_ok=True)
-        np.save(meta / "mc_loop_counts.npy", loop_counts(ctx.mc_ens, g.n_beads))      # mean loops joining i and j
-        np.save(meta / "mc_contact_map.npy", ctx.mc_map)                               # loop map with communication
+        _save_maps(ctx.dirs.metadata, ctx.mc_ens, g.n_beads, ctx.mc_map)
+        if ctx.replicas > 1:
+            np.save(ctx.dirs.metadata / "mc_contact_map_replica_std.npy", np.std(ctx.mc_replica_maps, axis=0))        # spread between replicas
     mc_figs.energy_traces(mc)
     mc_figs.convergence(mc)
     mc_figs.lef_trajectories(mc, g)
@@ -189,8 +211,9 @@ def describe(ctx):
     map_feature_report(ctx, "mc", ctx.mc_map, "Loop ensemble (MC)")
     _speed(ctx, mc, g)
     _nesting(ctx, mc, g)
-    if mc.replicas:
-        _replicas(mc, g)
+    if ctx.replicas > 1:
+        _replicas(ctx)
+        _per_replica(ctx)
     if m.get("epi_on"):                                           # epigenetic model: off unless epi_coeff != 0
         _epigenetic(ctx, mc, g)
 

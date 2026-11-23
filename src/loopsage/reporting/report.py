@@ -6,6 +6,7 @@
 import base64
 import datetime
 import html
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -61,21 +62,38 @@ class Registry:
     fig_dir: Path = None
     draw: bool = True                              # False: figures are not drawn (cfg.figures = off)
     capture: list = None                           # a list: figures are returned to the caller (Python interface) instead of saved
+    hidden: bool = False                           # True inside scope(): nothing is added to the report
 
     def reset(self, fig_dir=None, draw: bool = True):
-        self.items, self.facts, self.timings, self.fig_dir, self.draw, self.capture = [], [], [], fig_dir, draw, None
+        self.items, self.facts, self.timings, self.fig_dir, self.draw, self.capture, self.hidden = [], [], [], fig_dir, draw, None, False
+
+    @contextmanager
+    def scope(self, fig_dir):
+        """Save figures into fig_dir only (one replica's files); tables, facts and figures stay out of the report."""
+        saved = self.fig_dir, self.hidden
+        if fig_dir is not None:
+            Path(fig_dir).mkdir(parents=True, exist_ok=True)
+        self.fig_dir, self.hidden = fig_dir, True
+        try:
+            yield
+        finally:
+            self.fig_dir, self.hidden = saved
 
     def add_table(self, title, columns, rows, caption, section):
-        self.items.append(Tab(title, list(columns), rows, caption, section))
+        if not self.hidden:
+            self.items.append(Tab(title, list(columns), rows, caption, section))
 
     def add_block(self, title, html, caption, section):
-        self.items.append(Block(title, html, caption, section))
+        if not self.hidden:
+            self.items.append(Block(title, html, caption, section))
 
     def add_fig(self, fig: Fig):
-        self.items.append(fig)
+        if not self.hidden:
+            self.items.append(fig)
 
     def fact(self, label, value):
-        self.facts.append((label, str(value)))
+        if not self.hidden:
+            self.facts.append((label, str(value)))
 
     def of(self, section):
         return [i for i in self.items if i.section == section]

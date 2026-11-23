@@ -6,12 +6,12 @@ import json
 import threading
 from contextlib import nullcontext
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import numpy as np
 
-from loopsage.common.runtime import n_threads, stage_bar
+from loopsage.common.runtime import clear_stale, n_threads, replica_file, replica_seed, stage_bar
 from loopsage.common.utils import Timer
 from loopsage.logger import get_logger
 from loopsage.monte_carlo.energy import total_energy
@@ -56,6 +56,10 @@ class MCResult:
         """All independent chains, this one first."""
         return [self] + list(self.replicas)
 
+    def solo(self) -> "MCResult":
+        """This chain alone (without the other replicas attached)."""
+        return replace(self, replicas=[])
+
     def pooled(self) -> "MCResult":
         """All chains' post-burn-in snapshots joined in time (burn-in 0): the ensemble used for maps and MD."""
         if not self.replicas:
@@ -65,17 +69,18 @@ class MCResult:
         return MCResult(*[cat(k) for k in _ARRAYS[:-1]], np.sum([c.acc for c in self.chains], axis=0), meta)
 
     def save(self, path) -> None:
-        """Write this chain to `path`; further chains go to mc_r1.npz, mc_r2.npz, ... beside it."""
-        np.savez_compressed(path, meta=np.array(json.dumps(self.meta)), **{k: getattr(self, k) for k in _ARRAYS})
-        for k, r in enumerate(self.replicas, start=1):
-            r.save(Path(path).with_name(f"mc_r{k}.npz"))
+        """Write the chain to `path` (one replica), or every chain to mc_r0.npz, mc_r1.npz, ... beside it."""
+        clear_stale(path, len(self.chains))
+        for k, c in enumerate(self.chains):
+            np.savez_compressed(replica_file(path, k, len(self.chains)), meta=np.array(json.dumps(c.meta)), **{a: getattr(c, a) for a in _ARRAYS})
 
     @classmethod
     def load(cls, path) -> "MCResult":
-        z = np.load(path, allow_pickle=False)
-        res = cls(**{k: z[k] for k in _ARRAYS}, meta=json.loads(str(z["meta"])))
-        for k in range(1, res.meta.get("replicas", 1) if res.meta.get("replica", 0) == 0 else 1):
-            res.replicas.append(cls.load(Path(path).with_name(f"mc_r{k}.npz")))
+        """Read `path`, or the `_r<k>` files saved for several replicas (replica 0 returned, the others in .replicas)."""
+        read = lambda f: (lambda z: cls(**{a: z[a] for a in _ARRAYS}, meta=json.loads(str(z["meta"]))))(np.load(f, allow_pickle=False))
+        res = read(path if Path(path).exists() else replica_file(path, 0, 2))
+        n = res.meta.get("replicas", 1)
+        res.replicas = [read(replica_file(path, k, n)) for k in range(1, n)]
         return res
 
 
@@ -125,7 +130,8 @@ def run_mc(cfg, inputs, geom, quiet: bool = False) -> MCResult:
         def advance(k):
             with lock:
                 bar(k)
-        run = lambda r: _chain(cfg, p, n_tot, n_save, geom.n_beads, base + r, advance)
+        seeds = [replica_seed(base, r) for r in range(n_rep)]                  # independent random streams, so independent initial loops
+        run = lambda r: _chain(cfg, p, n_tot, n_save, geom.n_beads, seeds[r], advance)
         if workers > 1:
             with ThreadPoolExecutor(workers) as ex:
                 out = list(ex.map(run, range(n_rep)))
@@ -138,6 +144,6 @@ def run_mc(cfg, inputs, geom, quiet: bool = False) -> MCResult:
                 epi_on=bool(p.epi_norm != 0.0), lef_speed_dist=cfg.lef_speed_dist, lef_rw=bool(cfg.lef_rw), lef_speed_spread=cfg.lef_speed_spread,
                 lef_fast_fraction=cfg.lef_fast_fraction, lef_fast_ratio=cfg.lef_fast_ratio,
                 replicas=n_rep, threads=workers, seed=int(base))
-    chains = [MCResult(*rec[:7], rec[7], rec[8], acc, dict(meta, replica=r, seed=int(base) + r, lef_speed=v.tolist())) for r, (rec, acc, v) in enumerate(out)]
+    chains = [MCResult(*rec[:7], rec[7], rec[8], acc, dict(meta, replica=r, seed=seeds[r], lef_speed=v.tolist())) for r, (rec, acc, v) in enumerate(out)]
     chains[0].replicas = chains[1:]
     return chains[0]

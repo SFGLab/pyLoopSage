@@ -126,23 +126,25 @@ def run_mc(cfg: Config, inputs, geom=None):
 
 
 def run_md(cfg: Config, mc, geom=None, folder=None):
-    """3D molecular dynamics (OpenMM) from the Monte Carlo loops: returns an MDResult (coords, avg_map, rg, epot, ...).
-    Without `folder` nothing is written; with a folder the structures and maps are saved there (as the command does)."""
+    """3D molecular dynamics (OpenMM) from the Monte Carlo loops: returns an MDResult (coords, avg_map, rg, epot, ...), one independent run per replica
+    (`.chains`; `.pooled()` joins them). Without `folder` nothing is written; with a folder the structures and maps are saved there (as the command does)."""
     from loopsage.common.runtime import apply_threads, OutputDirs
     from loopsage.logger import set_quiet
-    from loopsage.molecular_dynamics.engine import run_md as _run_md
+    from loopsage.molecular_dynamics.engine import run_md_replicas as _run_md
     set_quiet(cfg.quiet)
     apply_threads(cfg)
     c = copy.copy(cfg)
     root = Path(folder) if folder else _tmp()
     if not folder:
         c.save_ensemble = c.save_metadata = False
-    dirs = OutputDirs(root)
-    for d in (dirs.data / "metadata", dirs.structures):
-        d.mkdir(parents=True, exist_ok=True)
+    dirs = OutputDirs(root, len(getattr(mc, "chains", [mc])))
+    for k in range(dirs.n_replicas):
+        for d in (dirs.replica(k).metadata, dirs.replica(k).structures):
+            d.mkdir(parents=True, exist_ok=True)
+    dirs.metadata.mkdir(parents=True, exist_ok=True)
     if c.seed is not None:
         np.random.seed(c.seed)
-    return _run_md(c, geom or geometry(cfg), mc.pooled() if hasattr(mc, "pooled") else mc, dirs)
+    return _run_md(c, geom or geometry(cfg), mc, dirs)
 
 
 def run(config=None, region=None, **params):

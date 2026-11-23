@@ -1,12 +1,11 @@
-"""Stage 3: 3D polymer molecular dynamics."""
-
+"""Stage 3: 3D polymer molecular dynamics, one independent run per replica."""
+from loopsage.analysis.replicas import map_correlation, map_spread, mean_offdiag
 from loopsage.common.genome import fmt_duration
 from loopsage.common.utils import describe_row, emit_table
-from loopsage.molecular_dynamics.engine import run_md
-from loopsage.molecular_dynamics.engine import MDResult
+from loopsage.molecular_dynamics.engine import MDResult, run_md_replicas
 from loopsage.reporting.report import REGISTRY
+from loopsage.viz import map_figs, replica_figs
 from loopsage.viz.map_figs import map_feature_report
-from loopsage.viz import map_figs
 
 NAME, ATTR, CACHE = "md", "md", "md.npz"
 
@@ -16,15 +15,40 @@ def enabled(cfg) -> bool:
 
 
 def compute(ctx):
-    return run_md(ctx.cfg, ctx.geom, ctx.mc_ens, ctx.dirs)
+    return run_md_replicas(ctx.cfg, ctx.geom, ctx.mc, ctx.dirs)
 
 
 def load(path):
     return MDResult.load(path)
 
 
+def _replicas(ctx):
+    """Table and figures for the agreement of the independent MD runs (several replicas only)."""
+    md, g = ctx.md, ctx.geom
+    corr = map_correlation([c.avg_map for c in md.chains])
+    emit_table("MD replicas", ["Replica", "Seed", "Frames", "Mean R_g", "Mean potential energy"],
+               [[k, c.meta["seed"], len(c.rg), f"{c.rg.mean():.4g} nm", f"{c.epot.mean():.5g} kJ/mol"] for k, c in enumerate(md.chains)],
+               f"{len(md.chains)} independent MD runs, each from its own Monte Carlo chain, start structure and random stream; "
+               f"mean pairwise correlation of their contact maps = {mean_offdiag(corr):.3f}.", "molecular_dynamics")
+    REGISTRY.fact("MD map agreement", f"r = {mean_offdiag(corr):.2f}")
+    replica_figs.replica_maps_figure("md_replica_maps", "3D contact map", [c.avg_map for c in md.chains], g, "Contact probability (0-1)", "molecular_dynamics")
+    replica_figs.md_distance_figure([c.avg_dist for c in md.chains], g)
+    replica_figs.md_traces_figure(md)
+
+
+def _per_replica(ctx):
+    """The MD figures of every replica, saved in its own visualizations/replica_<k> folder (not in the report)."""
+    for k, md in enumerate(ctx.md.chains):
+        with REGISTRY.scope(ctx.dirs.replica(k).figures):
+            map_figs.md_maps(md, ctx.geom)
+            map_figs.md_series(md)
+            map_figs.md_geometry(md, ctx.mc.chains[k], ctx.geom)
+            if ctx.mc_replica_maps:
+                map_figs.mc_vs_md(ctx.mc_replica_maps[k], md.avg_map, ctx.geom)
+
+
 def describe(ctx):
-    md, m = ctx.md, ctx.md.meta
+    md, m = ctx.md_ens, ctx.md_ens.meta
     n = m["n_frames"]
     REGISTRY.fact("MD frames", n)
     emit_table("Molecular dynamics run", ["Quantity", "Value", "Unit"], [
@@ -38,7 +62,8 @@ def describe(ctx):
         describe_row("Radius of gyration", md.rg, "nm"), describe_row("Potential energy", md.epot, "kJ/mol"),
     ], "Radius of gyration measures compaction of the 3D structure.", "molecular_dynamics")
     map_figs.md_maps(md, ctx.geom)
-    map_figs.md_series(md)
+    if ctx.replicas == 1:                                          # with replicas the frames of different runs are not one time series (see _replicas)
+        map_figs.md_series(md)
     geo = map_figs.md_geometry(md, ctx.mc_ens, ctx.geom)
     emit_table("3D geometry", ["Quantity", "Value", "Unit"], [
         ["Scaling exponent nu (R ~ s^nu)", geo["nu"], "dimensionless"],
@@ -56,6 +81,9 @@ def describe(ctx):
             *([["Compartments (MC epigenetic state vs MD PC1)", c["pc1"], "|Pearson r|"]] if c["pc1"] == c["pc1"] else []), ["Insulation score", c["insulation"], "Pearson r"],
             ["P(s) decay (log)", c["ps"], "Pearson r"], ["Boundaries within 2 beads", c["boundary_overlap"], "fraction of MC boundaries"],
         ], "How well the 3D structures reproduce the features of the loop ensemble.", "molecular_dynamics")
+    if ctx.replicas > 1:
+        _replicas(ctx)
+        _per_replica(ctx)
 
 
 if __name__ == "__main__":

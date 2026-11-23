@@ -3,13 +3,13 @@
 - Chain the stages; each one computes (or loads a cached result) and describes it.
 """
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
 
 from loopsage.common.genome import fmt_duration, Geometry
-from loopsage.common.runtime import apply_threads, create_run_dirs, OutputDirs
+from loopsage.common.runtime import apply_threads, cache_exists, create_run_dirs, OutputDirs
 from loopsage.common.utils import Timer
 from loopsage.knots import stage as stage_knots
 from loopsage.logger import get_logger, print_banner, set_quiet, setup_logging
@@ -32,14 +32,15 @@ class RunContext:
     mc: Any = None           # monte_carlo.result.MCResult
     mc_map: Any = None       # contact map implied by the MC loops (times the epigenetic checkerboard when enabled)
     mc_loop_map: Any = None  # loop-only map, set when the epigenetic model is on
-    md: Any = None           # molecular_dynamics.result.MDResult
+    md: Any = None           # molecular_dynamics.engine.MDResult (replica 0; the others in .replicas)
     structure: Any = None    # pipeline.stage_structure.StructureResult
     validation: Any = None   # validation.compare.ValidationResult
     features: Any = None     # {"mc": MapFeatures, "md": MapFeatures}
     links: Any = None        # LinkResult (optional knots stage)
     report_path: Any = None
-    _pool: Any = None
+    _pools: dict = field(default_factory=dict)
     optimization: Any = None   # optimizer.nelder_mead.OptResult (with --optimize)
+    mc_replica_maps: Any = None  # loop contact map of each replica (several replicas only)
     mc_epi_profile: Any = None   # average epigenetic state per bead (MC compartment track), None when the epigenetic model is off
     val_source: str = ""     # which contact map was validated
     _hic: Any = None
@@ -57,15 +58,29 @@ class RunContext:
         """(map on the bead grid with NaN = masked, info) of the optional --hic file; None without one."""
         if self._hic is None and self.cfg.hic_file:
             from loopsage.preproc.hic import hic_for_run
-            self._hic = hic_for_run(self.cfg, self.geom, self.dirs.data / "metadata")
+            self._hic = hic_for_run(self.cfg, self.geom, self.dirs.metadata)
         return self._hic
+
+    def _pooled(self, name):
+        """All replicas of `mc` / `md` pooled (the result itself with one replica); cached until the stage result changes."""
+        src = getattr(self, name)
+        if src is not None and (name not in self._pools or self._pools[name][0] is not src):
+            self._pools[name] = (src, src.pooled())
+        return self._pools[name][1] if src is not None else None
 
     @property
     def mc_ens(self):
-        """MC ensemble for maps, MD and structure checks: all chains pooled (replica 0 when there is one chain)."""
-        if self._pool is None or self._pool[0] is not self.mc:
-            self._pool = (self.mc, self.mc.pooled())
-        return self._pool[1]
+        """MC ensemble for maps, MD and structure checks: all chains pooled."""
+        return self._pooled("mc")
+
+    @property
+    def md_ens(self):
+        """MD result for the whole-run analyses: all replicas pooled; its frame_idx indexes mc_ens."""
+        return self._pooled("md")
+
+    @property
+    def replicas(self) -> int:
+        return len(self.mc.chains) if self.mc is not None else max(int(self.cfg.replicas), 1)
 
 
 # ---- Chain the stages; each one computes (or loads a cached result) and describes it ----
@@ -86,10 +101,12 @@ def make_context(cfg, reuse_latest=False) -> RunContext:
         cfg.source["seed"] = "random"
     np.random.seed(cfg.seed)                                       # numpy state of the main process (MD start structure, forces)
     geom = build_geometry(cfg)
-    dirs = create_run_dirs(cfg.out_path, geom, cfg.run_number, reuse_latest)
+    dirs = create_run_dirs(cfg.out_path, geom, cfg.replicas)
     setup_logging(cfg.verbosity, dirs.log_file)
     REGISTRY.reset(dirs.figures, cfg.figures)
     log.step("Run folder: %s", dirs.root)
+    if not reuse_latest and any(dirs.data.iterdir()):
+        log.warning("The run folder already has results; they are overwritten (use another --out folder to keep both).")
     log.step("Region %s, %d threads, %d replica(s), seed %d", geom.label, apply_threads(cfg), cfg.replicas, cfg.seed)
     for note in cfg.notes:
         log.warning(note)
@@ -101,7 +118,7 @@ def _run_stage(ctx, st, compute: bool, k: int = 0, n: int = 0):
     """Compute the stage (or load its cache), then describe it."""
     path = ctx.dirs.data / st.CACHE if st.CACHE else None
     title = TITLES.get(st.NAME, st.NAME)
-    if not compute and path is not None and path.exists():
+    if not compute and path is not None and cache_exists(path):
         log.stage("[%d/%d] %s: loading the saved result (%s)", k, n, title, path.name)
         obj = st.load(path)
     else:

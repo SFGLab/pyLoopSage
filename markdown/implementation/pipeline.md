@@ -66,10 +66,10 @@ Because the Monte Carlo result is saved, you can change only MD options (time st
 
 ## The run folder
 
-Every run writes its files into its own folder, named after the region and a run number:
+Every run writes its files into its own folder, named after the region:
 
 ```text
-results/chr1_78000000_92000000_1/
+results/chr1_78000000_92000000/
   config_resolved.ini     every option used, and where its value came from
   data/                   saved stage results (inputs.npz, mc.npz, md.npz, ...)
     metadata/             maps and matrices as .npy
@@ -78,6 +78,8 @@ results/chr1_78000000_92000000_1/
   report/report.html      the report
   logs/loopsage.log       the full log
 ```
+
+With `replicas` ≥ 2 the per-replica metadata, structures and figures go to `replica_<k>` subfolders of `data/metadata/`, `structures/` and `visualizations/`, and the report adds the comparison between replicas (see [Output](../reference/output.md)). With one replica there are no such subfolders.
 
 The file `config_resolved.ini` is the best record of a run: it contains every option, and for each one whether it was a default, came from the file, from the command line, or was set by the optimizer. With the same file and the same `--seed` (and `--threads 1` for the MD) a run can be repeated exactly.
 

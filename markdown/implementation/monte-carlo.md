@@ -126,7 +126,7 @@ Sliding picks the LEF uniformly by default, so all LEFs are equally fast. With `
 
 ## Snapshots and statistics
 
-The stage runs `n_steps` steps and saves the loops of all LEFs (and all states) every `mc_step` steps. The first `burnin` steps are *burn-in*: the system is still forgetting its random start (and, with annealing, is hot), so these snapshots are kept but not used for statistics. The snapshots after the burn-in are the **production** ensemble, and with `replicas` > 1 several independent chains are run in parallel and pooled. For every snapshot the stage also records the energy terms (total, binding, crossing, folding) and the *unfolded fraction*, the share of the chain not covered by any loop.
+The stage runs `n_steps` steps and saves the loops of all LEFs (and all states) every `mc_step` steps. The first `burnin` steps are *burn-in*: the system is still forgetting its random start (and, with annealing, is hot), so these snapshots are kept but not used for statistics. The snapshots after the burn-in are the **production** ensemble, and with `replicas` > 1 several independent chains are run in parallel, each with its own seed and its own random initial loops (and epigenetic states), and pooled for the maps; every chain is also analysed on its own. For every snapshot the stage also records the energy terms (total, binding, crossing, folding) and the *unfolded fraction*, the share of the chain not covered by any loop.
 
 !!! tip "Checking convergence"
     The report shows the energy terms after the burn-in with a *drift*: the difference between the two halves of the production run in units of the standard deviation. A drift well below 1 means that the energy is stable; a large drift means that the run is too short (raise `n_steps`) or the burn-in too small.
@@ -148,7 +148,7 @@ n_lef2     = 0           # a second family of extruders
 lef_rw     = True        # legs slide as a random walk                   (CLI: --lef-rw)
 lef_speed_dist = constant   # constant, maxwell, lognormal, two_state    (CLI: --lef-speed)
 variable_sliding_step = False   # step uniform in [1, shortest input loop] beads
-replicas   = 1           # independent chains, pooled                    (CLI: --n-replicas)
+replicas   = 1           # independent replicas (MC chain + 3D run each)  (CLI: --n-replicas)
 
 [energy]
 folding_coeff  = 1.0     # f:     reward for long loops

@@ -8,7 +8,7 @@ By default results go to a `results/` folder inside the project (change it with 
 
 ```text
 results/
-└── chr1_77000000_95000000_1/          <chromosome>_<start>_<end>_<run number>
+└── chr1_77000000_95000000/            <chromosome>_<start>_<end>
     ├── report/
     │   └── report.html                the full report: open this first
     ├── visualizations/                every figure, as .png and .svg
@@ -22,16 +22,43 @@ results/
     └── config_resolved.ini            every setting the run used
 ```
 
-### The run number
+### Several replicas
 
-The last part of the folder name, `_1` in the example, is the **run number**. It separates repeated runs of the *same region*, so a new run never overwrites an old one:
+With one replica (the default) the folders above are exactly what you get: no replica numbering anywhere. With `--n-replicas N` (N ≥ 2) every replica is a fully independent simulation: its own Monte Carlo chain (random start, own seed), and its own 3D run (own start structure, loops and random stream). The seeds follow from `--seed`: replica 0 uses it, the others get independent streams derived from it, and each is listed in the *Replicas* tables of the report. Everything stays in the same run folder; only the per-replica files get a `replica_<k>` subfolder (`k` = 0, 1, ...):
 
-- By default LoopSage takes the **next free number** for that region: `chr1_77000000_95000000_1`, then `..._2`, `..._3`.
-- Another region has its own numbering: `chr2_10000000_30000000_1`.
-- `--run N` (key `run_number`) chooses the number yourself. This is useful to put a run in a known place, or to continue a run (see [Stopping and continuing](#stopping-and-continuing)).
+```text
+chr1_77000000_95000000/
+├── visualizations/
+│   ├── replica_maps.png, md_replica_maps.png, ...   diagnostics across all replicas (also in the report)
+│   └── replica_0/, replica_1/, ...                  figures of one replica, incl. its 3d/ viewer and videos
+├── structures/
+│   └── replica_0/, replica_1/, ...                  init_structure.cif, trajectory.dcd, ensemble/ of that replica
+└── data/
+    ├── mc_r0.npz, mc_r1.npz, ...  md_r0.npz, md_r1.npz, ...   cached chains and MD runs, one file per replica
+    └── metadata/
+        ├── mc_contact_map.npy, md_avg_distance.npy, ...   all replicas pooled
+        ├── *_replica_std.npy                              spread between replicas
+        └── replica_0/, replica_1/, ...                    the matrices of one replica
+```
+
+The report and the files in the main folders show the **pooled** result (all replicas together) plus the comparison between replicas; the per-replica figures are only saved as files, to keep the report short. The diagnostics across replicas are:
+
+| Figure | What it shows |
+|---|---|
+| `replicas` | energy of each chain, loop occupancy and its correlation (convergence of the Monte Carlo) |
+| `replica_maps` | mean loop contact map over replicas, its standard deviation between replicas, and the correlation of the replica maps |
+| `md_replica_maps` | the same for the 3D contact maps |
+| `md_replica_distances` | mean 3D distance map, its spread (std) between replicas and the relative spread std / mean |
+| `md_replicas` | radius of gyration and potential energy along the MD frames of every replica |
+
+**Standard deviation between replicas** is, for every pair of beads, the standard deviation of that value over the replicas' own averages: it is large where the result depends on the random start. The `*_replica_std.npy` files hold the same matrices.
+
+### Repeated runs
+
+The folder is named after the region only, `chr1_77000000_95000000`; it has no run number. Running the *same region* again into the same `--out` folder **overwrites** its results (the log warns about it). To keep several runs, give each its own `--out` folder, for example `--out results_test1`.
 
 !!! tip "Which run was which?"
-    The folder name only tells the region and the number. What made the runs different is written in `config_resolved.ini` inside each folder (see below), so compare those files, not the names.
+    The folder name only tells the region. What made the runs different is written in `config_resolved.ini` inside each folder (see below), so compare those files, not the names.
 
 ## What is in each folder
 
@@ -96,8 +123,8 @@ Each stage stores its result here, so that later steps and your own scripts can 
 | `loops_annotated.bedpe` | motif finder | your loops with the CTCF orientation probabilities as columns 8 and 9 |
 | `motif_loops.tsv`, `motif_anchors.tsv`, `motif_stats.json` | motif finder | one row per kept loop and per scanned anchor with the motif scores, and the counts at each filtering step |
 | `optimization.json` | optimizer | the full record of the search |
-| `mc.npz` | Monte Carlo | the loop-extrusion simulation of replica 0 (arrays below). Further replicas: `mc_r1.npz`, `mc_r2.npz`, ... |
-| `md.npz` | molecular dynamics | the 3D coordinates and maps (arrays below) |
+| `mc.npz` | Monte Carlo | the loop-extrusion simulation (arrays below). With several replicas one file per replica instead: `mc_r0.npz`, `mc_r1.npz`, ... |
+| `md.npz` | molecular dynamics | the 3D coordinates and maps (arrays below). With several replicas: `md_r0.npz`, `md_r1.npz`, ... |
 | `links.npz` | topology | linking numbers per frame (only with `--knots`) |
 
 Because these files exist, you can stop and continue a run (see below).
@@ -144,6 +171,8 @@ The *metadata* are the **small matrices and numbers that summarise a run**. They
 | `mc_contact_map.npy` | the loop map built from the same ensemble, with communication between loops (the map the optimizer scores) | `save_metadata` |
 | `md_avg_distance.npy`, `md_std_distance.npy` | mean and standard deviation of the 3D distance in nm, over the MD frames | `save_metadata`, MD on |
 | `md_avg_strength.npy`, `md_std_strength.npy` | mean and standard deviation of the contact strength over the MD frames | `save_metadata`, MD on |
+| `mc_contact_map_replica_std.npy`, `md_avg_distance_replica_std.npy`, `md_avg_strength_replica_std.npy` | standard deviation between the replicas of the maps above | 2 or more replicas |
+| `replica_<k>/` (same file names) | the matrices of replica `k` alone; the files above are then pooled over all replicas | 2 or more replicas |
 | `optimized_parameters.json` | the values the optimizer chose (`chosen`: `n_lef`, `folding_coeff`, `bind_coeff`, temperatures), the starting point (`start`), the best result (`best`), whether it converged, number of evaluations and time | `--optimize`. Always saved, it is tiny |
 | `hic_map.npy`, `hic_info.json` | the Hi-C reference map of the region and where it came from (file, normalisation, resolution) | a Hi-C file is given (`--hic`) |
 
@@ -170,7 +199,6 @@ Where the files go and how they are numbered:
 | What | Command line | Config key | Meaning |
 |---|---|---|---|
 | Results folder | `--out PATH`, `-o PATH` | `out_path` | the folder that holds the run folders (default `results/`) |
-| Run number | `--run N` | `run_number` | choose the number instead of the next free one |
 | Random seed | `--seed N` | `seed` | repeat a run exactly. Without it a random seed is chosen and stored in `config_resolved.ini` |
 
 A few examples:
@@ -203,10 +231,10 @@ All keys, with their units and defaults, are in the [config reference](config.md
 Every stage saves its result in `data/`. If you run a **single stage** again on an existing run, the stages before it are loaded from `data/` instead of being computed again, and only the chosen stage runs. For example, to redo the Monte Carlo stage with new settings on top of the saved inputs:
 
 ```bash
-python -m loopsage.pipeline.stage_mc -c config.ini --run 1
+python -m loopsage.pipeline.stage_mc -c config.ini
 ```
 
-The stage modules are `stage_preproc`, `stage_optimize`, `stage_mc`, `stage_md`, `stage_structure` and `stage_report` (all in `loopsage.pipeline`). Without `--run`, the **latest** existing run of the region is used.
+The stage modules are `stage_preproc`, `stage_optimize`, `stage_mc`, `stage_md`, `stage_structure` and `stage_report` (all in `loopsage.pipeline`). The existing run folder of the region (same `--out`) is the one used.
 
 ## Using the data in your own analysis
 
@@ -216,7 +244,7 @@ Everything above can be read without LoopSage. In Python:
 import json
 import numpy as np
 
-run = "results/chr1_77000000_95000000_1"
+run = "results/chr1_77000000_95000000"
 
 mc = np.load(f"{run}/data/mc.npz")
 meta = json.loads(str(mc["meta"]))                   # run settings stored with the arrays
@@ -266,5 +294,5 @@ print(table)                                              # one row per run, rea
 Three habits make such a comparison reliable:
 
 - **Compare after burn-in only**, as above, so the random start does not enter the numbers.
-- **Use replicas.** With `--n-replicas 4` the four chains are stored in `mc.npz` and `mc_r1.npz` to `mc_r3.npz`; the spread between them is the noise level, and a difference smaller than that is not a result.
-- **Fix the seed** (`--seed`) when you want a difference to come from a setting and not from chance. Monte Carlo is exactly repeatable with the same seed; the 3D stage is repeatable only with `--threads 1`.
+- **Use replicas.** With `--n-replicas 4` the four independent chains (and 3D runs) are stored in `mc_r0.npz` to `mc_r3.npz` (and `md_r0.npz` to `md_r3.npz`) and in `replica_<k>` folders; the spread between them is the noise level, and a difference smaller than that is not a result.
+- **Fix the seed** (`--seed`) when you want a difference to come from a setting and not from chance. Monte Carlo is exactly repeatable with the same seed, and replica `k` is the same as a single run started with the seed listed for it; the 3D stage is repeatable only with `--threads 1`.

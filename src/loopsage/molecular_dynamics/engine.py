@@ -2,12 +2,13 @@
 
 - Distances -> contact probabilities (Hi-C-like maps) from 3D coordinates.
 - OpenMM engine: relax a polymer under the loop constraints of each MC snapshot.
+- Replicas: every Monte Carlo chain gets its own independent MD run.
 """
 import json
 import os
 import tempfile
 from pathlib import Path
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import numpy as np
 import openmm as mm
@@ -15,7 +16,7 @@ import openmm.unit as u
 from openmm.app import DCDReporter, ForceField, PDBxFile, Simulation
 from scipy.spatial.distance import pdist, squareform
 
-from loopsage.common.runtime import n_threads, stage_bar
+from loopsage.common.runtime import clear_stale, n_threads, replica_file, replica_seed, stage_bar
 from loopsage.common.utils import Timer
 from loopsage.logger import get_logger
 from loopsage.knots.crossing import crossings
@@ -40,9 +41,37 @@ class MDResult:
     meta: dict = field(default_factory=dict)   # platform, runtime_s, dt_fs, steps per frame...
     avg_dist: np.ndarray = None    # mean pairwise distance over frames, nm
     std_dist: np.ndarray = None    # std of the pairwise distance over frames, nm
+    replicas: list = field(default_factory=list)   # the other independent MD runs (this object is replica 0)
+
+    @property
+    def chains(self) -> list:
+        """All independent MD runs, this one first."""
+        return [self] + list(self.replicas)
+
+    def solo(self) -> "MDResult":
+        """This run alone (without the other replicas attached)."""
+        return replace(self, replicas=[])
+
+    def pooled(self) -> "MDResult":
+        """All replicas' frames joined; frame_idx then indexes the pooled Monte Carlo ensemble (MCResult.pooled)."""
+        if not self.replicas:
+            return self
+        ch, n = self.chains, [len(c.coords) for c in self.chains]
+        prod = [c.meta["mc_n_samples"] - c.meta["mc_burnin_idx"] for c in ch]             # snapshots each chain adds to the pooled ensemble
+        idx = [c.frame_idx - c.meta["mc_burnin_idx"] + off for c, off in zip(ch, np.cumsum([0] + prod[:-1]))]
+        avg, std = _pool_moments([c.avg_map for c in ch], [c.std_map for c in ch], n)
+        d_avg, d_std = _pool_moments([c.avg_dist for c in ch], [c.std_dist for c in ch], n) if ch[0].avg_dist is not None else (None, None)
+        meta = dict(self.meta, n_frames=sum(n), runtime_s=sum(c.meta["runtime_s"] for c in ch), pooled_chains=len(ch))
+        if "topology" in self.meta:                                                          # one number per frame: join them
+            meta["topology"] = dict(self.meta["topology"], **{k: sum((c.meta["topology"][k] for c in ch), []) for k in _TOPO})
+        return MDResult(np.concatenate([c.coords for c in ch]), avg, std, np.concatenate([c.rg for c in ch]), np.concatenate([c.epot for c in ch]),
+                        np.concatenate(idx), meta, d_avg, d_std)
 
     def save(self, path) -> None:
-        np.savez_compressed(path, meta=np.array(json.dumps(self.meta)), **{k: getattr(self, k) for k in _ARRAYS + _DIST})
+        """Write the run to `path` (one replica), or every run to md_r0.npz, md_r1.npz, ... beside it."""
+        clear_stale(path, len(self.chains))
+        for k, c in enumerate(self.chains):
+            np.savez_compressed(replica_file(path, k, len(self.chains)), meta=np.array(json.dumps(c.meta)), **{a: getattr(c, a) for a in _ARRAYS + _DIST})
 
     def save_maps(self, folder) -> None:
         """Average / std distance and strength matrices as .npy files."""
@@ -53,9 +82,25 @@ class MDResult:
 
     @classmethod
     def load(cls, path) -> "MDResult":
-        z = np.load(path, allow_pickle=False)
-        extra = {k: z[k] for k in _DIST if k in z.files}                 # absent in older runs
-        return cls(**{k: z[k] for k in _ARRAYS}, meta=json.loads(str(z["meta"])), **extra)
+        def read(f):
+            z = np.load(f, allow_pickle=False)
+            extra = {k: z[k] for k in _DIST if k in z.files}                 # absent in older runs
+            return cls(**{k: z[k] for k in _ARRAYS}, meta=json.loads(str(z["meta"])), **extra)
+        res = read(path if Path(path).exists() else replica_file(path, 0, 2))
+        n = res.meta.get("replicas", 1)
+        res.replicas = [read(replica_file(path, k, n)) for k in range(1, n)]
+        return res
+
+
+_TOPO = ("events", "passage", "leak", "created", "removed", "rejected")
+
+
+def _pool_moments(means, stds, n):
+    """Mean and std of the union of groups, from each group's mean, std and size."""
+    w = np.asarray(n, float) / np.sum(n)
+    mean = sum(wi * m for wi, m in zip(w, means))
+    var = sum(wi * (s ** 2 + m ** 2) for wi, m, s in zip(w, means, stds)) - mean ** 2
+    return mean, np.sqrt(np.maximum(var, 0.0))
 
 
 # ---- Distances -> contact probabilities (Hi-C-like maps) from 3D coordinates ----
@@ -107,20 +152,23 @@ log = get_logger(__name__)
 class LoopMD:
     """One MD frame per MC snapshot: update loop springs, integrate, record."""
 
-    def __init__(self, cfg, geom, mc, dirs):
-        self.cfg, self.mc, self.dirs, self.n = cfg, mc, dirs, geom.n_beads
+    def __init__(self, cfg, geom, mc, dirs, replica: int = 0, skip_burnin: bool = None):
+        self.cfg, self.mc, self.dirs, self.n, self.replica = cfg, mc, dirs, geom.n_beads, replica
+        self.seed = replica_seed(cfg.seed or 0, replica, 1)                    # own random stream: start structure, thermostat noise, topoisomerase
         self._scratch = None if cfg.save_ensemble else tempfile.TemporaryDirectory(prefix="loopsage_struct_")    # OpenMM needs the files; off = they go to a temporary folder
         self.struct_dir = dirs.structures if cfg.save_ensemble else Path(self._scratch.name)
         self.comps = cfg.do_compartments and mc.meta["epi_on"]
         if cfg.do_compartments and not self.comps:
             log.warning("do_compartments needs epi_coeff > 0 in the MC stage: compartments disabled.")
-        first = mc.burnin_idx if cfg.md_skip_burnin else 0
+        first = mc.burnin_idx if (cfg.md_skip_burnin if skip_burnin is None else skip_burnin) else 0
         self.frames = np.arange(first, mc.n_samples)
         self.local = cfg.topo_mode == "local"                                  # optional topoisomerase model
         self.track = bool(cfg.track_crossings or cfg.detect_knots)             # optional crossing counter
         self.ghost = np.zeros(self.n, bool)                                    # beads without excluded volume right now
-        self.rng = np.random.default_rng((cfg.seed or 0) + 17)
-        self.topo_log = {k: [] for k in ("events", "passage", "leak", "created", "removed", "rejected")}
+        self.rng = np.random.default_rng(self.seed + 17)
+        self.topo_log = {k: [] for k in _TOPO}
+        self.tag = f" replica {replica}" if dirs.rep is not None else ""        # log / progress-bar wording when there are several replicas
+        self.label = "Molecular dynamics" + (f" r{replica}" if self.tag else "")
 
     def _candidates(self):
         """Platform names to try, best first: the requested one (unless 'auto'), then CUDA, OpenCL, CPU, Reference."""
@@ -142,7 +190,7 @@ class LoopMD:
         for name in self._candidates():
             integrator = mm.LangevinIntegrator(cfg.sim_temp * u.kelvin, cfg.friction / u.picosecond, cfg.integrator_step * u.femtosecond)
             if cfg.seed is not None:
-                integrator.setRandomNumberSeed(cfg.seed)
+                integrator.setRandomNumberSeed(self.seed)
             props = {"Threads": str(self._cpu_threads())} if name == "CPU" else {}
             if cfg.device not in ("", None) and name in ("CUDA", "OpenCL"):
                 props["DeviceIndex"] = str(cfg.device)
@@ -174,6 +222,8 @@ class LoopMD:
         """Initial structure, force field, minimisation."""
         cfg = self.cfg
         log.info("MD: building the initial %s structure and force field (%d beads)", cfg.initial_structure_type, self.n)
+        if self.replica:                                                       # replica 0 continues the run's numpy stream; the others start their own
+            np.random.seed(self.seed)
         write_mmcif(make_structure(self.n, cfg.initial_structure_type), self.struct_dir / "init_structure.cif")
         write_psf(self.n, self.struct_dir / "topology.psf")
         pdb = PDBxFile(str(self.struct_dir / "init_structure.cif"))
@@ -282,10 +332,10 @@ class LoopMD:
 
     def run(self) -> MDResult:
         cfg, nf = self.cfg, len(self.frames)
-        log.step("MD: simulating %d frames x %d steps (%.1f ps each)", nf, cfg.sim_step, cfg.sim_step * cfg.integrator_step / 1000)
+        log.step("MD%s: simulating %d frames x %d steps (%.1f ps each)", self.tag, nf, cfg.sim_step, cfg.sim_step * cfg.integrator_step / 1000)
         coords, rg, epot = np.zeros((nf, self.n, 3), np.float32), np.zeros(nf), np.zeros(nf)
         maps, dists = RunningMean(), RunningMean()
-        with Timer() as t, stage_bar("Molecular dynamics", nf) as advance:
+        with Timer() as t, stage_bar(self.label, nf) as advance:
             for k, i in enumerate(self.frames):
                 self._update(i)
                 self._frame(i) if (self.local or self.track) else self.sim.step(cfg.sim_step)
@@ -297,14 +347,15 @@ class LoopMD:
                 dists.add(d)
                 maps.add(KERNELS["gaussian"](d, cfg.contact_radius))
                 if cfg.save_ensemble:
-                    self.dirs.ensemble.mkdir(exist_ok=True)
+                    self.dirs.ensemble.mkdir(parents=True, exist_ok=True)
                     with open(self.dirs.ensemble / f"MDLE_{k + 1}.cif", "w") as f:
                         PDBxFile.writeFile(self.topology, state.getPositions(), f)
                 advance()
         log.info("MD: finished, %d structures%s", nf, " saved to the ensemble folder" if cfg.save_ensemble else "")
         meta = dict(platform=self.platform_name, platform_detail=getattr(self, "platform_detail", ""), runtime_s=t.seconds, n_frames=nf, dt_fs=cfg.integrator_step,
                     steps_per_frame=cfg.sim_step, ps_per_frame=cfg.sim_step * cfg.integrator_step / 1000,
-                    temperature_K=cfg.sim_temp, contact_radius_nm=cfg.contact_radius)
+                    temperature_K=cfg.sim_temp, contact_radius_nm=cfg.contact_radius, replica=self.replica, seed=self.seed,
+                    mc_burnin_idx=int(self.mc.burnin_idx), mc_n_samples=int(self.mc.n_samples))
         if self.local or self.track:                                             # optional topology bookkeeping, one number per frame
             meta["topology"] = dict(self.topo_log, mode=cfg.topo_mode, ev_p=cfg.ev_p, keep=cfg.topo_keep, track_every=cfg.track_every)
         if self._scratch is not None:
@@ -313,11 +364,28 @@ class LoopMD:
         return MDResult(coords, maps.mean, maps.std, rg, epot, self.frames, meta, dists.mean, dists.std)
 
 
-def run_md(cfg, geom, mc, dirs) -> MDResult:
-    """Build and run the molecular dynamics stage."""
-    engine = LoopMD(cfg, geom, mc, dirs)
+def run_md(cfg, geom, mc, dirs, replica: int = 0, skip_burnin: bool = None) -> MDResult:
+    """Build and run the molecular dynamics of one Monte Carlo chain; its maps go to dirs.metadata."""
+    engine = LoopMD(cfg, geom, mc, dirs, replica, skip_burnin)
     engine.build()
     res = engine.run()
     if cfg.save_metadata:
-        res.save_maps(dirs.data / "metadata")
+        res.save_maps(dirs.metadata)
     return res
+
+
+def run_md_replicas(cfg, geom, mc, dirs) -> MDResult:
+    """One independent MD run per Monte Carlo chain (own loops, start structure and random stream, own folders); replica 0 carries the others in .replicas."""
+    n = len(mc.chains)
+    if n > 1 and not cfg.md_skip_burnin:
+        log.info("MD with several replicas: burn-in snapshots are skipped (md_skip_burnin has no effect)")
+    runs = [run_md(cfg, geom, c.solo(), dirs.replica(k), k, cfg.md_skip_burnin or n > 1) for k, c in enumerate(mc.chains)]
+    runs[0].replicas = runs[1:]
+    for r in runs:
+        r.meta["replicas"] = n
+    if n > 1 and cfg.save_metadata:                                  # whole-run maps: pooled, plus the spread between replicas
+        pooled = runs[0].pooled()
+        pooled.save_maps(dirs.metadata)
+        for name, m in (("avg_distance", [r.avg_dist for r in runs]), ("avg_strength", [r.avg_map for r in runs])):
+            np.save(dirs.metadata / f"md_{name}_replica_std.npy", np.std(m, axis=0))
+    return runs[0]

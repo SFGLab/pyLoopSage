@@ -30,7 +30,7 @@ def _sample(p, files):
     if p.kind == "bool":
         return str(not p.default)
     if p.kind == "int":
-        return str((p.default or 2) + 1) if p.name not in ("n_beads", "run_number", "seed") else "7"
+        return str((p.default or 2) + 1) if p.name not in ("n_beads", "seed") else "7"
     if p.kind == "float":
         return str(round((p.default or 1.0) * 0.5, 6))
     return "x"

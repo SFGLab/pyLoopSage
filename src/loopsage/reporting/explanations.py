@@ -230,6 +230,30 @@ EXPLAIN = {
                 "(below about 1.1) mean the chains agree. Middle: one row per replica, bright where many loops cover a bead (each row scaled to its own maximum); matching stripes mean the same loop pattern was found. Right: Pearson correlation "
                 "of these profiles for every pair of replicas, 1 meaning identical. Low values warn that the result depends on the "
                 "random start, so run longer or check the energy parameters. Downstream maps and 3D structures use all replicas together."),
+    "replica_maps": dict(
+        title="Loop contact map across replicas",
+        caption="Mean loop contact map of the replicas (left), its spread between replicas (middle) and the correlation between replica maps (right).",
+        explain="Each replica is an independent Monte Carlo chain with its own random start, and gives its own loop contact map. Left: their average. "
+                "Middle: the standard deviation between the replica maps at every pair of beads; bright spots are contacts that depend on the random start, "
+                "dark means all replicas agree. Right: Pearson correlation between the maps of every pair of replicas (1 = identical)."),
+    "md_replica_maps": dict(
+        title="3D contact map across replicas",
+        caption="Mean 3D contact map of the replicas (left), its spread between replicas (middle) and the correlation between replica maps (right).",
+        explain="Every replica has its own Monte Carlo loops, its own random start structure and its own molecular dynamics run. Left: the contact "
+                "strength (Gaussian kernel of the 3D distance) averaged over frames and then over replicas. Middle: the standard deviation of the replica "
+                "averages, i.e. how much a contact depends on the replica. Right: Pearson correlation between replica maps (1 = identical)."),
+    "md_replica_distances": dict(
+        title="3D distances across replicas",
+        caption="Mean pairwise 3D distance over replicas (left), its spread between replicas (middle) and the relative spread std / mean (right).",
+        explain="Pairwise distances between beads (nm), averaged over the frames of each replica and then over replicas. Middle: how much the replica "
+                "averages differ (std). Right: the same spread relative to the mean distance, so near and far pairs can be compared; "
+                "small values mean the 3D structures of all replicas have the same overall organisation."),
+    "md_replicas": dict(
+        title="MD traces of each replica",
+        caption="Radius of gyration (left) and potential energy (right) of every replica along its MD frames.",
+        explain="One smoothed line per replica. Radius of gyration measures how compact the polymer is; the potential energy is the force-field energy "
+                "of each frame. Replicas that stay on top of each other have relaxed to the same kind of structure; a replica that drifts away "
+                "has not converged or has a different loop pattern."),
     "kymograph_zoom": dict(
         section="monte_carlo", title="Kymograph zoom near equilibrium",
         caption="A short window of the production phase, shown without time averaging.",

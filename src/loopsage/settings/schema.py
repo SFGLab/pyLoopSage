@@ -61,7 +61,6 @@ PARAMS = (
     Param("motif_pad", "input", "int", 0, "Extend every anchor by this many bp on both sides before the motif search", "bp"),
     # ---- output ----
     Param("out_path", "output", "str", None, "Results folder (empty = <project>/results); each run gets its own subfolder", flag="--out", short="-o"),
-    Param("run_number", "output", "int", None, "Run number in the folder name (empty = next free; standalone stages reuse the latest)", flag="--run"),
     Param("verbosity", "output", "int", 0, "Console detail: 0 stages + progress bars, 1 + detail messages, 2 + info and tables, 3 + debug (CLI: -v, -vv, -vvv)"),
     Param("quiet", "output", "bool", False, "Print nothing to the console (the log file and the report are still written)", flag="--quiet", short="-q"),
     Param("seed", "output", "int", None, "Random seed (empty = a random one, saved in the resolved config); the same seed repeats the run exactly, MD included only with --threads 1", flag="--seed"),
@@ -71,7 +70,7 @@ PARAMS = (
     Param("save_ensemble", "output", "bool", True, "Save the 3D structures: every MD frame as .cif, plus the start structure, topology and trajectory (structures/)", flag="--save-ensemble"),
     # ---- parallelism ----
     Param("threads", "parallel", "int", 1, "Worker threads for the numba sampler, OpenMM CPU and numba kernels (0 = all cores)", "threads", flag="--threads", short="-t"),
-    Param("replicas", "parallel", "int", 1, "Independent Monte Carlo chains (seed, seed+1, ...) run in parallel; the ensemble is pooled", "chains", flag="--n-replicas"),
+    Param("replicas", "parallel", "int", 1, "Independent replicas: each runs its own Monte Carlo chain (random start) and its own 3D simulation; with 2 or more, per-replica results go to replica_<k> subfolders and the report adds cross-replica diagnostics", "chains", flag="--n-replicas"),
     # ---- Monte Carlo ----
     Param("n_steps", "monte_carlo", "int", 20000, "Total Monte Carlo steps", "MC steps", flag="--mc-steps"),
     Param("mc_step", "monte_carlo", "int", 200, "Save one snapshot every this many steps", "MC steps", flag="--sample-every"),

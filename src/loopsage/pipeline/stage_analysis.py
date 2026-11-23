@@ -19,7 +19,7 @@ def _sources(ctx):
     """Simulated maps to validate: the loop ensemble (MC) and, when it ran, the 3D structures (MD)."""
     out = {"loops (MC)": ctx.mc_map}
     if ctx.md is not None:
-        out["3D (MD)"] = ctx.md.avg_map
+        out["3D (MD)"] = ctx.md_ens.avg_map
     return out
 
 

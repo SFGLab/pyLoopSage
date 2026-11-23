@@ -21,8 +21,8 @@ def compute(ctx):
     """Linking numbers (only with detect_knots); otherwise an empty result, the crossing counter lives in the MD."""
     from loopsage.knots.linking import link_ensemble
     if not ctx.cfg.detect_knots:
-        return LinkResult.empty(ctx.md.coords.shape[1])
-    return link_ensemble(ctx.md, ctx.mc_ens, ctx.cfg.knots_stride)
+        return LinkResult.empty(ctx.md_ens.coords.shape[1])
+    return link_ensemble(ctx.md_ens, ctx.mc_ens, ctx.cfg.knots_stride)
 
 
 def save(obj, path):
@@ -35,7 +35,7 @@ def load(path):
 
 def _crossings(ctx):
     """Excluded-volume barrier and the chain crossings counted during the MD (tables and one figure)."""
-    cfg, topo = ctx.cfg, ctx.md.meta.get("topology")
+    cfg, topo = ctx.cfg, ctx.md_ens.meta.get("topology")
     bar = barrier_kT(cfg.ev_ff_strength, cfg.ev_ff_power, cfg.sim_temp)
     sug = strength_for_barrier(cfg.ev_barrier_target, cfg.ev_ff_strength, cfg.ev_ff_power, cfg.sim_temp)
     emit_table("Strand-crossing barrier of the excluded volume", ["Quantity", "Value", "Unit"], [
@@ -88,10 +88,10 @@ def describe(ctx):
         links_map_figure(r)
         if ctx.cfg.render_3d:
             from loopsage.knots.linking import link_examples, link_stills
-            stills = link_stills(ctx.md.coords, r)
+            stills = link_stills(ctx.md_ens.coords, r)
             if stills:
                 links_stills_figure(stills)
-            ex = link_examples(ctx.md.coords, r)
+            ex = link_examples(ctx.md_ens.coords, r)
             if ex:
                 links_examples_figure(ex)
 

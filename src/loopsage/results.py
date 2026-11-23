@@ -95,12 +95,13 @@ def contact_map(mc, geom) -> np.ndarray:
 
 def coordinates(md, frame: int = None) -> np.ndarray:
     """3D positions in nm: all frames (frames, beads, 3), or one frame (beads, 3)."""
+    md = md.pooled()                                      # all replicas' frames
     return md.coords if frame is None else md.coords[frame]
 
 
 def radius_of_gyration(md) -> np.ndarray:
     """Radius of gyration (nm) of every MD frame."""
-    return md.rg
+    return md.pooled().rg
 
 
 def distance(md, geom, a, b, units: str = "bead") -> np.ndarray:
@@ -109,9 +110,10 @@ def distance(md, geom, a, b, units: str = "bead") -> np.ndarray:
         a, b = (int(geom.bead_of(x)) for x in (a, b))
     elif units != "bead":
         raise ValueError("units must be 'bead' or 'bp'")
-    return np.linalg.norm(md.coords[:, a] - md.coords[:, b], axis=1)
+    c = md.pooled().coords
+    return np.linalg.norm(c[:, a] - c[:, b], axis=1)
 
 
 def contact_map_md(md) -> np.ndarray:
     """Average contact map of the 3D structures: array (beads, beads)."""
-    return md.avg_map
+    return md.pooled().avg_map

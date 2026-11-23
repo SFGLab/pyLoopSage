@@ -96,7 +96,6 @@ Section `[output]` of the config file.
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
 | `out_path`<br>`--out` | text | *(empty)* | Results folder (empty = ./results in the current folder); each run gets its own subfolder |
-| `run_number`<br>`--run` | integer | *(empty)* | Run number in the folder name (empty = next free; standalone stages reuse the latest) |
 | `verbosity`<br>*ini only* | integer | `0` | Console detail: 0 stages + progress bars, 1 + detail messages, 2 + info and tables, 3 + debug (CLI: -v, -vv, -vvv) |
 | `quiet`<br>`--quiet` | true / false | `False` | Print nothing to the console (the log file and the report are still written) |
 | `seed`<br>`--seed` | integer | *(empty)* | Random seed (empty = a random one, saved in the resolved config); the same seed repeats the run exactly, MD included only with --threads 1 |
@@ -112,7 +111,7 @@ Section `[parallel]` of the config file.
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
 | `threads`<br>`--threads` | integer (threads) | `1` | Worker threads for the numba sampler, OpenMM CPU and numba kernels (0 = all cores) |
-| `replicas`<br>`--n-replicas` | integer (chains) | `1` | Independent Monte Carlo chains (seed, seed+1, ...) run in parallel; the ensemble is pooled |
+| `replicas`<br>`--n-replicas` | integer (chains) | `1` | Independent replicas: each runs its own Monte Carlo chain (random start) and its own 3D simulation; with 2 or more, per-replica results go to replica_&lt;k&gt; subfolders and the report adds cross-replica diagnostics |
 
 ### Monte Carlo
 

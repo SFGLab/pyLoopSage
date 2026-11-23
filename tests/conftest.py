@@ -77,6 +77,15 @@ def tiny_args(demo_bedpe, tmp_path):
             "--mc-steps", "2000", "--sample-every", "100", "--burnin", "400", "--no-run-MD", "--seed", "1"]
 
 
+@pytest.fixture(autouse=True)
+def _console_not_quiet():
+    """Tests that run with quiet=True must not mute the console for the tests after them."""
+    from loopsage.logger import set_quiet
+    set_quiet(False)
+    yield
+    set_quiet(False)
+
+
 # ---- Terminal output: header and a per-module summary table ----------------
 
 _MODULE_DOC = {}
