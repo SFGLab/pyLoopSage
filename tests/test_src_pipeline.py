@@ -159,12 +159,6 @@ def _replica_args(fast_args, n, tmp_path, name):
     return [x if x != str(tmp_path / "results") else str(tmp_path / name) for x in args]
 
 
-def test_replica_seeds_are_independent_and_replica_zero_keeps_the_seed():
-    from loopsage.common.runtime import replica_seed
-    seeds = [replica_seed(7, k) for k in range(5)]
-    assert seeds[0] == 7 and len(set(seeds)) == 5
-    assert replica_seed(7, 1, stream=0) != replica_seed(7, 1, stream=1)       # MC and MD streams differ
-    assert replica_seed(7, 3) == replica_seed(7, 3)                            # reproducible
 
 
 def test_one_replica_has_no_replica_folders(fast_args, tmp_path):
@@ -184,7 +178,7 @@ def test_replicas_run_independently_and_are_organised_per_replica(demo_bedpe, tm
     ctx = run_pipeline(load_config(_replica_args(fa, 3, tmp_path, "three")))
     d, chains = ctx.dirs, ctx.mc.chains
     assert len(chains) == 3 and len(ctx.md.chains) == 3
-    assert len({c.meta["seed"] for c in chains}) == 3 and len({c.meta["seed"] for c in ctx.md.chains}) == 3
+    assert [c.meta["seed"] for c in chains] == [1, 2, 3] and [c.meta["seed"] for c in ctx.md.chains] == [1, 2, 3]       # --seed 1: replica j has seed 1 + j
     assert not np.array_equal(chains[0].Ms, chains[1].Ms) and not np.array_equal(chains[1].Ms, chains[2].Ms)      # different random chains
     x = [c.coords[0] for c in ctx.md.chains]
     assert not np.allclose(x[0], x[1], atol=1e-3) and not np.allclose(x[1], x[2], atol=1e-3)                       # different MD runs
