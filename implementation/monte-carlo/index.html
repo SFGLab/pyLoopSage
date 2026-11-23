@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -1839,7 +1839,7 @@ p_{\mathrm{accept}}=\min\!\big(1,\;e^{-\Delta E/T}\big).
 </tbody>
 </table>
 <h2 id="snapshots-and-statistics">Snapshots and statistics<a class="headerlink" href="#snapshots-and-statistics" title="Permanent link">&para;</a></h2>
-<p>The stage runs <code>n_steps</code> steps and saves the loops of all LEFs (and all states) every <code>mc_step</code> steps. The first <code>burnin</code> steps are <em>burn-in</em>: the system is still forgetting its random start (and, with annealing, is hot), so these snapshots are kept but not used for statistics. The snapshots after the burn-in are the <strong>production</strong> ensemble, and with <code>replicas</code> &gt; 1 several independent chains are run in parallel and pooled. For every snapshot the stage also records the energy terms (total, binding, crossing, folding) and the <em>unfolded fraction</em>, the share of the chain not covered by any loop.</p>
+<p>The stage runs <code>n_steps</code> steps and saves the loops of all LEFs (and all states) every <code>mc_step</code> steps. The first <code>burnin</code> steps are <em>burn-in</em>: the system is still forgetting its random start (and, with annealing, is hot), so these snapshots are kept but not used for statistics. The snapshots after the burn-in are the <strong>production</strong> ensemble, and with <code>replicas</code> &gt; 1 several independent chains are run in parallel, each with its own seed and its own random initial loops (and epigenetic states), and pooled for the maps; every chain is also analysed on its own. For every snapshot the stage also records the energy terms (total, binding, crossing, folding) and the <em>unfolded fraction</em>, the share of the chain not covered by any loop.</p>
 <div class="admonition tip">
 <p class="admonition-title">Checking convergence</p>
 <p>The report shows the energy terms after the burn-in with a <em>drift</em>: the difference between the two halves of the production run in units of the standard deviation. A drift well below 1 means that the energy is stable; a large drift means that the run is too short (raise <code>n_steps</code>) or the burn-in too small.</p>
@@ -1858,7 +1858,7 @@ p_{\mathrm{accept}}=\min\!\big(1,\;e^{-\Delta E/T}\big).
 <span class="na">lef_rw</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s">True</span><span class="w">        </span><span class="c1"># legs slide as a random walk                   (CLI: --lef-rw)</span>
 <span class="na">lef_speed_dist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">constant</span><span class="w">   </span><span class="c1"># constant, maxwell, lognormal, two_state    (CLI: --lef-speed)</span>
 <span class="na">variable_sliding_step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">False</span><span class="w">   </span><span class="c1"># step uniform in [1, shortest input loop] beads</span>
-<span class="na">replicas</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">1</span><span class="w">           </span><span class="c1"># independent chains, pooled                    (CLI: --n-replicas)</span>
+<span class="na">replicas</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">1</span><span class="w">           </span><span class="c1"># independent replicas (MC chain + 3D run each)  (CLI: --n-replicas)</span>
 
 <span class="k">[energy]</span>
 <span class="na">folding_coeff</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">1.0</span><span class="w">     </span><span class="c1"># f:     reward for long loops</span>
@@ -1997,7 +1997,7 @@ p_{\mathrm{accept}}=\min\!\big(1,\;e^{-\Delta E/T}\big).
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -1551,8 +1551,8 @@ python<span class="w"> </span>-m<span class="w"> </span>loopsage.pipeline.stage_
 </code></pre></div>
 <p>Because the Monte Carlo result is saved, you can change only MD options (time step, forces, number of steps per frame) and repeat the MD without sampling the loops again.</p>
 <h2 id="the-run-folder">The run folder<a class="headerlink" href="#the-run-folder" title="Permanent link">&para;</a></h2>
-<p>Every run writes its files into its own folder, named after the region and a run number:</p>
-<div class="highlight"><pre><span></span><code>results/chr1_78000000_92000000_1/
+<p>Every run writes its files into its own folder, named after the region:</p>
+<div class="highlight"><pre><span></span><code>results/chr1_78000000_92000000/
   config_resolved.ini     every option used, and where its value came from
   data/                   saved stage results (inputs.npz, mc.npz, md.npz, ...)
     metadata/             maps and matrices as .npy
@@ -1561,6 +1561,7 @@ python<span class="w"> </span>-m<span class="w"> </span>loopsage.pipeline.stage_
   report/report.html      the report
   logs/loopsage.log       the full log
 </code></pre></div>
+<p>With <code>replicas</code> ≥ 2 the per-replica metadata, structures and figures go to <code>replica_&lt;k&gt;</code> subfolders of <code>data/metadata/</code>, <code>structures/</code> and <code>visualizations/</code>, and the report adds the comparison between replicas (see <a href="../../reference/output/">Output</a>). With one replica there are no such subfolders.</p>
 <p>The file <code>config_resolved.ini</code> is the best record of a run: it contains every option, and for each one whether it was a default, came from the file, from the command line, or was set by the optimizer. With the same file and the same <code>--seed</code> (and <code>--threads 1</code> for the MD) a run can be repeated exactly.</p>
 <h2 id="where-the-code-is">Where the code is<a class="headerlink" href="#where-the-code-is" title="Permanent link">&para;</a></h2>
 <table>
@@ -1691,7 +1692,7 @@ python<span class="w"> </span>-m<span class="w"> </span>loopsage.pipeline.stage_
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

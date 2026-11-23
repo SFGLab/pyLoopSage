@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -1292,10 +1292,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#the-run-number" class="md-nav__link">
+  <a href="#several-replicas" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The run number
+        Several replicas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#repeated-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repeated runs
       
     </span>
   </a>
@@ -1578,10 +1589,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#the-run-number" class="md-nav__link">
+  <a href="#several-replicas" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The run number
+        Several replicas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#repeated-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repeated runs
       
     </span>
   </a>
@@ -1805,9 +1827,9 @@
 <h1 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h1>
 <p>Every run writes <strong>one folder</strong> that holds everything it produced: the report, the figures, the 3D structures, the saved data and the settings that were used. This page explains where each thing is, what the numbers in the files mean, how to switch outputs on and off, and how to reuse the saved data for your own analysis.</p>
 <h2 id="the-run-folder">The run folder<a class="headerlink" href="#the-run-folder" title="Permanent link">&para;</a></h2>
-<p>By default results go to a <code>results/</code> folder inside the project (change it with <code>--out</code>). Each run gets its own subfolder:</p>
+<p>By default results go to a <code>results/</code> folder inside the project (change it with <code>--out</code>). Each region gets its own subfolder:</p>
 <div class="highlight"><pre><span></span><code>results/
-└── chr1_77000000_95000000_1/          &lt;chromosome&gt;_&lt;start&gt;_&lt;end&gt;_&lt;run number&gt;
+└── chr1_77000000_95000000/            &lt;chromosome&gt;_&lt;start&gt;_&lt;end&gt;
     ├── report/
     │   └── report.html                the full report: open this first
     ├── visualizations/                every figure, as .png and .svg
@@ -1820,16 +1842,58 @@
     │   └── loopsage.log               everything the run printed, in detail
     └── config_resolved.ini            every setting the run used
 </code></pre></div>
-<h3 id="the-run-number">The run number<a class="headerlink" href="#the-run-number" title="Permanent link">&para;</a></h3>
-<p>The last part of the folder name, <code>_1</code> in the example, is the <strong>run number</strong>. It separates repeated runs of the <em>same region</em>, so a new run never overwrites an old one:</p>
-<ul>
-<li>By default LoopSage takes the <strong>next free number</strong> for that region: <code>chr1_77000000_95000000_1</code>, then <code>..._2</code>, <code>..._3</code>.</li>
-<li>Another region has its own numbering: <code>chr2_10000000_30000000_1</code>.</li>
-<li><code>--run N</code> (key <code>run_number</code>) chooses the number yourself. This is useful to put a run in a known place, or to continue a run (see <a href="#stopping-and-continuing">Stopping and continuing</a>).</li>
-</ul>
+<h3 id="several-replicas">Several replicas<a class="headerlink" href="#several-replicas" title="Permanent link">&para;</a></h3>
+<p>With one replica (the default) the folders above are exactly what you get, with no <code>replica_&lt;k&gt;</code> subfolders. With <code>--n-replicas N</code> (N ≥ 2) every replica is a fully independent simulation: its own Monte Carlo chain (random start, own seed), and its own 3D run (own start structure, loops and random stream). The seeds follow from <code>--seed</code>: replica 0 uses it, the others get independent streams derived from it, and each is listed in the <em>Replicas</em> tables of the report. Everything stays in the same run folder; only the per-replica files get a <code>replica_&lt;k&gt;</code> subfolder (<code>k</code> = 0, 1, ...):</p>
+<div class="highlight"><pre><span></span><code>chr1_77000000_95000000/
+├── visualizations/
+│   ├── replica_maps.png, md_replica_maps.png, ...   diagnostics across all replicas (also in the report)
+│   └── replica_0/, replica_1/, ...                  figures of one replica, incl. its 3d/ viewer and videos
+├── structures/
+│   └── replica_0/, replica_1/, ...                  init_structure.cif, trajectory.dcd, ensemble/ of that replica
+└── data/
+    ├── mc_r0.npz, mc_r1.npz, ...  md_r0.npz, md_r1.npz, ...   cached chains and MD runs, one file per replica
+    └── metadata/
+        ├── mc_contact_map.npy, md_avg_distance.npy, ...   all replicas pooled
+        ├── *_replica_std.npy                              spread between replicas
+        └── replica_0/, replica_1/, ...                    the matrices of one replica
+</code></pre></div>
+<p>The report and the files in the main folders show the <strong>pooled</strong> result (all replicas together) plus the comparison between replicas; the per-replica figures are only saved as files, to keep the report short. The diagnostics across replicas are:</p>
+<table>
+<thead>
+<tr>
+<th>Figure</th>
+<th>What it shows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>replicas</code></td>
+<td>energy of each chain, loop occupancy and its correlation (convergence of the Monte Carlo)</td>
+</tr>
+<tr>
+<td><code>replica_maps</code></td>
+<td>mean loop contact map over replicas, its standard deviation between replicas, and the correlation of the replica maps</td>
+</tr>
+<tr>
+<td><code>md_replica_maps</code></td>
+<td>the same for the 3D contact maps</td>
+</tr>
+<tr>
+<td><code>md_replica_distances</code></td>
+<td>mean 3D distance map, its spread (std) between replicas and the relative spread std / mean</td>
+</tr>
+<tr>
+<td><code>md_replicas</code></td>
+<td>radius of gyration and potential energy along the MD frames of every replica</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Standard deviation between replicas</strong> is, for every pair of beads, the standard deviation of that value over the replicas' own averages: it is large where the result depends on the random start. The <code>*_replica_std.npy</code> files hold the same matrices.</p>
+<h3 id="repeated-runs">Repeated runs<a class="headerlink" href="#repeated-runs" title="Permanent link">&para;</a></h3>
+<p>The folder is named after the region, <code>chr1_77000000_95000000</code>. Running the <em>same region</em> again with the same <code>--out</code> folder writes into it and <strong>overwrites</strong> its results (the log warns about it). To keep several runs, give each its own <code>--out</code> folder, for example <code>--out results_test1</code>.</p>
 <div class="admonition tip">
 <p class="admonition-title">Which run was which?</p>
-<p>The folder name only tells the region and the number. What made the runs different is written in <code>config_resolved.ini</code> inside each folder (see below), so compare those files, not the names.</p>
+<p>The folder name only tells the region. What made the runs different is written in <code>config_resolved.ini</code> inside each folder (see below), so compare those files, not the names.</p>
 </div>
 <h2 id="what-is-in-each-folder">What is in each folder<a class="headerlink" href="#what-is-in-each-folder" title="Permanent link">&para;</a></h2>
 <h3 id="reportreporthtml"><code>report/report.html</code><a class="headerlink" href="#reportreporthtml" title="Permanent link">&para;</a></h3>
@@ -1981,12 +2045,12 @@
 <tr>
 <td><code>mc.npz</code></td>
 <td>Monte Carlo</td>
-<td>the loop-extrusion simulation of replica 0 (arrays below). Further replicas: <code>mc_r1.npz</code>, <code>mc_r2.npz</code>, ...</td>
+<td>the loop-extrusion simulation (arrays below). With several replicas one file per replica instead: <code>mc_r0.npz</code>, <code>mc_r1.npz</code>, ...</td>
 </tr>
 <tr>
 <td><code>md.npz</code></td>
 <td>molecular dynamics</td>
-<td>the 3D coordinates and maps (arrays below)</td>
+<td>the 3D coordinates and maps (arrays below). With several replicas: <code>md_r0.npz</code>, <code>md_r1.npz</code>, ...</td>
 </tr>
 <tr>
 <td><code>links.npz</code></td>
@@ -2135,6 +2199,16 @@
 <td><code>save_metadata</code>, MD on</td>
 </tr>
 <tr>
+<td><code>mc_contact_map_replica_std.npy</code>, <code>md_avg_distance_replica_std.npy</code>, <code>md_avg_strength_replica_std.npy</code></td>
+<td>standard deviation between the replicas of the maps above</td>
+<td>2 or more replicas</td>
+</tr>
+<tr>
+<td><code>replica_&lt;k&gt;/</code> (same file names)</td>
+<td>the matrices of replica <code>k</code> alone; the files above are then pooled over all replicas</td>
+<td>2 or more replicas</td>
+</tr>
+<tr>
 <td><code>optimized_parameters.json</code></td>
 <td>the values the optimizer chose (<code>chosen</code>: <code>n_lef</code>, <code>folding_coeff</code>, <code>bind_coeff</code>, temperatures), the starting point (<code>start</code>), the best result (<code>best</code>), whether it converged, number of evaluations and time</td>
 <td><code>--optimize</code>. Always saved, it is tiny</td>
@@ -2256,12 +2330,6 @@
 <td>the folder that holds the run folders (default <code>results/</code>)</td>
 </tr>
 <tr>
-<td>Run number</td>
-<td><code>--run N</code></td>
-<td><code>run_number</code></td>
-<td>choose the number instead of the next free one</td>
-</tr>
-<tr>
 <td>Random seed</td>
 <td><code>--seed N</code></td>
 <td><code>seed</code></td>
@@ -2289,15 +2357,15 @@ loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class=
 <p>All keys, with their units and defaults, are in the <a href="../config/">config reference</a>; the command-line forms are in the <a href="../cli/">command-line reference</a>.</p>
 <h3 id="stopping-and-continuing">Stopping and continuing<a class="headerlink" href="#stopping-and-continuing" title="Permanent link">&para;</a></h3>
 <p>Every stage saves its result in <code>data/</code>. If you run a <strong>single stage</strong> again on an existing run, the stages before it are loaded from <code>data/</code> instead of being computed again, and only the chosen stage runs. For example, to redo the Monte Carlo stage with new settings on top of the saved inputs:</p>
-<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>loopsage.pipeline.stage_mc<span class="w"> </span>-c<span class="w"> </span>config.ini<span class="w"> </span>--run<span class="w"> </span><span class="m">1</span>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>loopsage.pipeline.stage_mc<span class="w"> </span>-c<span class="w"> </span>config.ini
 </code></pre></div>
-<p>The stage modules are <code>stage_preproc</code>, <code>stage_optimize</code>, <code>stage_mc</code>, <code>stage_md</code>, <code>stage_structure</code> and <code>stage_report</code> (all in <code>loopsage.pipeline</code>). Without <code>--run</code>, the <strong>latest</strong> existing run of the region is used.</p>
+<p>The stage modules are <code>stage_preproc</code>, <code>stage_optimize</code>, <code>stage_mc</code>, <code>stage_md</code>, <code>stage_structure</code> and <code>stage_report</code> (all in <code>loopsage.pipeline</code>). The existing run folder of the region (same <code>--out</code>) is the one used.</p>
 <h2 id="using-the-data-in-your-own-analysis">Using the data in your own analysis<a class="headerlink" href="#using-the-data-in-your-own-analysis" title="Permanent link">&para;</a></h2>
 <p>Everything above can be read without LoopSage. In Python:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="n">run</span> <span class="o">=</span> <span class="s2">&quot;results/chr1_77000000_95000000_1&quot;</span>
+<span class="n">run</span> <span class="o">=</span> <span class="s2">&quot;results/chr1_77000000_95000000&quot;</span>
 
 <span class="n">mc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">run</span><span class="si">}</span><span class="s2">/data/mc.npz&quot;</span><span class="p">)</span>
 <span class="n">meta</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">mc</span><span class="p">[</span><span class="s2">&quot;meta&quot;</span><span class="p">]))</span>                   <span class="c1"># run settings stored with the arrays</span>
@@ -2341,8 +2409,8 @@ loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class=
 <p>Three habits make such a comparison reliable:</p>
 <ul>
 <li><strong>Compare after burn-in only</strong>, as above, so the random start does not enter the numbers.</li>
-<li><strong>Use replicas.</strong> With <code>--n-replicas 4</code> the four chains are stored in <code>mc.npz</code> and <code>mc_r1.npz</code> to <code>mc_r3.npz</code>; the spread between them is the noise level, and a difference smaller than that is not a result.</li>
-<li><strong>Fix the seed</strong> (<code>--seed</code>) when you want a difference to come from a setting and not from chance. Monte Carlo is exactly repeatable with the same seed; the 3D stage is repeatable only with <code>--threads 1</code>.</li>
+<li><strong>Use replicas.</strong> With <code>--n-replicas 4</code> the four independent chains (and 3D runs) are stored in <code>mc_r0.npz</code> to <code>mc_r3.npz</code> (and <code>md_r0.npz</code> to <code>md_r3.npz</code>) and in <code>replica_&lt;k&gt;</code> folders; the spread between them is the noise level, and a difference smaller than that is not a result.</li>
+<li><strong>Fix the seed</strong> (<code>--seed</code>) when you want a difference to come from a setting and not from chance. Monte Carlo is exactly repeatable with the same seed, and replica <code>k</code> is the same as a single run started with the seed listed for it; the 3D stage is repeatable only with <code>--threads 1</code>.</li>
 </ul>
 
 
@@ -2442,7 +2510,7 @@ loopsage<span class="w"> </span>-c<span class="w"> </span>config.ini<span class=
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       
