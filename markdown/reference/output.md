@@ -4,7 +4,7 @@ Every run writes **one folder** that holds everything it produced: the report, t
 
 ## The run folder
 
-By default results go to a `results/` folder inside the project (change it with `--out`). Each run gets its own subfolder:
+By default results go to a `results/` folder inside the project (change it with `--out`). Each region gets its own subfolder:
 
 ```text
 results/
@@ -24,7 +24,7 @@ results/
 
 ### Several replicas
 
-With one replica (the default) the folders above are exactly what you get: no replica numbering anywhere. With `--n-replicas N` (N ≥ 2) every replica is a fully independent simulation: its own Monte Carlo chain (random start, own seed), and its own 3D run (own start structure, loops and random stream). The seeds follow from `--seed`: replica 0 uses it, the others get independent streams derived from it, and each is listed in the *Replicas* tables of the report. Everything stays in the same run folder; only the per-replica files get a `replica_<k>` subfolder (`k` = 0, 1, ...):
+With one replica (the default) the folders above are exactly what you get, with no `replica_<k>` subfolders. With `--n-replicas N` (N ≥ 2) every replica is a fully independent simulation: its own Monte Carlo chain (random start, own seed), and its own 3D run (own start structure, loops and random stream). The seeds follow from `--seed`: replica 0 uses it, the others get independent streams derived from it, and each is listed in the *Replicas* tables of the report. Everything stays in the same run folder; only the per-replica files get a `replica_<k>` subfolder (`k` = 0, 1, ...):
 
 ```text
 chr1_77000000_95000000/
@@ -55,7 +55,7 @@ The report and the files in the main folders show the **pooled** result (all rep
 
 ### Repeated runs
 
-The folder is named after the region only, `chr1_77000000_95000000`; it has no run number. Running the *same region* again into the same `--out` folder **overwrites** its results (the log warns about it). To keep several runs, give each its own `--out` folder, for example `--out results_test1`.
+The folder is named after the region, `chr1_77000000_95000000`. Running the *same region* again with the same `--out` folder writes into it and **overwrites** its results (the log warns about it). To keep several runs, give each its own `--out` folder, for example `--out results_test1`.
 
 !!! tip "Which run was which?"
     The folder name only tells the region. What made the runs different is written in `config_resolved.ini` inside each folder (see below), so compare those files, not the names.
