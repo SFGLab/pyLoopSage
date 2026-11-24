@@ -26,6 +26,12 @@ def ps_curve(mat) -> np.ndarray:
     return np.array([np.diagonal(mat, k).mean() for k in range(mat.shape[0])])
 
 
+def ps_normalized(mat, upto: int = None) -> np.ndarray:
+    """P(s) for s = 1..upto as a probability (sums to 1), so maps of any units (loop counts, contact probabilities, Hi-C) share one scale."""
+    ps = ps_curve(mat)[1:upto]
+    return ps / ps.sum() if ps.sum() > 0 else ps
+
+
 def fill_masked(mat) -> np.ndarray:
     """Replace NaN (masked beads) by the mean of their diagonal, so they are neutral in O/E, P(s) and insulation."""
     m = np.array(mat, float)

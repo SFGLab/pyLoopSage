@@ -473,7 +473,7 @@ EXPLAIN = {
         caption="Experimental versus simulated loop strength.",
         explain="Per bead, the observed/expected (O/E) loop strength: loop weight divided by what is typical "
                 "for that anchor distance, which removes the trivial fact that close anchors interact more. "
-                "Both signals are log-transformed and scaled to 0-1. Top: experiment and simulation, middle: where they differ. Right: "
+                "Both profiles are log-transformed, smoothed with the same Gaussian width as the insulation and compartment profiles (<code>track_smooth</code> beads; the faint lines are the unsmoothed ones) and scaled to 0-1. The correlation is computed on the smoothed profiles. Top: experiment and simulation, middle: where they differ. Right: "
                 "scatter on a 0-1 scale with the best-fit line; points on the dotted y = x line would agree "
                 "perfectly. <b>Pearson r</b> measures linear and <b>Spearman &rho;</b> rank agreement."),
     "validation_pearson_direct": dict(
@@ -487,7 +487,8 @@ EXPLAIN = {
         section="validation", title="Validation: contact decay P(s)",
         caption="Experimental versus simulated contact strength as a function of bead separation.",
         explain="P(s) is the mean contact at separation s. Real chromatin loses contacts steadily with "
-                "distance; agreement here shows the model produces realistic distance dependence. <b>Left:</b> both curves, each relative to its shortest separation. "
+                "distance; agreement here shows the model produces realistic distance dependence. <b>Left:</b> both curves as probabilities: each is the mean contact per separation of its own map "
+                "(the experiment is the input loops drawn like the simulated ones) divided by the sum over all separations, so the two have the same units and scale. The correlation is taken on log P(s). "
                 "<b>Right:</b> their ratio on a log2 scale: 0 means the same contact level, +1 that the simulation has twice as many contacts at that distance, "
                 "so it shows at which distances the simulated decay is too flat (violet) or too steep (pink)."),
     "validation_insulation": dict(
@@ -514,7 +515,7 @@ EXPLAIN = {
     "validation_summary": dict(
         section="validation", title="Summary of agreement",
         caption="Pearson r with 95% confidence intervals for every comparison.",
-        explain="Each dot is a correlation (violet = loop ensemble MC, green = 3D structures MD, smoothed where available; number = r); the bar is its 95% confidence interval (Fisher z-transform); shaded bands mark weak (0-0.3) and strong (0.5-0.7) agreement. "
+        explain="Each dot is a correlation (violet = loop ensemble MC, green = 3D structures MD, smoothed profiles; number = r); the bar is its 95% confidence interval (Fisher z-transform); shaded bands mark weak (0-0.3) and strong (0.5-0.7) agreement. "
                 "Intervals that exclude 0 indicate a reliable association. Rough strength: |r| below 0.3 weak, "
                 "0.3-0.5 moderate, 0.5-0.7 strong, above 0.7 very strong."),
 }

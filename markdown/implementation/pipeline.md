@@ -55,7 +55,7 @@ loopsage -f loops.bedpe -r chr1:78000000-92000000 -n 1000 -t 4 --run-MD -o resul
 loopsage -f loops.bedpe -r chr1:78000000-92000000 -n 1000 --run-MD --optimize --hic sample.hic
 ```
 
-You can also run **one stage** on its own. The earlier stages are then not recomputed: their saved results are loaded from the latest run folder.
+You can also run **one stage** on its own. The earlier stages are then not recomputed: their saved results are loaded from the output folder (`--out`).
 
 ```bash
 python -m loopsage.pipeline.stage_mc -c config.ini      # only the Monte Carlo, inputs are reused
@@ -66,10 +66,10 @@ Because the Monte Carlo result is saved, you can change only MD options (time st
 
 ## The run folder
 
-Every run writes its files into its own folder, named after the region:
+Every run writes its files into one output folder, the one you give with `--out` (it is created if missing; by default `results/<chrom>_<start>_<end>`):
 
 ```text
-results/chr1_78000000_92000000/
+results/                 the --out folder
   config_resolved.ini     every option used, and where its value came from
   data/                   saved stage results (inputs.npz, mc.npz, md.npz, ...)
     metadata/             maps and matrices as .npy

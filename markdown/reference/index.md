@@ -14,7 +14,7 @@ Everything is given as options. Good for a quick run or a script.
 loopsage -f loops.bedpe -r chr1:77000000-95000000 --mc-steps 20000
 ```
 
-The results (figures, report, structures) are written to a run folder, `results/chr1_77000000_95000000_1/`. All options are listed on the [command-line page](cli.md).
+The results (figures, report, structures) are written to the folder you give with `--out`, for example `--out results/chr1_77000000_95000000`; it is created if it does not exist. Without `--out` the folder is `results/chr1_77000000_95000000/`. All options are listed on the [command-line page](cli.md), and the folder is described on the [output page](output.md).
 
 ### Config file
 

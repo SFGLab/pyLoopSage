@@ -95,7 +95,7 @@ Section `[output]` of the config file.
 
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
-| `out_path`<br>`--out` | text | *(empty)* | Results folder (empty = ./results in the current folder); each run gets its own subfolder |
+| `out_path`<br>`--out` | text | *(empty)* | Output folder: created if missing (with its parents) and used as given (empty = ./results/<chrom>_<start>_<end>) |
 | `verbosity`<br>*ini only* | integer | `0` | Console detail: 0 stages + progress bars, 1 + detail messages, 2 + info and tables, 3 + debug (CLI: -v, -vv, -vvv) |
 | `quiet`<br>`--quiet` | true / false | `False` | Print nothing to the console (the log file and the report are still written) |
 | `seed`<br>`--seed` | integer | *(empty)* | Random seed (empty = a random one, saved in the resolved config); the same seed repeats the run exactly, MD included only with --threads 1 |
@@ -205,8 +205,7 @@ Section `[analysis]` of the config file.
 
 | Key / CLI option | Type (unit) | Default | What it does |
 |---|---|---|---|
-| `corr_smooth`<br>*ini only* | number (beads) | `1.5` | Gaussian smoothing (beads) applied to per-position signals before the extra validation correlations (0 = off) |
-| `track_smooth`<br>`--track-smooth` | number (beads) | `7.0` | Gaussian smoothing of the Hi-C insulation score and of the A/B track (Hi-C eigenvector or compartment BigWig) used as input and for validation (0 = off) |
+| `track_smooth`<br>`--track-smooth` | number (beads) | `7.0` | Gaussian smoothing of the Hi-C insulation score, of the A/B track (Hi-C eigenvector or compartment BigWig) and of the validation profiles: loop strength, insulation score, compartments (0 = off) |
 | `contact_radius`<br>*ini only* | number (nm) | `1.0` | Contact distance for MD contact maps |
 | `zoom_snapshots`<br>*ini only* | integer (snapshots) | `120` | Snapshots shown in the zoomed kymograph (window near equilibrium) |
 | `zoom_start`<br>*ini only* | integer (snapshot) | *(empty)* | First snapshot of the zoom window (empty = middle of production) |

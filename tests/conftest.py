@@ -35,6 +35,15 @@ def test_data_dir(tmp_path_factory):
 
     return d
 
+SMOOTH_SIGMA = 3.0      # one Gaussian width (beads) shared by every smoothing test
+
+
+@pytest.fixture
+def smooth_sigma():
+    """The common smoothing width of the profile tests (the config key is track_smooth)."""
+    return SMOOTH_SIGMA
+
+
 @pytest.fixture
 def random_matrix():
     """A small symmetric 'simulated heatmap' for correlation tests."""

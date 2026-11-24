@@ -60,7 +60,7 @@ PARAMS = (
     Param("motif_pseudocount", "input", "float", 0.8, "Pseudocount added to the PFM counts (avoids impossible bases)"),
     Param("motif_pad", "input", "int", 0, "Extend every anchor by this many bp on both sides before the motif search", "bp"),
     # ---- output ----
-    Param("out_path", "output", "str", None, "Results folder (empty = <project>/results); each run gets its own subfolder", flag="--out", short="-o"),
+    Param("out_path", "output", "str", None, "Output folder: created if missing (with its parents) and used as given (empty = ./results/<chrom>_<start>_<end>)", flag="--out", short="-o"),
     Param("verbosity", "output", "int", 0, "Console detail: 0 stages + progress bars, 1 + detail messages, 2 + info and tables, 3 + debug (CLI: -v, -vv, -vvv)"),
     Param("quiet", "output", "bool", False, "Print nothing to the console (the log file and the report are still written)", flag="--quiet", short="-q"),
     Param("seed", "output", "int", None, "Random seed (empty = a random one, saved in the resolved config); the same seed repeats the run exactly, MD included only with --threads 1", flag="--seed"),
@@ -137,8 +137,7 @@ PARAMS = (
     Param("video_size", "structure_3d", "int", 640, "Video width and height", "px"),
     Param("max_video_frames", "structure_3d", "int", 240, "Maximum frames per video", "frames"),
     # ---- analysis ----
-    Param("corr_smooth", "analysis", "float", 1.5, "Gaussian smoothing (beads) applied to per-position signals before the extra validation correlations (0 = off)", "beads"),
-    Param("track_smooth", "analysis", "float", 7.0, "Gaussian smoothing of the Hi-C insulation score and of the A/B track (Hi-C eigenvector or compartment BigWig) used as input and for validation (0 = off)", "beads", flag="--track-smooth"),
+    Param("track_smooth", "analysis", "float", 7.0, "Gaussian smoothing of the Hi-C insulation score, of the A/B track (Hi-C eigenvector or compartment BigWig) and of the validation profiles: loop strength, insulation score, compartments (0 = off)", "beads", flag="--track-smooth"),
     Param("contact_radius", "analysis", "float", 1.0, "Contact distance for MD contact maps", "nm"),
     Param("zoom_snapshots", "analysis", "int", 120, "Snapshots shown in the zoomed kymograph (window near equilibrium)", "snapshots"),
     Param("zoom_start", "analysis", "int", None, "First snapshot of the zoom window (empty = middle of production)", "snapshot"),
@@ -173,4 +172,4 @@ BY_NAME = {p.name: p for p in PARAMS}
 
 # keys from old LoopSage configs that no longer do anything (ignored with a note)
 DEPRECATED = {"save_plots", "save_mdt", "viz_heats", "float_list", "string_list",
-              "simulation_type", "auto_tune", "comp_file"}
+              "simulation_type", "auto_tune", "comp_file", "corr_smooth"}

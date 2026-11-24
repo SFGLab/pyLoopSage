@@ -101,8 +101,8 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 CLI_TAIL = """
 ## Output
 
-Every run gets its own folder, `results/<chrom>_<start>_<end>_<run>/`, with the report in `report/report.html`, the figures in `visualizations/`, the 3D structures in `structures/`, and the numerical results in `data/` (matrices in `data/metadata/` as `.npy` files).
-Use `-o` to choose another results folder and `--run N` to fix the run number.
+Every run writes into one output folder, with the report in `report/report.html`, the figures in `visualizations/`, the 3D structures in `structures/`, and the numerical results in `data/` (matrices in `data/metadata/` as `.npy` files).
+Choose the folder with `-o`: it is created if it does not exist (with its parents) and used exactly as given, so `-o results` writes into `results/` and `-o results/chr1_134_489` into that subfolder. Without `-o` the folder is `results/<chrom>_<start>_<end>`. The region is not part of the layout; it is written in the report.
 
 **Everything is saved by default**, from the command line and from a config file. Each kind of output has its own switch to turn it off (`--no-...`, or `... = False` in the config file):
 

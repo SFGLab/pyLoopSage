@@ -236,3 +236,45 @@ def test_cpu_platform_uses_all_cores_unless_threads_set(tmp_path):
     import os
     assert _engine("cpu", tmp_path)._cpu_threads() == (os.cpu_count() or 1)
     assert _engine("cpu", tmp_path, threads_source="cli")._cpu_threads() == 1
+
+
+def _implied_J(n, ms, ns, norm=1.0):
+    """The coupling matrix the energy functions actually use, read off the code: J_ab = -dE when beads a and b (alone) share a state."""
+    from loopsage.monte_carlo.energy import dE_epi_dyn, E_epi_dyn
+    h, S = np.zeros(n), np.arange(n, dtype=np.int64)                   # all states different: no pair is coupled
+    J, e0 = np.zeros((n, n)), E_epi_dyn(S, ms, ns, h, norm)
+    for a in range(n):
+        for b in range(a + 1, n):
+            S2 = S.copy(); S2[a] = S[b]                              # now only the pair (a, b) shares a state
+            J[a, b] = J[b, a] = -(E_epi_dyn(S2, ms, ns, h, norm) - e0) / norm
+            assert np.isclose(dE_epi_dyn(S, ms, ns, h, norm, a, int(S[b])), -norm * J[a, b])      # incremental update agrees
+    return J
+
+
+def test_dynamic_J_is_one_on_backbone_and_loops_and_zero_elsewhere():
+    """J_ij = 1 for nearest neighbours |i-j| = 1 and for every current LEF loop (m, n), 0 for all other pairs, symmetric, zero diagonal."""
+    n = 16
+    ms, ns = np.array([2, 5, 5, 9], np.int64), np.array([7, 12, 12, 11], np.int64)       # a nested pair, and a duplicated loop (5, 12)
+    J = _implied_J(n, ms, ns)
+    assert np.array_equal(J, J.T) and not np.diag(J).any()
+    assert set(np.unique(J)) <= {0.0, 1.0}                                                  # binary: a duplicate loop does not make 2
+    assert all(J[i, i + 1] == 1 for i in range(n - 1))                                      # nearest neighbours
+    assert all(J[m, k] == 1 for m, k in zip(ms, ns))                                        # loops
+    expected = _dense_J(n, ms, ns)
+    assert np.array_equal(J, expected) and J.sum() == 2 * (n - 1 + 3)                       # 15 bonds + 3 distinct loops, nothing else
+
+
+def test_dynamic_J_follows_the_loops_and_has_no_memory():
+    """J depends only on where the loops are now: moving a loop moves its 1; no loops left = backbone only; the energy scale only multiplies."""
+    from loopsage.monte_carlo.energy import E_epi_dyn
+    n = 12
+    ms, ns = np.array([1, 4], np.int64), np.array([6, 9], np.int64)
+    J0 = _implied_J(n, ms, ns)
+    ms2 = ms.copy(); ns2 = ns.copy(); ms2[0], ns2[0] = 3, 8                                 # slide one loop
+    J1 = _implied_J(n, ms2, ns2)
+    assert J0[1, 6] == 1 and J1[1, 6] == 0 and J1[3, 8] == 1 and J0[3, 8] == 0              # old coupling off, new one on
+    assert np.array_equal(J1, _dense_J(n, ms2, ns2))
+    assert np.array_equal(_implied_J(n, ms2, ns2), _implied_J(n, ms2[::-1].copy(), ns2[::-1].copy()))      # order of the loops is irrelevant
+    assert np.array_equal(_implied_J(n, ms[:0], ns[:0]), _dense_J(n, ms[:0], ns[:0]))      # no loops: backbone only
+    S, h = np.zeros(n, np.int64), np.zeros(n)
+    assert E_epi_dyn(S, ms, ns, h, 2.5) == pytest.approx(2.5 * E_epi_dyn(S, ms, ns, h, 1.0))      # epi_coeff scales the energy, never J

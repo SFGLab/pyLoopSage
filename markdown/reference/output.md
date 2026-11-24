@@ -4,22 +4,32 @@ Every run writes **one folder** that holds everything it produced: the report, t
 
 ## The run folder
 
-By default results go to a `results/` folder inside the project (change it with `--out`). Each region gets its own subfolder:
+The output folder is **yours to choose**, with `--out` (`-o`, config key `out_path`). LoopSage creates it, with all its parent folders, if it does not exist yet, and writes the files into it exactly as given. The region is not part of the layout: the chromosome and the coordinates are written in the report and in `config_resolved.ini`, not in a folder name.
+
+| You give | The results go to |
+|---|---|
+| `--out results` | `results/` |
+| `--out results/chr1_134_489` | `results/chr1_134_489/` (`results/` is created too if needed) |
+| `--out /data/hic/exp7/run_a` | that folder, created with all its parents |
+| nothing | `results/<chrom>_<start>_<end>/` in the current folder, for example `results/chr1_77000000_95000000/` |
+
+Without `--out` the region is added to the default folder, so that runs of different regions do not overwrite each other. An existing file with the name of the folder is an error.
+
+The folder holds:
 
 ```text
-results/
-└── chr1_77000000_95000000/            <chromosome>_<start>_<end>
-    ├── report/
-    │   └── report.html                the full report: open this first
-    ├── visualizations/                every figure, as .png and .svg
-    │   └── 3d/                        interactive viewer and videos
-    ├── structures/                    3D structures of the polymer
-    │   └── ensemble/                  one .cif file per MD frame
-    ├── data/                          saved results of each stage (for reuse)
-    │   └── metadata/                  small arrays: maps, optimized parameters
-    ├── logs/
-    │   └── loopsage.log               everything the run printed, in detail
-    └── config_resolved.ini            every setting the run used
+results/                           the output folder, whatever you named it
+├── report/
+│   └── report.html                the full report: open this first
+├── visualizations/                every figure, as .png and .svg
+│   └── 3d/                        interactive viewer and videos
+├── structures/                    3D structures of the polymer
+│   └── ensemble/                  one .cif file per MD frame
+├── data/                          saved results of each stage (for reuse)
+│   └── metadata/                  small arrays: maps, optimized parameters
+├── logs/
+│   └── loopsage.log               everything the run printed, in detail
+└── config_resolved.ini            every setting the run used
 ```
 
 ### Several replicas
@@ -27,7 +37,7 @@ results/
 With one replica (the default) the folders above are exactly what you get, with no `replica_<k>` subfolders. With `--n-replicas N` (N ≥ 2) every replica is a fully independent simulation: its own Monte Carlo chain (random start, own seed), and its own 3D run (own start structure, loops and random stream). The seeds follow from `--seed`: replica 0 uses it, the others get independent streams derived from it, and each is listed in the *Replicas* tables of the report. Everything stays in the same run folder; only the per-replica files get a `replica_<k>` subfolder (`k` = 0, 1, ...):
 
 ```text
-chr1_77000000_95000000/
+results/
 ├── visualizations/
 │   ├── replica_maps.png, md_replica_maps.png, ...   diagnostics across all replicas (also in the report)
 │   └── replica_0/, replica_1/, ...                  figures of one replica, incl. its 3d/ viewer and videos
@@ -55,10 +65,10 @@ The report and the files in the main folders show the **pooled** result (all rep
 
 ### Repeated runs
 
-The folder is named after the region, `chr1_77000000_95000000`. Running the *same region* again with the same `--out` folder writes into it and **overwrites** its results (the log warns about it). To keep several runs, give each its own `--out` folder, for example `--out results_test1`.
+Running again with the same `--out` writes into the same folder and **overwrites** its results (the log warns about it). To keep several runs, give each its own folder, for example `--out results/test1`, `--out results/test2`, or one per region, `--out results/chr1_134_489`.
 
 !!! tip "Which run was which?"
-    The folder name only tells the region. What made the runs different is written in `config_resolved.ini` inside each folder (see below), so compare those files, not the names.
+    Name the folders as you like. What made the runs different is written in `config_resolved.ini` inside each folder (see below), so compare those files, not the names.
 
 ## What is in each folder
 
@@ -194,11 +204,11 @@ Each output has a switch. Boolean switches come in pairs on the command line (`-
 | Topology | `--knots` | `detect_knots` | off | with it on: `links.npz` and the `links_*` figures |
 | Console output | `-q`, `-v`, `-vv`, `-vvv` | `quiet`, `verbosity` | normal | `-q` prints nothing; the log file and report are still written |
 
-Where the files go and how they are numbered:
+Where the files go:
 
 | What | Command line | Config key | Meaning |
 |---|---|---|---|
-| Results folder | `--out PATH`, `-o PATH` | `out_path` | the folder that holds the run folders (default `results/`) |
+| Output folder | `--out PATH`, `-o PATH` | `out_path` | the folder of the run, created with its parents and used as given (default `results/<chrom>_<start>_<end>`) |
 | Random seed | `--seed N` | `seed` | repeat a run exactly. Without it a random seed is chosen and stored in `config_resolved.ini` |
 
 A few examples:
@@ -234,7 +244,7 @@ Every stage saves its result in `data/`. If you run a **single stage** again on 
 python -m loopsage.pipeline.stage_mc -c config.ini
 ```
 
-The stage modules are `stage_preproc`, `stage_optimize`, `stage_mc`, `stage_md`, `stage_structure` and `stage_report` (all in `loopsage.pipeline`). The existing run folder of the region (same `--out`) is the one used.
+The stage modules are `stage_preproc`, `stage_optimize`, `stage_mc`, `stage_md`, `stage_structure` and `stage_report` (all in `loopsage.pipeline`). The stages read the saved results from the folder given with `--out` (or the default folder of the region).
 
 ## Using the data in your own analysis
 
@@ -244,7 +254,7 @@ Everything above can be read without LoopSage. In Python:
 import json
 import numpy as np
 
-run = "results/chr1_77000000_95000000"
+run = "results/chr1_77000000_95000000"                  # the folder you gave as --out
 
 mc = np.load(f"{run}/data/mc.npz")
 meta = json.loads(str(mc["meta"]))                   # run settings stored with the arrays
@@ -272,7 +282,7 @@ import numpy as np
 import pandas as pd
 
 rows = []
-for run in sorted(Path("results").glob("chr1_77000000_95000000_*")):
+for run in sorted(Path("results").glob("test*")):               # one --out folder per run, e.g. results/test1, results/test2
     cfg = configparser.ConfigParser(inline_comment_prefixes=(";",))
     cfg.read(run / "config_resolved.ini")
     mc = np.load(run / "data" / "mc.npz")

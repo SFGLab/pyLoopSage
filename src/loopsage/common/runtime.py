@@ -1,7 +1,7 @@
 """Thread settings shared by the sampler, numba kernels and OpenMM.
 
 - Stage progress bars (always shown).
-- Output layout: <results>/<chrom>_<start>_<end>/{structures,visualizations,report,logs,data}; several replicas add replica_<k> subfolders.
+- Output layout: <out>/{structures,visualizations,report,logs,data}; several replicas add replica_<k> subfolders.
 """
 import os
 import random
@@ -175,7 +175,7 @@ def fun_bar(desc: str, total: float):
         view.done = view.total
 
 
-# ---- Output layout: <results>/<chrom>_<start>_<end>/{structures,visualizations,report,logs,data}; replicas add replica_<k> subfolders ----
+# ---- Output layout: <out>/{structures,visualizations,report,logs,data}; replicas add replica_<k> subfolders ----
 
 log = get_logger(__name__)
 
@@ -224,12 +224,16 @@ class OutputDirs:
     def config(self) -> Path: return self.root / "config_resolved.ini"
 
 
-def create_run_dirs(base, geom, replicas: int = 1) -> OutputDirs:
-    """Folder `<chrom>_<start>_<end>` under `base` (default ./results); with replicas > 1 also `replica_<k>` subfolders of structures and visualizations."""
-    base = Path(base).expanduser().resolve() if base else Path.cwd() / "results"
-    if base.exists() and not base.is_dir():
-        raise IOError(f"'{base}' exists and is not a directory.")
-    dirs = OutputDirs(base / f"{geom.chrom}_{geom.start}_{geom.end}", max(int(replicas), 1))
+def create_run_dirs(out, geom, replicas: int = 1) -> OutputDirs:
+    """The run folder is `out` exactly as given (created with its parents when missing).
+
+    Without `out` it is ./results/<chrom>_<start>_<end>, so runs of different regions do not collide.
+    With replicas > 1 structures and visualizations also get `replica_<k>` subfolders.
+    """
+    root = Path(out).expanduser().resolve() if out else Path.cwd() / "results" / f"{geom.chrom}_{geom.start}_{geom.end}"
+    if root.exists() and not root.is_dir():
+        raise IOError(f"'{root}' exists and is not a directory.")
+    dirs = OutputDirs(root, max(int(replicas), 1))
     for d in (dirs.data, dirs.logs, dirs.report.parent, *[v for k in range(dirs.n_replicas) for v in (dirs.replica(k).viewer, dirs.replica(k).structures)], dirs.viewer):
         d.mkdir(parents=True, exist_ok=True)
     return dirs

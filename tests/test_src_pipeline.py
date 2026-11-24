@@ -12,7 +12,7 @@ from loopsage.settings.loader import load_config
 def test_run_creates_organised_folder_and_report(figure_run):
     ctx = figure_run
     root = ctx.dirs.root
-    assert re.fullmatch(r"chr1_77000000_95000000", root.name)             # no automatic number
+    assert root.name == "results"                                          # --out is the folder itself, no region or number added
     for sub in ("visualizations", "structures", "report", "logs", "data"):
         assert (root / sub).is_dir()
     html = (root / "report" / "report.html").read_text()
@@ -23,10 +23,10 @@ def test_run_creates_organised_folder_and_report(figure_run):
     assert (root / "visualizations" / "loop_nesting.png").exists() and (root / "visualizations" / "loop_parents_children.png").exists()
 
 
-def test_run_folder_has_no_number(fast_args):
+def test_out_is_the_run_folder_and_a_rerun_overwrites_it(fast_args):
     first = run_pipeline(load_config(fast_args)).dirs.root
     second = run_pipeline(load_config(fast_args)).dirs.root
-    assert first.name == second.name == "chr1_77000000_95000000"              # same folder, overwritten
+    assert first == second and first.name == "results"                        # same folder, overwritten
     assert "already has results" in first.joinpath("logs", "loopsage.log").read_text()      # the second run said it overwrote
 
 
@@ -178,7 +178,9 @@ def test_replicas_run_independently_and_are_organised_per_replica(demo_bedpe, tm
     ctx = run_pipeline(load_config(_replica_args(fa, 3, tmp_path, "three")))
     d, chains = ctx.dirs, ctx.mc.chains
     assert len(chains) == 3 and len(ctx.md.chains) == 3
-    assert [c.meta["seed"] for c in chains] == [1, 2, 3] and [c.meta["seed"] for c in ctx.md.chains] == [1, 2, 3]       # --seed 1: replica j has seed 1 + j
+    for runs in (chains, ctx.md.chains):                                                                               # --seed 1: replica 0 keeps it, the others get their own derived seeds
+        seeds = [c.meta["seed"] for c in runs]
+        assert seeds[0] == 1 and len(set(seeds)) == 3
     assert not np.array_equal(chains[0].Ms, chains[1].Ms) and not np.array_equal(chains[1].Ms, chains[2].Ms)      # different random chains
     x = [c.coords[0] for c in ctx.md.chains]
     assert not np.allclose(x[0], x[1], atol=1e-3) and not np.allclose(x[1], x[2], atol=1e-3)                       # different MD runs
@@ -198,3 +200,40 @@ def test_replicas_run_independently_and_are_organised_per_replica(demo_bedpe, tm
     assert all((d.data / f"{n}_r{k}.npz").exists() for n in ("mc", "md") for k in range(3)) and not (d.data / "mc.npz").exists()   # one file per replica
     again = type(ctx.md).load(d.data / "md.npz")                              # cache round trip keeps all replicas
     assert len(again.chains) == 3 and np.allclose(again.chains[2].coords, ctx.md.chains[2].coords)
+
+
+# ---- Output folder: --out is used exactly as given ----
+
+class _Geom:
+    chrom, start, end = "chr1", 134, 489
+
+
+def test_out_folder_is_used_as_given_and_created_with_parents(tmp_path):
+    from loopsage.common.runtime import create_run_dirs
+    plain = create_run_dirs(tmp_path / "results", _Geom())
+    assert plain.root == (tmp_path / "results").resolve() and plain.data.is_dir() and plain.report.parent.is_dir()      # no region, no number added
+    nested = create_run_dirs(tmp_path / "results" / "chr1_134_489", _Geom())                                           # whole tree is created
+    assert nested.root == (tmp_path / "results" / "chr1_134_489").resolve() and nested.logs.is_dir()
+    assert not list((tmp_path / "results").glob("chr1_134_489_*")) and nested.root.parent == plain.root
+
+
+def test_default_out_folder_names_the_region(tmp_path, monkeypatch):
+    from loopsage.common.runtime import create_run_dirs
+    monkeypatch.chdir(tmp_path)
+    assert create_run_dirs(None, _Geom()).root == (tmp_path / "results" / "chr1_134_489").resolve()       # only when --out is not given
+
+
+def test_out_folder_that_is_a_file_is_an_error_and_replicas_get_subfolders(tmp_path):
+    from loopsage.common.runtime import create_run_dirs
+    (tmp_path / "taken").write_text("x")
+    with pytest.raises(IOError):
+        create_run_dirs(tmp_path / "taken", _Geom())
+    d = create_run_dirs(tmp_path / "multi", _Geom(), replicas=3)
+    assert all((d.root / "structures" / f"replica_{k}").is_dir() for k in range(3))
+
+
+def test_run_pipeline_writes_into_the_given_nested_folder(fast_args, tmp_path):
+    out = tmp_path / "a" / "b" / "chr1_134_489"
+    i = fast_args.index("-o")
+    ctx = run_pipeline(load_config(fast_args[:i] + ["-o", str(out)] + fast_args[i + 2:]))
+    assert ctx.dirs.root == out.resolve() and (out / "report" / "report.html").exists() and (out / "config_resolved.ini").exists()

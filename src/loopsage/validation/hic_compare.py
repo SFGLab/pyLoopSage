@@ -3,7 +3,7 @@ import numpy as np
 
 from scipy.ndimage import gaussian_filter1d
 
-from loopsage.analysis.maps import compartment_from_hic, oe_correlation, STATE_SMOOTH, fill_masked, insulation_score, observed_over_expected, pc1, ps_curve
+from loopsage.analysis.maps import compartment_from_hic, oe_correlation, STATE_SMOOTH, fill_masked, insulation_score, observed_over_expected, pc1, ps_normalized
 from loopsage.validation.compare import boundaries, boundary_overlap
 
 NAN = float("nan")
@@ -47,8 +47,7 @@ def compare_hic(model, hic, window: int = 5, tol: int = 2, state=None, track: fl
     up = (sep >= 2) & (np.triu(np.ones((n, n)), 1) > 0) & seen
     ok = up & (h > 0) & (m > 0)
     oe_h, oe_m = observed_over_expected(h), observed_over_expected(m)
-    ps_h, ps_m = ps_curve(h)[1:n // 2], ps_curve(m)[1:n // 2]
-    ps_h, ps_m = ps_h / ps_h.sum(), ps_m / ps_m.sum()
+    ps_h, ps_m = ps_normalized(h, n // 2), ps_normalized(m, n // 2)
     ins_h, ins_m = insulation_score(h, window, track), insulation_score(m, window, track)
     sl = slice(window, n - window)
     ins_h, ins_m = (np.nan_to_num(np.log2(np.clip(v[sl], 1e-12, None) / v[sl].mean())) for v in (ins_h, ins_m))

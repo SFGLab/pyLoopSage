@@ -20,11 +20,11 @@ First stable release of LoopSage 2: a full rewrite of the original scripts into 
 
 **Replica simulations (`--n-replicas`)**
 - **Independent replicas.** Each replica has its own Monte Carlo chain (random initial loops and epigenetic states) and its own MD run (own start structure if the shape is random, own loops and thermostat noise).
-- **Seeds.** Replica `j` uses the seed `--seed + j`, so a run is reproducible and replica 0 equals a single run with the same seed.
+- **Seeds.** Replica 0 uses `--seed` and every other replica gets its own independent seed derived from it, so a run is reproducible, replica 0 equals a single run with the same seed, and each replica can be repeated alone with the seed listed in the report.
 - **One replica (default):** no replica numbering, no subfolders.
 - **Several replicas:** results go into `replica_<k>/` subfolders (structures, figures, viewer) inside the same run folder. Cached results are `mc_r0.npz`, `mc_r1.npz`, ... and `md_r0.npz`, ... (loop trajectories and epigenetic states per replica).
 - **Cross-replica diagnostics:** average and standard deviation (between replicas) of the contact and distance heatmaps, per-replica average maps, and pairwise correlation of the replica maps, plus pooled statistics over all replicas.
-- The run folder is named `<chrom>_<start>_<end>` with no run number; the `--run` option was removed.
+- **Output folder:** `--out` is the output folder itself (created with its parents if missing, used as given), so you choose the layout; without `--out` it is `results/<chrom>_<start>_<end>`. There is no run number and `--run` was removed.
 
 **Parameter optimizer (`--optimize`)**
 - Nelder-Mead search over the number of LEFs, folding, binding and temperature. Fits against Hi-C or the map built from the input loops, with early stopping and re-scoring of the best candidates on longer runs.

@@ -72,10 +72,7 @@ def describe(ctx):
             signal_figure(p, ctx.geom, (("_" + ("md" if "MD" in src else "mc")) if both else ""), src if both else "")
     head = ctx.validation[ctx.val_source]
     if head.rows:
-        REGISTRY.fact("Pearson r", f"{head.rows[0]['pearson']:.2f} ({head.rows[0]['strength']})")
-        sm = [r for r in head.rows if r["label"] == "Primary (zero-excluded), smoothed"]
-        if sm:
-            REGISTRY.fact("Pearson r (smoothed)", f"{sm[0]['pearson']:.2f} ({sm[0]['strength']})")
+        REGISTRY.fact("Pearson r", f"{head.rows[0]['pearson']:.2f} ({head.rows[0]['strength']})")        # loop strength, smoothed profiles
     validation_summary({src: res.rows for src, res in ctx.validation.items()})
     if ctx.hic is not None:
         _hic(ctx)

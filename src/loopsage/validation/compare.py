@@ -12,7 +12,7 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.signal import find_peaks
 from scipy.stats import kendalltau, mannwhitneyu, pearsonr, spearmanr
 
-from loopsage.analysis.maps import insulation_profile, insulation_window, loop_map_from_counts, map_features, ps_curve
+from loopsage.analysis.maps import insulation_profile, insulation_window, loop_map_from_counts, map_features, ps_curve, ps_normalized
 from loopsage.common.utils import normalize_signal, pearson_ci, strength_label
 from loopsage.logger import get_logger
 from loopsage.preproc.readers import numeric_col, read_region_table, valid_prob
@@ -55,11 +55,11 @@ def exp_ps(df, geom) -> np.ndarray:
 
 
 def oe_values(df, mat, geom):
-    """Per-loop observed/expected: weight and simulated contact divided by their P(s)."""
+    """Per-loop observed/expected: weight and simulated contact divided by their P(s), each rescaled to mean 1 (same units on both sides)."""
     x, y, w = bedpe_pairs(df, geom)
     d = np.abs(y - x)
-    sim = mat[x, y]
-    return x, y, w / (exp_ps(df, geom)[d] + 1e-9), sim / (ps_curve(mat)[d] + 1e-9)
+    e, s = w / (exp_ps(df, geom)[d] + 1e-9), mat[x, y] / (ps_curve(mat)[d] + 1e-9)
+    return x, y, e / max(e.mean(), 1e-12), s / max(s.mean(), 1e-12)
 
 
 def aggregate_to_beads(x, y, exp_vals, sim_vals, n):
@@ -229,29 +229,45 @@ def experiment_features(path, geom):
     return map_features(loop_matrix(read_region_table(path, geom, paired=True), geom))
 
 
-def _compare(res, label, signal, key, exp, sim, kind, sigma, perm=0, log=False, **extra):
-    """Correlate raw and (optionally) smoothed signals; the smoothed pair is what the figure highlights."""
-    raw = correlate(normalize_signal(exp), normalize_signal(sim), exp, sim, True, perm)
-    ok = _add(res, label, signal, raw)
+def _pair(exp, sim, logr):
+    """The two signals as correlated: log10 of the positive part for decay curves (logr), else as they are."""
+    e, s = np.asarray(exp, float), np.asarray(sim, float)
+    if logr:
+        ok = (e > 0) & (s > 0)
+        return np.log10(e[ok]), np.log10(s[ok])
+    return e, s
+
+
+def _compare(res, label, signal, key, exp, sim, kind, sigma, perm=0, logr=False, **extra):
+    """Correlate the signals smoothed with `sigma` beads (the primary row, which the figure shows) and, as a reference, raw.
+
+    kind "loop" (per-loop values) and logr (decay curves, a function of separation) are never smoothed.
+    """
+    z = (lambda v: v) if logr else normalize_signal
     sm = None
-    if ok and sigma > 0 and kind != "loop":
-        es, ss = smooth(exp, sigma, log), smooth(sim, sigma, log)
-        sm = correlate(normalize_signal(es), normalize_signal(ss), exp, sim, True, perm)
-        _add(res, f"{label}, smoothed", signal, sm)
-    if ok:
-        res.plots.append(dict(key=key, signal=signal, kind=kind, raw=raw, smooth=sm, sigma=sigma, exp=np.asarray(exp, float),
-                              sim=np.asarray(sim, float), **extra))
+    if sigma > 0 and kind not in ("loop", "sep"):
+        es, ss = smooth(exp, sigma), smooth(sim, sigma)
+        sm = correlate(z(es), z(ss), exp, sim, True, perm)
+    ce, cs = _pair(exp, sim, logr)
+    raw = correlate(z(ce), z(cs), ce, cs, True, perm)
+    if not _add(res, label, signal, sm or raw):
+        return
+    if sm:
+        _add(res, f"{label}, raw", signal, raw)
+    res.plots.append(dict(key=key, signal=signal, kind=kind, raw=raw, smooth=sm, sigma=sigma if sm else 0.0, exp=np.asarray(exp, float),
+                          sim=np.asarray(sim, float), **extra))
 
 
 def validate(mat, cfg, geom, path=None, comp=None, track=None, track_name="PC1 of the simulated map") -> ValidationResult:
-    """Correlate simulated vs experimental loop strength, P(s) decay and insulation (path overrides cfg.interaction_file).
+    """Correlate simulated vs experimental loop strength, P(s) decay, insulation and compartments (path overrides cfg.interaction_file).
 
-    Per-position signals are also compared after a light Gaussian smoothing (cfg.corr_smooth beads), which removes bead-level noise.
+    Per-position profiles are smoothed with one Gaussian width (cfg.track_smooth beads, as the Hi-C insulation and A/B tracks) before they are
+    correlated and plotted; the raw correlation is kept as a reference row. P(s) curves are compared as normalised probabilities (sum 1).
     """
     path = path or cfg.interaction_file
     fmt = detect_format(path)
     df = read_region_table(path, geom, paired=(fmt == "bedpe"))
-    res, sigma = ValidationResult(), float(cfg.corr_smooth)
+    res, sigma = ValidationResult(), float(cfg.track_smooth)
     paired = fmt == "bedpe"
 
     if paired:
@@ -262,16 +278,17 @@ def validate(mat, cfg, geom, path=None, comp=None, track=None, track_name="PC1 o
         exp, sim = site_signal(mat, df, geom)
         name = "site strength"
     _compare(res, "Primary (zero-excluded)", name, "pearson", exp, sim, "bead", sigma, perm=500)
-    _add(res, "Reference (zeros kept)", name, correlate(normalize_signal(exp), normalize_signal(sim), drop_zero=False))
+    _add(res, "Reference (zeros kept, raw)", name, correlate(normalize_signal(exp), normalize_signal(sim), drop_zero=False))
 
     if paired and len(x) > 1:
         c = correlate(normalize_signal(e_oe), normalize_signal(s_oe), e_oe, s_oe, True, 500)
         if _add(res, "Per-loop (no aggregation)", "loop strength (O/E)", c):
             res.plots.append(dict(key="pearson_direct", signal="loop strength (O/E)", kind="loop", raw=c, smooth=None, sigma=0.0, exp=e_oe, sim=s_oe))
-        _compare(res, "P(s) decay", "contact vs bead separation", "ps_decay", exp_ps(df, geom), ps_curve(mat), "sep", sigma, log=True)
+        ps_e, ps_s = ps_normalized(experiment_map(df, geom, cfg.n_lef)), ps_normalized(mat)         # both from a map, both probabilities (sum 1)
+        _compare(res, "P(s) decay", "contact vs bead separation", "ps_decay", np.r_[0, ps_e], np.r_[0, ps_s], "sep", sigma, logr=True)
         w = insulation_window(geom)                                   # same diamond (in bp) on both maps; the raw loop dots are not a map
         ins_sim, ins_exp = insulation_profile(mat, w), insulation_profile(experiment_map(df, geom, cfg.n_lef), w)
-        be, bs = boundaries(ins_exp, max(sigma, 1)), boundaries(ins_sim, max(sigma, 1))
+        be, bs = boundaries(smooth(ins_exp, sigma)), boundaries(smooth(ins_sim, sigma))             # boundaries of the smoothed scores shown in the figure
         _compare(res, "Insulation score", "insulation score, experiment (loop map) vs simulation", "insulation", ins_exp, ins_sim, "bead", sigma,
                  b_exp=be, b_sim=bs, overlap=boundary_overlap(be, bs), overlap_rev=boundary_overlap(bs, be))
         _compare(res, "Boundary strength vs loops", "loop strength vs simulated boundary strength (minus insulation)", "insulation_anchor", exp, -ins_sim, "bead", sigma)

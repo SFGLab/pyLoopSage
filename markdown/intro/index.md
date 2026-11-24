@@ -65,7 +65,7 @@ LoopSage reproduces this process in a computer:
 loopsage -f loops.bedpe -r chr1:77000000-95000000
 ```
 
-Then open `results/chr1_77000000_95000000_1/report/report.html` in a browser.
+Then open `results/chr1_77000000_95000000/report/report.html` in a browser (the default output folder; choose your own with `--out`).
 Install the program first: see [Installation](installation.md). To learn why LoopSage is built the way it is, read the [Inspiration](inspiration.md). All options are listed in the [Reference](../reference/index.md).
 
 ## Citation

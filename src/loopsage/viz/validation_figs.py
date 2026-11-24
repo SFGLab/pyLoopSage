@@ -50,7 +50,7 @@ def _dots(ax, x, y, color=None):
 def _stats_box(ax, p):
     """Pearson r (smoothed and raw) and Spearman rho in a corner box."""
     raw, sm = p["raw"], p["smooth"]
-    lines = [f"Pearson r = {(sm or raw)['pearson']:.2f}" + (f"  (smoothed {p['sigma']:g})" if sm else ""),
+    lines = [f"Pearson r = {(sm or raw)['pearson']:.2f}" + (f"  (smoothed {p['sigma']:g})" if sm else "") + ("  (log P(s))" if p["key"] == "ps_decay" else ""),
              f"Spearman = {(sm or raw)['spearman']:.2f}"]
     if sm:
         lines.append(f"raw: r = {raw['pearson']:.2f}")
@@ -106,24 +106,15 @@ def _bead_figure(p, geom):
 
 
 def _sep_figure(p, geom):
-    """Left: both decays (log-log, relative to the shortest separation). Right: their ratio, i.e. where the simulated decay is too flat or too steep."""
+    """Left: both decays as probabilities P(s) (each sums to 1, so the units match), log-log. Right: their ratio, i.e. where the simulated decay is too flat or too steep."""
     fig, axs = make_fig(1, 2, cell=(5.6, 4.4))
-    kb = geom.bp_per_bead / 1e3
-    s = np.arange(len(p["exp"]))[1:] * kb
-    curves = {}
-    for v, col, lab in ((p["exp"], EXP_COLOR, "Experiment"), (p["sim"], SIM_COLOR, "Simulation")):
-        v = v[1:] / (v[1:][v[1:] > 0][0] if (v[1:] > 0).any() else 1)
+    s = np.arange(len(p["exp"]))[1:] * geom.bp_per_bead / 1e3                       # separation in kb
+    e, m = p["exp"][1:], p["sim"][1:]
+    for v, col, lab in ((e, EXP_COLOR, "Experiment (loop map)"), (m, SIM_COLOR, "Simulation")):
         ok = v > 0
-        axs[0].plot(s[ok], v[ok], color=col, lw=0.8, alpha=0.4)
-        sm = smooth(v, p["sigma"], log=True) if p["smooth"] else v
-        curves[lab] = sm
-        if p["smooth"]:
-            axs[0].plot(s[ok], sm[ok], color=col, lw=2.2, label=lab)
-        else:
-            axs[0].plot([], [], color=col, label=lab)
-    axs[0].set(xscale="log", yscale="log", title="Contact decay with separation", xlabel="Separation (kb)", ylabel="Mean contact (relative to the shortest)")
+        axs[0].plot(s[ok], v[ok], color=col, lw=2.2, label=lab)
+    axs[0].set(xscale="log", yscale="log", title="Contact decay with separation", xlabel="Separation (kb)", ylabel="P(s), normalised to sum 1")
     axs[0].legend(frameon=False, fontsize=8)
-    e, m = curves["Experiment"], curves["Simulation"]
     ok = (e > 0) & (m > 0)
     r = np.log2(m[ok] / e[ok])
     lim = max(2.0, 1.3 * np.percentile(np.abs(r), 90))                          # a few noisy points at the longest separations must not set the scale
@@ -175,15 +166,13 @@ def signal_figure(p, geom, suffix="", source=""):
 
 
 def validation_summary(by_source):
-    """Pearson r per comparison for every simulated map (MC, MD): smoothed value (raw when there is none) with its 95% CI."""
+    """Pearson r per comparison for every simulated map (MC, MD): the smoothed profiles, with the 95% CI."""
     colors = dict(zip(by_source, (VIOLET, "#1baf7a")))
     groups = {}
     for src, rows in by_source.items():
         for r in rows:
-            if np.isfinite(r["ci_lo"]):
-                g = groups.setdefault(r["label"].replace(", smoothed", ""), {})
-                if src not in g or "smoothed" in r["label"]:          # prefer the smoothed row
-                    g[src] = r
+            if np.isfinite(r["ci_lo"]) and not r["label"].endswith(", raw") and "zeros kept" not in r["label"]:     # the primary (smoothed) rows
+                groups.setdefault(r["label"], {})[src] = r
     if not groups:
         return
     fig, axs = make_fig(1, 1, cell=(8.6, 0.8 * len(groups) + 2.0))
@@ -200,7 +189,7 @@ def validation_summary(by_source):
     ax.axvline(0, color=MUTED, lw=0.8)
     first = lambda g: next(iter(g.values()))
     ax.set_yticks(range(len(groups)), [f"{n_}\n{first(g)['signal']}" for n_, g in reversed(list(groups.items()))])
-    ax.set(title="Agreement with experiment", xlabel="Pearson r (95% CI, smoothed where available)", xlim=(-0.5, 1.15), ylim=(-0.6, len(groups) - 0.4))
+    ax.set(title="Agreement with experiment", xlabel="Pearson r (95% CI, smoothed profiles)", xlim=(-0.5, 1.15), ylim=(-0.6, len(groups) - 0.4))
     for src, col in colors.items():
         ax.plot([], [], "o", color=col, label=src)
     ax.legend(frameon=False, fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=2)

@@ -12,5 +12,5 @@ Tiny synthetic runs (`data/demo_loops.bedpe`: 60 loops on chr1:77-95 Mb, made by
 | `loopsage -c demo/demo_quick.ini -vv` | same as `quick`, with info messages | seconds |
 
 The sensitivity demo writes `results/scan_demo/sensitivity_report.html` (plus CSV tables); results folders are not tracked by git.
-Each other run writes a folder `results/chr1_77000000_95000000_<n>/` containing `report/report.html`.
+Each other run writes the folder `results/chr1_77000000_95000000/` (or the one given with `--out`) containing `report/report.html`.
 Add `-v` (tables) or `-vv` (info) to `run_demo.py` to see more in the terminal.

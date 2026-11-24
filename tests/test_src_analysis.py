@@ -146,19 +146,74 @@ def test_smoothing_helper():
     assert (smooth(np.array([1.0, 100, 1, 1]), 1.0, log=True) >= 0).all()
 
 
-def test_smoothing_raises_correlation_of_noisy_signals():
+def test_smoothing_raises_correlation_of_noisy_signals(smooth_sigma):
     from loopsage.validation.compare import _compare, ValidationResult
     rng = np.random.default_rng(0)
     base = np.convolve(rng.random(300), np.ones(15) / 15, "same") * 10                      # smooth shared structure
     exp, sim = base + rng.normal(0, 1.5, 300) + 5, base + rng.normal(0, 1.5, 300) + 5
     res = ValidationResult()
-    _compare(res, "Test", "toy", "pearson", exp, sim, "bead", sigma=3.0)
-    raw, sm = res.rows
-    assert sm["label"].endswith("smoothed") and sm["pearson"] > raw["pearson"] + 0.05
-    assert res.plots[0]["smooth"] is not None and res.plots[0]["sigma"] == 3.0
+    _compare(res, "Test", "toy", "pearson", exp, sim, "bead", sigma=smooth_sigma)
+    sm, raw = res.rows                                                                       # the smoothed profile is the primary row
+    assert raw["label"].endswith(", raw") and not sm["label"].endswith(", raw") and sm["pearson"] > raw["pearson"] + 0.05
+    assert res.plots[0]["smooth"] is not None and res.plots[0]["sigma"] == smooth_sigma
     off = ValidationResult()
     _compare(off, "Test", "toy", "pearson", exp, sim, "bead", sigma=0.0)
     assert len(off.rows) == 1 and off.plots[0]["smooth"] is None                     # 0 turns smoothing off
     loop = ValidationResult()
-    _compare(loop, "Test", "toy", "pearson_direct", exp, sim, "loop", sigma=3.0)
+    _compare(loop, "Test", "toy", "pearson_direct", exp, sim, "loop", sigma=smooth_sigma)
     assert len(loop.rows) == 1                                                       # per-loop values are never smoothed
+
+
+def test_validation_smooths_every_profile_with_track_smooth(run, smooth_sigma):
+    from loopsage.validation.compare import validate
+    cfg, geom, _, mc = run
+    cfg.track_smooth = smooth_sigma
+    res = validate(loop_map(mc, geom.n_beads), cfg, geom)
+    beads = [p for p in res.plots if p["kind"] == "bead"]
+    assert {p["key"] for p in beads} >= {"pearson", "insulation"}
+    assert all(p["sigma"] == smooth_sigma and p["smooth"] is not None for p in beads)     # loop strength and insulation: one width
+    assert res.rows[0]["label"] == "Primary (zero-excluded)" and res.rows[0]["pearson"] == pytest.approx(beads[0]["smooth"]["pearson"])
+    cfg.track_smooth = 0.0
+    assert all(p["smooth"] is None for p in validate(loop_map(mc, geom.n_beads), cfg, geom).plots if p["kind"] == "bead")
+
+
+# ---- Validation: the experimental and simulated vectors have the same scale ----
+
+def test_ps_normalized_is_a_probability_in_any_units(random_matrix):
+    from loopsage.analysis.maps import ps_normalized
+    ps = ps_normalized(random_matrix)
+    assert ps.sum() == pytest.approx(1.0) and len(ps) == len(random_matrix) - 1
+    assert np.allclose(ps, ps_normalized(1e-3 * random_matrix))                         # counts or probabilities: same curve
+    assert ps_normalized(random_matrix, 20).sum() == pytest.approx(1.0)
+
+
+def test_decay_curves_share_one_scale(run):
+    from loopsage.validation.compare import validate
+    cfg, geom, _, mc = run
+    mat = loop_map(mc, geom.n_beads)
+    plots = {k: next(p for p in validate(m, cfg, geom).plots if p["key"] == "ps_decay") for k, m in (("counts", mat), ("probability", mat * 1e-3))}
+    for p in plots.values():
+        assert p["exp"][1:].sum() == pytest.approx(1.0) and p["sim"][1:].sum() == pytest.approx(1.0)      # both are P(s), same dimension
+        assert p["sigma"] == 0.0                                                                        # a decay is not smoothed
+    assert np.allclose(plots["counts"]["sim"], plots["probability"]["sim"])                                # MC counts or MD probabilities: same sim curve
+    assert np.allclose(plots["counts"]["exp"], plots["probability"]["exp"])
+
+
+def test_decay_of_a_map_with_itself_agrees(run):
+    from loopsage.validation.compare import _compare, ValidationResult
+    from loopsage.analysis.maps import ps_normalized
+    _, geom, _, mc = run
+    ps = np.r_[0, ps_normalized(loop_map(mc, geom.n_beads))]
+    res = ValidationResult()
+    _compare(res, "P(s)", "toy", "ps_decay", ps, 5 * ps, "sep", 0.0, logr=True)           # a pure rescaling must not change the correlation
+    assert res.rows[0]["pearson"] == pytest.approx(1.0)
+
+
+def test_oe_values_have_mean_one(run):
+    from loopsage.validation.compare import oe_values
+    from loopsage.preproc.readers import read_region_table
+    cfg, geom, _, mc = run
+    df = read_region_table(cfg.interaction_file, geom, paired=True)
+    for mat in (loop_map(mc, geom.n_beads), 1e-3 * loop_map(mc, geom.n_beads)):
+        _, _, e, s = oe_values(df, mat, geom)
+        assert e.mean() == pytest.approx(1.0) and s.mean() == pytest.approx(1.0)

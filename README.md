@@ -75,7 +75,7 @@ loopsage -h
 - **Input:** a `.bedpe` loop file, or `.bed` / `.narrowPeak` CTCF sites, plus the genomic region.
 - **CTCF motif search (optional):** with `--motif-genome FASTA` every loop anchor is scanned for the CTCF motif (bundled JASPAR MA0139.1, or your own `--motif-pfm`) and the orientation probabilities are added automatically; `--min-pet N` keeps only loops with at least N PET counts (works without a genome too). Needs no extra packages; the genome is read through a `.fai` index and never loaded into memory. Hits are accepted at `--motif-pvalue` (default 1e-5). The report shows a progress bar while searching and a diagnostics section (loops kept, motif scores, orientation calls). The annotated loops are saved in the run's `data` folder.
 - **Config:** `config_example.ini` lists every parameter with a short description; command-line flags override it.
-- **Output:** `results/<chrom>_<start>_<end>_<run>/`, with the report in `report/report.html`.
+- **Output:** the folder given with `--out` (created if missing, e.g. `--out results/chr1_134_489`; default `results/<chrom>_<start>_<end>`), with the report in `report/report.html`.
 - **MD platform:** `--platform auto` (default) tries CUDA, then OpenCL, then the multi-threaded CPU platform, and the chosen platform is always printed. Force one with `--platform CUDA|OpenCL|CPU`.
 - **Monte Carlo:** `--method Metropolis|Annealing`, `--t-init`, `--t-final`, `--mc-steps`, `--sample-every` and `--burnin` control the sampler (all also keys in the config file).
 - **Parallelism:** `-t/--threads` sets worker threads and `--n-replicas` runs independent Monte Carlo chains (default 1).

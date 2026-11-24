@@ -6,9 +6,9 @@ Run the whole pipeline:
     loopsage -f loops.bedpe -r chr1:80000000-90000000 --run-MD -v
 
 Verbosity: no flag = progress bars only; `-v` = result tables; `-vv` = + info messages; `-vvv` = debug.
-Results go to `results/` in the current folder (git-ignored in the repository), one folder per run, named `{chrom}_{start}_{end}_{run}`:
+Results go to the folder given with `--out` (created, with its parents, if missing; used exactly as given). Without `--out` it is `results/{chrom}_{start}_{end}/` in the current folder (git-ignored in the repository):
 
-    results/chr1_77000000_95000000_1/
+    results/chr1_77000000_95000000/
         structures/      3D structures (.cif)
         visualizations/  every figure as png + svg
         report/          report.html
@@ -16,7 +16,7 @@ Results go to `results/` in the current folder (git-ignored in the repository), 
         data/            cached stage outputs (npz / npy)
         config_resolved.ini
 
-Use `--out DIR` for another results folder and `--run N` to pick a run number.
+Use `--out DIR` to choose the folder, for example `--out results` or `--out results/chr1_134_489`.
 
 Layout (each file is small and documented; everything lives in the `loopsage` package, e.g. `src/loopsage/settings/` is `loopsage.settings`):
 
@@ -34,7 +34,7 @@ Layout (each file is small and documented; everything lives in the `loopsage` pa
 | `reporting/`, `html/` | report builder; `html/` holds the CSS and page template |
 | `pipeline/` | stages (`stage_*.py`) and the runner |
 
-Parallelism: `--threads N` (`-t`, 0 = all cores) sets worker threads for the sampler, OpenMM CPU and numba kernels; `--n-replicas R` runs R independent Monte Carlo chains (seeds `seed`, `seed+1`, ...) in parallel threads (the numba sampler releases the GIL). Results do not depend on the thread count. Maps, 3D structures and diagnostics use all chains pooled, and the report adds a replica-agreement figure (R-hat, occupancy correlation). In `config.ini`: `[parallel]` with `threads` and `replicas`.
+Parallelism: `--threads N` (`-t`, 0 = all cores) sets worker threads for the sampler, OpenMM CPU and numba kernels; `--n-replicas R` runs R independent Monte Carlo chains (replica 0 uses `seed`, the others independent seeds derived from it) in parallel threads (the numba sampler releases the GIL). Results do not depend on the thread count. Maps, 3D structures and diagnostics use all chains pooled, and the report adds a replica-agreement figure (R-hat, occupancy correlation). In `config.ini`: `[parallel]` with `threads` and `replicas`.
 
 Any stage runs alone and reuses cached results from `data/`, e.g.
 `python -m loopsage.pipeline.stage_md -c config.ini`.

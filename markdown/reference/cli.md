@@ -60,7 +60,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 
 | Option | Type (unit) | Default | What it does |
 |---|---|---|---|
-| `-o`, `--out` | text | *(empty)* | Results folder (empty = ./results in the current folder); each run gets its own subfolder |
+| `-o`, `--out` | text | *(empty)* | Output folder: created if missing (with its parents) and used as given (empty = ./results/<chrom>_<start>_<end>) |
 | `--run` | integer | *(empty)* | Run number in the folder name (empty = next free; standalone stages reuse the latest) |
 | `-q`, `--quiet` / `--no-quiet` | true / false | `False` | Print nothing to the console (the log file and the report are still written) |
 | `--seed` | integer | *(empty)* | Random seed (empty = a random one, saved in the resolved config); the same seed repeats the run exactly, MD included only with --threads 1 |
@@ -74,7 +74,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 | Option | Type (unit) | Default | What it does |
 |---|---|---|---|
 | `-t`, `--threads` | integer (threads) | `1` | Worker threads for the numba sampler, OpenMM CPU and numba kernels (0 = all cores) |
-| `--n-replicas` | integer (chains) | `1` | Independent Monte Carlo chains (seed, seed+1, ...) run in parallel; the ensemble is pooled |
+| `--n-replicas` | integer (chains) | `1` | Independent replicas: each runs its own Monte Carlo chain (random start) and its own 3D simulation; with 2 or more, per-replica results go to replica_&lt;k&gt; subfolders and the report adds cross-replica diagnostics |
 
 ### Monte Carlo
 
@@ -121,7 +121,7 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 
 | Option | Type (unit) | Default | What it does |
 |---|---|---|---|
-| `--track-smooth` | number (beads) | `7.0` | Gaussian smoothing of the Hi-C insulation score and of the A/B track (Hi-C eigenvector or compartment BigWig) used as input and for validation (0 = off) |
+| `--track-smooth` | number (beads) | `7.0` | Gaussian smoothing of the Hi-C insulation score, of the A/B track (Hi-C eigenvector or compartment BigWig) and of the validation profiles: loop strength, insulation score, compartments (0 = off) |
 
 ### Parameter optimizer
 
@@ -145,8 +145,8 @@ Switches that are on or off come in pairs: `--run-MD` turns a step on and `--no-
 
 ## Output
 
-Every run gets its own folder, `results/<chrom>_<start>_<end>_<run>/`, with the report in `report/report.html`, the figures in `visualizations/`, the 3D structures in `structures/`, and the numerical results in `data/` (matrices in `data/metadata/` as `.npy` files).
-Use `-o` to choose another results folder and `--run N` to fix the run number.
+Every run writes into one output folder, with the report in `report/report.html`, the figures in `visualizations/`, the 3D structures in `structures/`, and the numerical results in `data/` (matrices in `data/metadata/` as `.npy` files).
+Choose the folder with `-o`: it is created if it does not exist (with its parents) and used exactly as given, so `-o results` writes into `results/` and `-o results/chr1_134_489` into that subfolder. Without `-o` the folder is `results/<chrom>_<start>_<end>`. The region is not part of the layout; it is written in the report.
 
 **Everything is saved by default**, from the command line and from a config file. Each kind of output has its own switch to turn it off (`--no-...`, or `... = False` in the config file):
 
